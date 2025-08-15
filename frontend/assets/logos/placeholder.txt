@@ -1,0 +1,17 @@
+PLACEHOLDER FOR LOGO FILES
+
+Replace this file with actual PNG logo images:
+
+1. udd_merch.png - Main UDD Merch Hub logo (200x200px recommended)
+2. site.png - School of Information Technology Education logo (200x200px recommended)  
+3. sba.png - School of Business Administration logo (200x200px recommended)
+
+The logos should be:
+- PNG format with transparent background
+- High quality (at least 200x200px)
+- Consistent with UDD branding colors
+- Professional and clean design
+
+
+
+

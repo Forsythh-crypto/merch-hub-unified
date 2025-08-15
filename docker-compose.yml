@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # Laravel Backend API
+  backend:
+    build: ./backend
+    container_name: merchub_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+      - backend_storage:/var/www/html/storage
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=database
+      - DB_DATABASE=merchub_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+    depends_on:
+      - database
+    networks:
+      - merchub_network
+
+  # Flutter Web Frontend (Development)
+  frontend:
+    image: cirrusci/flutter:stable
+    container_name: merchub_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    working_dir: /app
+    command: >
+      sh -c "flutter pub get && 
+             flutter run -d web-server --web-hostname 0.0.0.0 --web-port 3000"
+    networks:
+      - merchub_network
+
+  # MySQL Database
+  database:
+    image: mysql:8.0
+    container_name: merchub_database
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: merchub_db
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - merchub_network
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: merchub_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/build/web:/usr/share/nginx/html/frontend:ro
+    depends_on:
+      - backend
+    networks:
+      - merchub_network
+    profiles:
+      - production
+
+  # phpMyAdmin (Development)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: merchub_phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: database
+      PMA_USER: root
+      PMA_PASSWORD: password
+    depends_on:
+      - database
+    networks:
+      - merchub_network
+    profiles:
+      - development
+
+volumes:
+  mysql_data:
+  backend_storage:
+
+networks:
+  merchub_network:
+    driver: bridge

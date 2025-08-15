@@ -1,0 +1,155 @@
+{
+  "folders": [
+    {
+      "name": "🌐 Backend (Laravel)",
+      "path": "./backend"
+    },
+    {
+      "name": "📱 Frontend (Flutter)", 
+      "path": "./frontend"
+    },
+    {
+      "name": "📚 Documentation",
+      "path": "./docs"
+    },
+    {
+      "name": "🔧 Scripts",
+      "path": "./scripts"
+    }
+  ],
+  "settings": {
+    "files.associations": {
+      "*.blade.php": "blade",
+      "*.dart": "dart"
+    },
+    "emmet.includeLanguages": {
+      "blade": "html"
+    },
+    "php.suggest.basic": true,
+    "php.validate.enable": true,
+    "php.validate.executablePath": "php",
+    "dart.flutterSdkPath": null,
+    "dart.debugExternalPackageLibraries": false,
+    "dart.debugSdkLibraries": false,
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/vendor": true,
+      "**/build": true,
+      "**/.dart_tool": true,
+      "**/storage/framework": true,
+      "**/storage/logs": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/vendor/**": true,
+      "**/build/**": true,
+      "**/.dart_tool/**": true,
+      "**/storage/framework/**": true,
+      "**/storage/logs/**": true
+    }
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🚀 Start Development Servers",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "dev"],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🔧 Setup Project",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "setup"],
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": true,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "🌐 Start Backend Only",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "backend"],
+        "group": "build"
+      },
+      {
+        "label": "📱 Start Frontend Only",
+        "type": "shell", 
+        "command": "npm",
+        "args": ["run", "frontend"],
+        "group": "build"
+      },
+      {
+        "label": "🗄️ Reset Database",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "backend:fresh"],
+        "group": "build"
+      },
+      {
+        "label": "👤 Create Super Admin",
+        "type": "shell",
+        "command": "npm", 
+        "args": ["run", "create-superadmin"],
+        "group": "build"
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🌐 Debug Backend (PHP)",
+        "type": "php",
+        "request": "launch",
+        "program": "${workspaceFolder}/backend/artisan",
+        "args": ["serve"],
+        "cwd": "${workspaceFolder}/backend",
+        "runtimeArgs": ["-dxdebug.start_with_request=yes"],
+        "env": {
+          "XDEBUG_MODE": "debug,develop",
+          "XDEBUG_CONFIG": "client_port=${port}"
+        }
+      },
+      {
+        "name": "📱 Debug Frontend (Flutter Web)",
+        "request": "launch",
+        "type": "dart",
+        "cwd": "${workspaceFolder}/frontend",
+        "program": "lib/main.dart",
+        "args": ["-d", "web-server", "--web-port", "3000"]
+      }
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-json",
+      "bradlc.vscode-tailwindcss",
+      "onecentlin.laravel-blade",
+      "ryannaddy.laravel-artisan",
+      "dart-code.dart-code",
+      "dart-code.flutter",
+      "ms-vscode.vscode-typescript-next",
+      "esbenp.prettier-vscode",
+      "bmewburn.vscode-intelephense-client",
+      "mikestead.dotenv"
+    ]
+  }
+}

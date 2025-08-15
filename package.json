@@ -1,0 +1,38 @@
+{
+  "name": "merch-hub-unified",
+  "version": "1.0.0",
+  "description": "Full-stack marketplace application with Flutter frontend and Laravel backend",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -c \"#93c5fd,#c4b5fd\" \"npm run backend\" \"npm run frontend\" --names=backend,frontend",
+    "backend": "cd backend && php artisan serve",
+    "frontend": "cd frontend && flutter run -d web-server --web-hostname 0.0.0.0 --web-port 3000",
+    "backend:setup": "cd backend && composer install && php artisan key:generate && php artisan migrate && php artisan db:seed",
+    "frontend:setup": "cd frontend && flutter pub get",
+    "setup": "npm run backend:setup && npm run frontend:setup",
+    "backend:fresh": "cd backend && php artisan migrate:fresh --seed",
+    "backend:seed": "cd backend && php artisan db:seed",
+    "create-superadmin": "cd backend && php artisan user:create-superadmin",
+    "test:backend": "cd backend && php artisan test",
+    "test:frontend": "cd frontend && flutter test",
+    "test": "npm run test:backend && npm run test:frontend",
+    "build:frontend": "cd frontend && flutter build web",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "flutter",
+    "laravel",
+    "marketplace",
+    "full-stack",
+    "api",
+    "mobile",
+    "web"
+  ],
+  "author": "Capstone Project Team",
+  "license": "MIT"
+}
