@@ -23,13 +23,8 @@ class ListingController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'status' => 'nullable|in:pending,approved,rejected',
             'stock_quantity' => 'nullable|integer|min:0',
+            'size_variants' => 'nullable|string', // JSON string from frontend
         ]);
-
-        // Enforce size for clothing items
-        $category = Category::find($validated['category_id']);
-        if ($category && $category->name === 'Clothing' && empty($validated['size'])) {
-            return response()->json(['message' => 'Size is required for clothing items.'], 422);
-        }
 
         // Handle image upload
         $imagePath = $request->hasFile('image')
@@ -58,6 +53,7 @@ class ListingController extends Controller
             $initialStatus = $validated['status'];
         }
 
+        // Create the listing
         $listing = Listing::create([
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -71,7 +67,26 @@ class ListingController extends Controller
             'status' => $initialStatus,
         ]);
 
-        return response()->json($listing->load(['category', 'user', 'department']));
+        // Handle size variants if provided
+        if (isset($validated['size_variants']) && !empty($validated['size_variants'])) {
+            \Log::info('Size variants received: ' . $validated['size_variants']);
+            $sizeVariants = json_decode($validated['size_variants'], true);
+            \Log::info('Decoded size variants: ' . print_r($sizeVariants, true));
+            
+            if (is_array($sizeVariants)) {
+                foreach ($sizeVariants as $variant) {
+                    if (isset($variant['size']) && isset($variant['stock_quantity']) && $variant['stock_quantity'] > 0) {
+                        $listing->sizeVariants()->create([
+                            'size' => $variant['size'],
+                            'stock_quantity' => $variant['stock_quantity'],
+                        ]);
+                        \Log::info("Created size variant: {$variant['size']} with stock {$variant['stock_quantity']}");
+                    }
+                }
+            }
+        }
+
+        return response()->json($listing->load(['category', 'user', 'department', 'sizeVariants']));
     }
 
     /**
@@ -79,7 +94,7 @@ class ListingController extends Controller
      */
     public function index(Request $request)
     {
-        $listings = Listing::with(['category', 'user', 'department'])
+        $listings = Listing::with(['category', 'user', 'department', 'sizeVariants'])
                           ->where('status', 'approved')
                           ->latest()
                           ->get();
@@ -93,7 +108,7 @@ class ListingController extends Controller
     public function adminIndex(Request $request)
     {
         $user = $request->user();
-        $query = Listing::with(['category', 'user', 'department']);
+        $query = Listing::with(['category', 'user', 'department', 'sizeVariants']);
 
         // If admin (not superadmin), only show their department's listings
         if ($user->isAdmin() && !$user->isSuperAdmin()) {
@@ -120,7 +135,7 @@ class ListingController extends Controller
         $listing->update(['status' => 'approved']);
 
         return response()->json([
-            'listing' => $listing->load(['category', 'user', 'department']),
+            'listing' => $listing->load(['category', 'user', 'department', 'sizeVariants']),
             'message' => 'Listing approved successfully'
         ]);
     }
@@ -147,7 +162,7 @@ class ListingController extends Controller
      */
     public function departmentListings(Request $request, int $departmentId)
     {
-        $listings = Listing::with(['category', 'user', 'department'])
+        $listings = Listing::with(['category', 'user', 'department', 'sizeVariants'])
                           ->where('department_id', $departmentId)
                           ->latest()
                           ->get();
@@ -160,7 +175,7 @@ class ListingController extends Controller
      */
     public function superAdminIndex(Request $request)
     {
-        $listings = Listing::with(['category', 'user', 'department'])
+        $listings = Listing::with(['category', 'user', 'department', 'sizeVariants'])
                           ->latest()
                           ->get();
 
@@ -179,8 +194,76 @@ class ListingController extends Controller
         $listing->update(['stock_quantity' => $validated['stock_quantity']]);
 
         return response()->json([
-            'listing' => $listing->load(['category', 'user', 'department']),
+            'listing' => $listing->load(['category', 'user', 'department', 'sizeVariants']),
             'message' => 'Stock quantity updated successfully'
+        ]);
+    }
+
+    /**
+     * Update a listing (Admin and Super Admin)
+     */
+    public function update(Request $request, Listing $listing)
+    {
+        $user = $request->user();
+
+        // Check if user can manage this listing's department
+        if (!$user->canManageDepartment($listing->department_id)) {
+            return response()->json(['message' => 'Cannot update listings from this department'], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'status' => 'nullable|in:pending,approved,rejected', // Optional for admins
+            'stock_quantity' => 'nullable|integer|min:0', // Optional for stock updates
+        ]);
+
+        // Only allow status changes for superadmins
+        if (isset($validated['status']) && !$user->isSuperAdmin()) {
+            unset($validated['status']); // Remove status from update for non-superadmins
+        }
+
+        $listing->update($validated);
+
+        return response()->json([
+            'listing' => $listing->load(['category', 'user', 'department', 'sizeVariants']),
+            'message' => 'Listing updated successfully'
+        ]);
+    }
+
+    /**
+     * Update size variants for a listing (Admin and Super Admin)
+     */
+    public function updateSizeVariants(Request $request, Listing $listing)
+    {
+        $user = $request->user();
+
+        // Check if user can manage this listing's department
+        if (!$user->canManageDepartment($listing->department_id)) {
+            return response()->json(['message' => 'Cannot update listings from this department'], 403);
+        }
+
+        $validated = $request->validate([
+            'size_variants' => 'required|array',
+            'size_variants.*.size' => 'required|string|max:10',
+            'size_variants.*.stock_quantity' => 'required|integer|min:0',
+        ]);
+
+        // Delete existing size variants
+        $listing->sizeVariants()->delete();
+
+        // Create new size variants
+        foreach ($validated['size_variants'] as $variant) {
+            $listing->sizeVariants()->create([
+                'size' => $variant['size'],
+                'stock_quantity' => $variant['stock_quantity'],
+            ]);
+        }
+
+        return response()->json([
+            'listing' => $listing->load(['category', 'user', 'department', 'sizeVariants']),
+            'message' => 'Size variants updated successfully'
         ]);
     }
 }

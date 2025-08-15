@@ -13,17 +13,45 @@ class DepartmentSeeder extends Seeder
     public function run(): void
     {
         $departments = [
-            'School of Information Technology Education',
-            'School of Teacher Education',
-            'School of Criminology',
-            'School of Health Sciences',
-            'School of Humanities',
-            'School of Engineering',
-            'School of International Hospitality Management',
+            [
+                'name' => 'School of Business and Accountancy',
+                'logo_path' => 'sba.png'
+            ],
+            [
+                'name' => 'School of Information Technology Education',
+                'logo_path' => 'site.png'
+            ],
+            [
+                'name' => 'School of Teacher Education',
+                'logo_path' => 'ste.png'
+            ],
+            [
+                'name' => 'School of Criminology',
+                'logo_path' => 'soc.png'
+            ],
+            [
+                'name' => 'School of Health Sciences',
+                'logo_path' => 'sohs.png'
+            ],
+            [
+                'name' => 'School of Humanities',
+                'logo_path' => 'soh.png'
+            ],
+            [
+                'name' => 'School of Engineering',
+                'logo_path' => 'soe.png'
+            ],
+            [
+                'name' => 'School of International Hospitality Management',
+                'logo_path' => 'sihm.png'
+            ],
         ];
 
-        foreach ($departments as $name) {
-            Department::firstOrCreate(['name' => $name]);
+        foreach ($departments as $department) {
+            Department::firstOrCreate(
+                ['name' => $department['name']],
+                ['logo_path' => $department['logo_path']]
+            );
         }
     }
 }

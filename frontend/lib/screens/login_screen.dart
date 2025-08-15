@@ -61,19 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
         print('Login successful, token: $token');
 
-        // Create UserSession object
-        final userSession = UserSession(
-          userId: userData['id'].toString(),
-          name: userData['name'],
-          email: userData['email'],
-          role: userData['role'] == 'superadmin'
-              ? UserRole.superAdmin
-              : userData['role'] == 'admin'
-              ? UserRole.admin
-              : UserRole.student,
-          departmentId: userData['department_id'],
-          departmentName: userData['department_name'],
-        );
+        // Create UserSession object using fromJson for consistency
+        final userSession = UserSession.fromJson(userData);
 
         // Navigate based on role
         if (!mounted) return;

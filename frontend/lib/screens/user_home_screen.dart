@@ -3,6 +3,7 @@ import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
 import '../screens/config/app_config.dart';
+import 'user_orders_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -22,7 +23,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       'color': const Color(0xFF6B7280), // Gray
     },
     {
-      'name': 'School of Business Administration',
+      'name': 'School of Business and Accountancy',
       'logo': 'assets/logos/sba.png',
       'color': const Color(0xFFF59E0B), // Yellow
     },
@@ -113,9 +114,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black),
+            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
             onPressed: () {
-              // TODO: Implement cart
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UserOrdersScreen(),
+                ),
+              );
             },
           ),
           PopupMenuButton<String>(
@@ -258,6 +264,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                   Navigator.pushNamed(
                                     context,
                                     '/user-listings',
+                                    arguments: 'All',
                                   );
                                 },
                                 child: const Text(
@@ -368,9 +375,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                   Navigator.pushNamed(
                                     context,
                                     '/user-listings',
-                                    arguments: {
-                                      'departmentName': department['name'],
-                                    },
+                                    arguments: department['name'],
                                   );
                                 },
                                 child: Container(

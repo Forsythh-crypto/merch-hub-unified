@@ -15,4 +15,9 @@ class AppConfig {
     print('API URL: $url'); // Debug log
     return Uri.parse(url);
   }
+
+  static String fileUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    return '$_apiBaseUrl/files/$path';
+  }
 }

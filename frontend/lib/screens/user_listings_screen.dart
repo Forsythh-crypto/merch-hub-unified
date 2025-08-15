@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
+import 'order_confirmation_screen.dart';
 
 class UserListingsScreen extends StatefulWidget {
-  const UserListingsScreen({super.key});
+  final String? initialDepartment;
+
+  const UserListingsScreen({super.key, this.initialDepartment});
 
   @override
   State<UserListingsScreen> createState() => _UserListingsScreenState();
@@ -24,42 +27,42 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     {
       'name': 'School of Information Technology Education',
       'logo': 'assets/logos/site.png',
-      'color': const Color(0xFF1E3A8A),
+      'color': const Color(0xFF6B7280), // Gray
     },
     {
-      'name': 'School of Business Administration',
+      'name': 'School of Business and Accountancy',
       'logo': 'assets/logos/sba.png',
-      'color': const Color(0xFF059669),
+      'color': const Color(0xFFF59E0B), // Yellow
     },
     {
       'name': 'School of Criminology',
       'logo': 'assets/logos/soc.png',
-      'color': const Color(0xFF7C3AED),
+      'color': const Color(0xFF800000), // Maroon
     },
     {
       'name': 'School of Engineering',
       'logo': 'assets/logos/soe.png',
-      'color': const Color(0xFFEA580C),
+      'color': const Color(0xFFEA580C), // Orange
     },
     {
       'name': 'School of Teacher Education',
       'logo': 'assets/logos/ste.png',
-      'color': const Color(0xFF7C3AED),
+      'color': const Color(0xFF2563EB), // Blue
     },
     {
       'name': 'School of Humanities',
       'logo': 'assets/logos/soh.png',
-      'color': const Color(0xFF0891B2),
+      'color': const Color(0xFF7C3AED), // Purple
     },
     {
       'name': 'School of Health Sciences',
       'logo': 'assets/logos/sohs.png',
-      'color': const Color(0xFFDC2626),
+      'color': const Color(0xFF059669), // Green
     },
     {
       'name': 'School of International Hospitality Management',
       'logo': 'assets/logos/sihm.png',
-      'color': const Color(0xFFEC4899),
+      'color': const Color(0xFFDC2626), // Red
     },
   ];
 
@@ -74,17 +77,23 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_routeArgsInitialized) return;
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map<String, dynamic>) {
-      final dept = args['departmentName'] as String?;
-      if (dept != null && dept.isNotEmpty) {
-        setState(() {
-          _selectedDepartment = dept;
-        });
+
+    // Handle both direct string and map arguments
+    String? initialDepartment = widget.initialDepartment;
+    if (initialDepartment == null) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String) {
+        initialDepartment = args;
+      } else if (args is Map<String, dynamic>) {
+        initialDepartment = args['departmentName'] as String?;
       }
     }
-    _routeArgsInitialized = true;
+
+    if (initialDepartment != null && _selectedDepartment == 'All') {
+      setState(() {
+        _selectedDepartment = initialDepartment!;
+      });
+    }
   }
 
   @override
@@ -429,171 +438,262 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
   }
 
   Widget _buildProductCard(Listing listing) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Product Image
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+    return GestureDetector(
+      onTap: listing.stockQuantity > 0 ? () => _showOrderDialog(listing) : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Image
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: listing.imagePath != null
+                          ? Image.network(
+                              Uri.encodeFull(
+                                '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
+                              ),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  color: Colors.grey[100],
+                                  child: const Icon(
+                                    Icons.image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              color: Colors.grey[100],
+                              child: const Icon(
+                                Icons.image,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
+                    ),
+
+                    // Stock Badge
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: listing.stockQuantity > 0
+                              ? Colors.green
+                              : Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          listing.stockQuantity > 0
+                              ? 'In Stock'
+                              : 'Out of Stock',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Stack(
-                children: [
-                  // Image
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
+            ),
+
+            // Product Details
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      listing.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: listing.imagePath != null
-                        ? Image.network(
-                            Uri.encodeFull(
-                              '${AppConfig.baseUrl}/api/files/${listing.imagePath}?t=${listing.updatedAt.millisecondsSinceEpoch}',
-                            ),
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
+
+                    const SizedBox(height: 4),
+
+                    // Department and Category
+                    Text(
+                      '${listing.department?.name ?? 'N/A'}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+
+                    const Spacer(),
+
+                    // Price and Size
+                    Row(
+                      children: [
+                        Text(
+                          '₱${listing.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (listing.sizeVariants != null &&
+                            listing.sizeVariants!.isNotEmpty) ...[
+                          // Show available sizes for clothing
+                          Wrap(
+                            spacing: 4,
+                            children: listing.sizeVariants!.take(3).map((
+                              variant,
+                            ) {
                               return Container(
-                                width: double.infinity,
-                                height: double.infinity,
-                                color: Colors.grey[100],
-                                child: const Icon(
-                                  Icons.image,
-                                  size: 50,
-                                  color: Colors.grey,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: variant.stockQuantity > 0
+                                      ? Colors.green[100]
+                                      : Colors.red[100],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  variant.size,
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: variant.stockQuantity > 0
+                                        ? Colors.green[800]
+                                        : Colors.red[800],
+                                  ),
                                 ),
                               );
-                            },
-                          )
-                        : Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            color: Colors.grey[100],
-                            child: const Icon(
-                              Icons.image,
-                              size: 50,
-                              color: Colors.grey,
+                            }).toList(),
+                          ),
+                          if (listing.sizeVariants!.length > 3)
+                            Text(
+                              '+${listing.sizeVariants!.length - 3} more',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                        ] else if (listing.size != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              listing.size!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                  ),
+                      ],
+                    ),
 
-                  // Stock Badge
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: listing.stockQuantity > 0
-                            ? Colors.green
-                            : Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        listing.stockQuantity > 0 ? 'In Stock' : 'Out of Stock',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    const SizedBox(height: 8),
+
+                    // Pre-order Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 32,
+                      child: ElevatedButton(
+                        onPressed: listing.stockQuantity > 0
+                            ? () => _showOrderDialog(listing)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: listing.stockQuantity > 0
+                              ? const Color(0xFF1E3A8A)
+                              : Colors.grey,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                        ),
+                        child: Text(
+                          listing.stockQuantity > 0
+                              ? 'Pre-order'
+                              : 'Out of Stock',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-
-          // Product Details
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    listing.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // Department and Category
-                  Text(
-                    '${listing.department?.name ?? 'N/A'}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-
-                  const Spacer(),
-
-                  // Price and Size
-                  Row(
-                    children: [
-                      Text(
-                        '₱${listing.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF1E3A8A),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (listing.size != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            listing.size!,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  void _showOrderDialog(Listing listing) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderConfirmationScreen(listing: listing),
+      ),
+    ).then((orderCreated) {
+      if (orderCreated == true) {
+        // Refresh listings if order was created
+        _loadListings();
+      }
+    });
   }
 }

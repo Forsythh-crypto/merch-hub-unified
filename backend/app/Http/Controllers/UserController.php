@@ -220,8 +220,22 @@ class UserController extends Controller
             return response()->json(['message' => 'Cannot modify super admin role'], 403);
         }
 
-        $user->update(['role' => User::ROLE_ADMIN]);
+        $validated = $request->validate([
+            'department_id' => 'required|exists:departments,id',
+        ]);
+
+        \Log::info("Granting admin privileges to user {$user->id} for department {$validated['department_id']}");
+
+        $user->update([
+            'role' => User::ROLE_ADMIN,
+            'department_id' => $validated['department_id'],
+        ]);
+        
+        // Refresh the user model and load the department relationship
+        $user->refresh();
         $user->load('department');
+
+        \Log::info("User updated successfully. New role: {$user->role}, Department: {$user->department->name}");
 
         return response()->json([
             'user' => $user->getSessionData(),
@@ -243,6 +257,9 @@ class UserController extends Controller
         }
 
         $user->update(['role' => User::ROLE_STUDENT]);
+        
+        // Refresh the user model and load the department relationship
+        $user->refresh();
         $user->load('department');
 
         return response()->json([

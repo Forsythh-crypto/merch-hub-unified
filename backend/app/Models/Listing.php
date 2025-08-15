@@ -35,7 +35,23 @@ class Listing extends Model
 
     public function category()
     {
-    return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class);
     }
 
+    public function sizeVariants()
+    {
+        return $this->hasMany(ListingSizeVariant::class);
+    }
+
+    // Helper method to get total stock across all sizes
+    public function getTotalStockAttribute()
+    {
+        return $this->sizeVariants->sum('stock_quantity');
+    }
+
+    // Helper method to check if listing has multiple sizes
+    public function getHasMultipleSizesAttribute()
+    {
+        return $this->sizeVariants->count() > 1;
+    }
 }

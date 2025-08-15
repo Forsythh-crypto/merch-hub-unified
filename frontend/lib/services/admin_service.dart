@@ -156,16 +156,29 @@ class AdminService {
   static Future<List<Listing>> getAdminListings() async {
     try {
       final headers = await _getHeaders();
+      print(
+        '🔍 Getting admin listings from: ${AppConfig.api('admin/listings')}',
+      );
+
       final response = await http.get(
         AppConfig.api('admin/listings'),
         headers: headers,
       );
 
+      print(
+        '🔍 Admin listings response: ${response.statusCode} - ${response.body}',
+      );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data['listings'] as List)
+        final listings = (data['listings'] as List)
             .map((listing) => Listing.fromJson(listing))
             .toList();
+
+        print('🔍 Parsed ${listings.length} listings');
+        return listings;
+      } else {
+        print('❌ Failed to get admin listings: ${response.statusCode}');
       }
     } catch (e) {
       print('Error getting admin listings: $e');
@@ -227,12 +240,22 @@ class AdminService {
   static Future<bool> updateStock(int listingId, int stockQuantity) async {
     try {
       final headers = await _getHeaders();
+      print('🔧 Updating stock for listing $listingId to $stockQuantity');
+
       final response = await http.put(
-        AppConfig.api('admin/listings/$listingId/update-stock'),
+        AppConfig.api('admin/listings/$listingId'),
         headers: headers,
-        body: jsonEncode({'stock_quantity': stockQuantity}),
+        body: jsonEncode({
+          'title': 'temp', // We need to provide required fields
+          'description': 'temp',
+          'price': 0.0,
+          'stock_quantity': stockQuantity,
+        }),
       );
 
+      print(
+        '🔧 Update stock response: ${response.statusCode} - ${response.body}',
+      );
       return response.statusCode == 200;
     } catch (e) {
       print('Error updating stock: $e');
@@ -262,15 +285,26 @@ class AdminService {
   }
 
   // User Management Methods
-  static Future<bool> grantAdminPrivileges(int userId) async {
+  static Future<bool> grantAdminPrivileges(int userId, int departmentId) async {
     try {
       final headers = await _getHeaders();
+      print(
+        '🔑 Granting admin privileges to user $userId for department $departmentId',
+      );
+
       final response = await http.put(
         AppConfig.api('admin/users/$userId/grant-admin'),
         headers: headers,
+        body: jsonEncode({'department_id': departmentId}),
       );
 
       print('Grant admin response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode != 200) {
+        print('❌ Failed to grant admin privileges: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+      }
+
       return response.statusCode == 200;
     } catch (e) {
       print('Error granting admin privileges: $e');
@@ -520,6 +554,148 @@ class AdminService {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print('❌ Error creating listing: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> createListingWithVariants({
+    required String title,
+    required String description,
+    required double price,
+    required String status,
+    String? imagePath,
+    int? categoryId,
+    int? departmentId,
+    required List<Map<String, dynamic>> sizeVariants,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(AppConfig.baseUrl + '/api/listings'),
+      );
+
+      // Add auth headers ONLY (do not set Content-Type for multipart)
+      final token = await _getToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer ' + token;
+      }
+      request.headers['Accept'] = 'application/json';
+
+      // Add text fields
+      request.fields['title'] = title;
+      request.fields['description'] = description;
+      request.fields['price'] = price.toString();
+      request.fields['status'] = status;
+      if (categoryId != null)
+        request.fields['category_id'] = categoryId.toString();
+      if (departmentId != null)
+        request.fields['department_id'] = departmentId.toString();
+
+      // Add size variants as JSON
+      request.fields['size_variants'] = jsonEncode(sizeVariants);
+
+      // Add image file if provided
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final file = await http.MultipartFile.fromPath('image', imagePath);
+        request.files.add(file);
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print(
+        '📦 Create listing with variants response: ${response.statusCode} - ${response.body}',
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print('❌ Error creating listing with variants: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateListing(
+    int listingId, {
+    required String title,
+    required String description,
+    required double price,
+    String? status,
+    int? stockQuantity,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      print('🔑 Update listing headers: $headers');
+      final requestBody = {
+        'title': title,
+        'description': description,
+        'price': price,
+      };
+
+      // Only include status if provided (for superadmins)
+      if (status != null) {
+        requestBody['status'] = status;
+      }
+
+      // Include stock quantity if provided
+      if (stockQuantity != null) {
+        requestBody['stock_quantity'] = stockQuantity;
+      }
+
+      print(
+        '📝 Update listing data: {title: $title, description: $description, price: $price, status: $status}',
+      );
+
+      final response = await http.put(
+        AppConfig.api('admin/listings/$listingId'),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      print(
+        '📦 Update listing response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode != 200) {
+        print('❌ Update listing failed with status: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+      }
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('❌ Error updating listing: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateListingSizeVariants(
+    int listingId,
+    List<Map<String, dynamic>> sizeVariants,
+  ) async {
+    try {
+      final headers = await _getHeaders();
+      print('🔑 Update size variants headers: $headers');
+      print('📝 Update size variants data: $sizeVariants');
+
+      final response = await http.put(
+        AppConfig.api('admin/listings/$listingId/size-variants'),
+        headers: headers,
+        body: jsonEncode({'size_variants': sizeVariants}),
+      );
+
+      print(
+        '📦 Update size variants response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode != 200) {
+        print(
+          '❌ Update size variants failed with status: ${response.statusCode}',
+        );
+        print('❌ Response body: ${response.body}');
+      }
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('❌ Error updating size variants: $e');
       return false;
     }
   }

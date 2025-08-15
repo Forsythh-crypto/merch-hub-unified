@@ -64,7 +64,11 @@ class MerchHubApp extends StatelessWidget {
           );
           return AdminListingsScreen(userSession: userSession);
         },
-        '/user-listings': (context) => const UserListingsScreen(),
+        '/user-listings': (context) {
+          final initialDepartment =
+              ModalRoute.of(context)?.settings.arguments as String?;
+          return UserListingsScreen(initialDepartment: initialDepartment);
+        },
       },
     );
   }

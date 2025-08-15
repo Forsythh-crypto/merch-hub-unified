@@ -9,6 +9,7 @@ import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
 import '../screens/config/app_config.dart';
+import 'admin_orders_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   final UserSession userSession;
@@ -32,7 +33,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
     switch (departmentName.toLowerCase()) {
       case 'school of information technology education':
         return 'assets/logos/site.png';
-      case 'school of business administration':
+      case 'school of business and accountancy':
         return 'assets/logos/sba.png';
       case 'school of criminology':
         return 'assets/logos/soc.png';
@@ -65,7 +66,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _loadData();
   }
 
@@ -153,6 +154,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
           isScrollable: true,
           tabs: const [
             Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
+            Tab(icon: Icon(Icons.shopping_cart), text: 'Orders'),
             Tab(icon: Icon(Icons.people), text: 'Users'),
             Tab(icon: Icon(Icons.school), text: 'Departments'),
             Tab(icon: Icon(Icons.inventory), text: 'Products'),
@@ -202,6 +204,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
         controller: _tabController,
         children: [
           _buildDashboardTab(),
+          AdminOrdersScreen(userSession: widget.userSession),
           _buildUsersTab(),
           _buildDepartmentsTab(),
           _buildProductsTab(),
@@ -1931,6 +1934,44 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
     }
   }
 
+  // Department Selection Dialog
+  Future<int?> _showDepartmentSelectionDialog() async {
+    return showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Department'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Choose which department this user will be an admin of:',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              ...(_departments
+                  .map(
+                    (dept) => ListTile(
+                      title: Text(dept['name']),
+                      onTap: () => Navigator.pop(context, dept['id']),
+                      trailing: const Icon(Icons.arrow_forward_ios),
+                    ),
+                  )
+                  .toList()),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // User Management Actions
   Future<void> _handleUserAction(UserSession user, String action) async {
     try {
@@ -1939,12 +1980,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
 
       switch (action) {
         case 'grant_admin':
-          success = await AdminService.grantAdminPrivileges(
-            int.parse(user.userId),
-          );
-          message = success
-              ? 'Admin privileges granted to ${user.name}'
-              : 'Failed to grant admin privileges';
+          // Show department selection dialog for grant admin
+          final selectedDepartmentId = await _showDepartmentSelectionDialog();
+          if (selectedDepartmentId != null) {
+            success = await AdminService.grantAdminPrivileges(
+              int.parse(user.userId),
+              selectedDepartmentId,
+            );
+            message = success
+                ? 'Admin privileges granted to ${user.name}. The user should log out and log back in to see the updated department.'
+                : 'Failed to grant admin privileges';
+          }
           break;
         case 'grant_superadmin':
           success = await AdminService.grantSuperAdminPrivileges(
@@ -1959,7 +2005,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
             int.parse(user.userId),
           );
           message = success
-              ? 'Admin privileges revoked from ${user.name}'
+              ? 'Admin privileges revoked from ${user.name}. The user should log out and log back in to see the updated role.'
               : 'Failed to revoke admin privileges';
           break;
         case 'revoke_superadmin':
@@ -2394,6 +2440,18 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
     File? selectedImage;
     bool isLoading = true;
 
+    // Per-size stock controllers for clothing
+    final Map<String, TextEditingController> _sizeQtyControllers = {
+      'XS': TextEditingController(),
+      'S': TextEditingController(),
+      'M': TextEditingController(),
+      'L': TextEditingController(),
+      'XL': TextEditingController(),
+      'XXL': TextEditingController(),
+    };
+    final List<String> _clothingSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    bool isClothingSelected = false;
+
     // Load data first
     Future<void> loadData() async {
       try {
@@ -2482,6 +2540,102 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // Category Dropdown
+                DropdownButtonFormField<int>(
+                  value: selectedCategoryId,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: categories.map((category) {
+                    return DropdownMenuItem<int>(
+                      value: category['id'],
+                      child: Text(category['name']),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategoryId = value;
+                      // Determine if clothing is selected to show/hide size fields
+                      final cat = categories.firstWhere(
+                        (c) => c['id'] == selectedCategoryId,
+                        orElse: () => {'name': ''},
+                      );
+                      isClothingSelected = (cat['name'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains('cloth');
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Department Dropdown
+                DropdownButtonFormField<int>(
+                  value: selectedDepartmentId,
+                  decoration: const InputDecoration(
+                    labelText: 'Department',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: departments.map((dept) {
+                    return DropdownMenuItem<int>(
+                      value: dept['id'],
+                      child: Text(dept['name']),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedDepartmentId = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Conditional Size/Stock Inputs
+                if (isClothingSelected) ...[
+                  const Text(
+                    'Stock per Size:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ..._clothingSizes
+                      .map(
+                        (size) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: TextField(
+                            controller: _sizeQtyControllers[size],
+                            decoration: InputDecoration(
+                              labelText: '$size Stock',
+                              border: const OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ] else ...[
+                  // Single Stock Quantity for non-clothing
+                  TextFormField(
+                    controller: stockController,
+                    decoration: const InputDecoration(
+                      labelText: 'Stock Quantity',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter stock quantity';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Please enter a valid quantity';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+                const SizedBox(height: 16),
+
                 DropdownButtonFormField<String>(
                   value: selectedStatus,
                   decoration: const InputDecoration(
@@ -2503,71 +2657,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                     selectedStatus = value!;
                   },
                 ),
-                const SizedBox(height: 16),
-                // Category Dropdown
-                DropdownButtonFormField<int>(
-                  value: selectedCategoryId,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: categories.map((category) {
-                    return DropdownMenuItem<int>(
-                      value: category['id'],
-                      child: Text(category['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCategoryId = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Department Dropdown
-                DropdownButtonFormField<int>(
-                  value: selectedDepartmentId,
-                  decoration: const InputDecoration(
-                    labelText: 'Department',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: departments.map((department) {
-                    return DropdownMenuItem<int>(
-                      value: department['id'],
-                      child: Text(department['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedDepartmentId = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Size (required for Clothing)
-                Builder(
-                  builder: (context) {
-                    bool isClothing = false;
-                    final cat = categories.firstWhere(
-                      (c) => c['id'] == selectedCategoryId,
-                      orElse: () => {},
-                    );
-                    final name = (cat['name'] ?? '').toString().toLowerCase();
-                    if (name.contains('cloth') || name == 'clothing') {
-                      isClothing = true;
-                    }
-                    if (!isClothing) return const SizedBox.shrink();
-                    return TextField(
-                      onChanged: (v) => selectedSize = v.trim(),
-                      decoration: const InputDecoration(
-                        labelText: 'Size (required for Clothing)',
-                        hintText: 'e.g., S, M, L, XL',
-                        border: OutlineInputBorder(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
+
                 const SizedBox(height: 16),
                 // Image upload section
                 Container(
@@ -2699,42 +2789,89 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                 Navigator.pop(context);
 
                 try {
-                  // Require size if category is Clothing
-                  final selCat = categories.firstWhere(
-                    (c) => c['id'] == selectedCategoryId,
-                    orElse: () => {},
-                  );
-                  final catName = (selCat['name'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  final isClothing =
-                      catName.contains('cloth') || catName == 'clothing';
-                  if (isClothing &&
-                      (selectedSize == null || selectedSize!.isEmpty)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Size is required for clothing items.'),
-                      ),
+                  // Handle per-size stock for clothing
+                  if (isClothingSelected) {
+                    final entries = _sizeQtyControllers.entries
+                        .map(
+                          (e) => MapEntry(
+                            e.key,
+                            int.tryParse(e.value.text.trim()),
+                          ),
+                        )
+                        .where((e) => (e.value ?? 0) > 0)
+                        .toList();
+
+                    if (entries.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter stock for at least one size',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Create single listing with size variants
+                    final sizeVariants = <Map<String, dynamic>>[];
+                    for (final entry in entries) {
+                      sizeVariants.add({
+                        'size': entry.key,
+                        'stock_quantity': entry.value,
+                      });
+                    }
+
+                    final success =
+                        await AdminService.createListingWithVariants(
+                          title: titleController.text.trim(),
+                          description: descriptionController.text.trim(),
+                          price:
+                              double.tryParse(priceController.text.trim()) ??
+                              0.0,
+                          status: selectedStatus,
+                          imagePath: selectedImage?.path,
+                          categoryId: selectedCategoryId,
+                          departmentId: selectedDepartmentId,
+                          sizeVariants: sizeVariants,
+                        );
+
+                    if (success) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Successfully created listing with multiple sizes',
+                          ),
+                        ),
+                      );
+                      _loadData();
+                    }
+                  } else {
+                    // Regular single listing creation
+                    final success = await AdminService.createListing(
+                      title: titleController.text.trim(),
+                      description: descriptionController.text.trim(),
+                      price:
+                          double.tryParse(priceController.text.trim()) ?? 0.0,
+                      stockQuantity:
+                          int.tryParse(stockController.text.trim()) ?? 0,
+                      status: selectedStatus,
+                      imagePath: selectedImage?.path,
+                      categoryId: selectedCategoryId,
+                      departmentId: selectedDepartmentId,
+                      size: selectedSize?.trim(),
                     );
-                    return;
-                  }
 
-                  final success = await AdminService.createListing(
-                    title: titleController.text.trim(),
-                    description: descriptionController.text.trim(),
-                    price: double.tryParse(priceController.text.trim()) ?? 0.0,
-                    stockQuantity:
-                        int.tryParse(stockController.text.trim()) ?? 0,
-                    status: selectedStatus,
-                    imagePath: selectedImage?.path,
-                    categoryId: selectedCategoryId,
-                    departmentId: selectedDepartmentId,
-                    size: selectedSize?.trim(),
-                  );
-
-                  if (success) {
-                    // Refresh data to show the new product
-                    _loadData();
+                    if (success) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Product created successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      _loadData();
+                    }
                   }
                 } catch (e) {
                   print('Error creating product: $e');
@@ -2761,122 +2898,258 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
     );
     String selectedStatus = listing.status;
 
+    // Check if this is a clothing item with size variants
+    final hasSizeVariants =
+        listing.sizeVariants != null && listing.sizeVariants!.isNotEmpty;
+    final isClothing =
+        listing.category?.name.toLowerCase().contains('clothing') ?? false;
+
+    // Per-size stock controllers for clothing
+    final Map<String, TextEditingController> sizeQtyControllers = {
+      'XS': TextEditingController(),
+      'S': TextEditingController(),
+      'M': TextEditingController(),
+      'L': TextEditingController(),
+      'XL': TextEditingController(),
+      'XXL': TextEditingController(),
+    };
+
+    // Initialize size controllers with existing data
+    if (hasSizeVariants && listing.sizeVariants != null) {
+      // If listing has size variants, use those values
+      for (final variant in listing.sizeVariants!) {
+        if (sizeQtyControllers.containsKey(variant.size)) {
+          sizeQtyControllers[variant.size]!.text = variant.stockQuantity
+              .toString();
+        }
+      }
+    } else if (isClothing) {
+      // If it's clothing but no size variants, distribute the total stock across sizes
+      final totalStock = listing.stockQuantity;
+      final defaultStock = totalStock > 0
+          ? (totalStock / 6).round()
+          : 0; // Distribute across 6 sizes
+
+      for (final controller in sizeQtyControllers.values) {
+        controller.text = defaultStock.toString();
+      }
+
+      // Put remaining stock in the first size (M)
+      if (totalStock > 0) {
+        final remaining = totalStock - (defaultStock * 6);
+        if (remaining > 0) {
+          sizeQtyControllers['M']!.text = (defaultStock + remaining).toString();
+        }
+      }
+    }
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Product'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Product Title',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: priceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Price (₱)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Product'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Product Title',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: stockController,
-                      decoration: const InputDecoration(
-                        labelText: 'Stock Quantity',
-                        border: OutlineInputBorder(),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: priceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Price (₱)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
                       ),
-                      keyboardType: TextInputType.number,
                     ),
+                    const SizedBox(width: 16),
+                    if (!isClothing && !hasSizeVariants)
+                      Expanded(
+                        child: TextField(
+                          controller: stockController,
+                          decoration: const InputDecoration(
+                            labelText: 'Stock Quantity',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                  ],
+                ),
+                if (isClothing || hasSizeVariants) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Stock per Size:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: sizeQtyControllers.entries.map((entry) {
+                      return SizedBox(
+                        width: 100,
+                        child: TextField(
+                          controller: entry.value,
+                          decoration: InputDecoration(
+                            labelText: entry.key,
+                            border: const OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedStatus,
-                decoration: const InputDecoration(
-                  labelText: 'Status',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                  DropdownMenuItem(value: 'approved', child: Text('Approved')),
-                  DropdownMenuItem(value: 'rejected', child: Text('Rejected')),
-                ],
-                onChanged: (value) {
-                  selectedStatus = value!;
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (titleController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Product title is required'),
-                    backgroundColor: Colors.red,
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedStatus,
+                  decoration: const InputDecoration(
+                    labelText: 'Status',
+                    border: OutlineInputBorder(),
                   ),
-                );
-                return;
-              }
-
-              Navigator.pop(context);
-
-              // Update stock quantity
-              final newStock = int.tryParse(stockController.text);
-              if (newStock != null) {
-                final success = await AdminService.updateStock(
-                  listing.id,
-                  newStock,
-                );
-                if (success) {
-                  _loadData();
-                }
-              }
-
-              // Update status if changed (approve only for now)
-              if (selectedStatus.toLowerCase() !=
-                  listing.status.toLowerCase()) {
-                if (selectedStatus.toLowerCase() == 'approved') {
-                  final approved = await AdminService.approveListing(
-                    listing.id,
+                  items: const [
+                    DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                    DropdownMenuItem(
+                      value: 'approved',
+                      child: Text('Approved'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'rejected',
+                      child: Text('Rejected'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    selectedStatus = value!;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Product title is required'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
-                  if (approved) {
-                    _loadData();
-                  }
+                  return;
                 }
-              }
-            },
-            child: const Text('Update'),
-          ),
-        ],
+
+                try {
+                  print('🔄 Starting update for listing ID: ${listing.id}');
+                  print('📝 Title: ${titleController.text.trim()}');
+                  print('📝 Description: ${descriptionController.text.trim()}');
+                  print('📝 Price: ${priceController.text.trim()}');
+                  print('📝 Status: $selectedStatus');
+                  print('👕 Has size variants: $hasSizeVariants');
+
+                  // Update basic info
+                  final success = await AdminService.updateListing(
+                    listing.id,
+                    title: titleController.text.trim(),
+                    description: descriptionController.text.trim(),
+                    price:
+                        double.tryParse(priceController.text.trim()) ??
+                        listing.price,
+                    status: selectedStatus,
+                  );
+
+                  if (success) {
+                    print('✅ Basic info update successful');
+
+                    // Update size variants if it's clothing
+                    if (isClothing || hasSizeVariants) {
+                      print('👕 Updating size variants...');
+                      final sizeVariants = <Map<String, dynamic>>[];
+                      for (final entry in sizeQtyControllers.entries) {
+                        final stock = int.tryParse(entry.value.text.trim());
+                        if (stock != null && stock >= 0) {
+                          sizeVariants.add({
+                            'size': entry.key,
+                            'stock_quantity': stock,
+                          });
+                        }
+                      }
+
+                      print('📦 Size variants to update: $sizeVariants');
+
+                      if (sizeVariants.isNotEmpty) {
+                        final sizeSuccess =
+                            await AdminService.updateListingSizeVariants(
+                              listing.id,
+                              sizeVariants,
+                            );
+                        print('👕 Size variants update result: $sizeSuccess');
+                      }
+                    } else {
+                      // Update single stock quantity for non-clothing
+                      final newStock = int.tryParse(stockController.text);
+                      if (newStock != null) {
+                        await AdminService.updateStock(listing.id, newStock);
+                      }
+                    }
+
+                    // Auto-refresh data
+                    _loadData();
+
+                    // Close dialog first, then show success message
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Product updated successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    // Show error without closing dialog
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to update product'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print('Error updating product: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to update product'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
       ),
     );
   }

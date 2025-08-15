@@ -17,6 +17,7 @@ class Listing {
   final User? user;
   final Department? department;
   final Category? category;
+  final List<SizeVariant>? sizeVariants;
 
   Listing({
     required this.id,
@@ -35,6 +36,7 @@ class Listing {
     this.user,
     this.department,
     this.category,
+    this.sizeVariants,
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -74,6 +76,11 @@ class Listing {
           : null,
       category: json['category'] != null
           ? Category.fromJson(json['category'])
+          : null,
+      sizeVariants: json['size_variants'] != null
+          ? (json['size_variants'] as List)
+                .map((variant) => SizeVariant.fromJson(variant))
+                .toList()
           : null,
     );
   }
@@ -142,5 +149,45 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(id: json['id'], name: json['name']);
+  }
+}
+
+class SizeVariant {
+  final int id;
+  final int listingId;
+  final String size;
+  final int stockQuantity;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  SizeVariant({
+    required this.id,
+    required this.listingId,
+    required this.size,
+    required this.stockQuantity,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory SizeVariant.fromJson(Map<String, dynamic> json) {
+    return SizeVariant(
+      id: json['id'],
+      listingId: json['listing_id'],
+      size: json['size'],
+      stockQuantity: json['stock_quantity'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'listing_id': listingId,
+      'size': size,
+      'stock_quantity': stockQuantity,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
   }
 }

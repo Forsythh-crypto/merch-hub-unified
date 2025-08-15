@@ -7,11 +7,60 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\File;
 
 
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
+});
+
+// Test email route
+Route::get('/test-email', function () {
+    try {
+        \Illuminate\Support\Facades\Mail::raw('Test email from Laravel', function ($message) {
+            $message->to('test@example.com')
+                    ->subject('Test Email');
+        });
+        return response()->json(['message' => 'Email sent successfully']);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
+// Test pickup ready email
+Route::get('/test-pickup-email/{orderId}', function ($orderId) {
+    try {
+        $order = \App\Models\Order::with(['user', 'listing', 'department'])->findOrFail($orderId);
+        
+        if (!$order->user) {
+            return response()->json(['error' => 'Order has no user associated'], 400);
+        }
+        
+        \Illuminate\Support\Facades\Log::info('Testing pickup email for order: ' . $order->order_number);
+        \Illuminate\Support\Facades\Log::info('User email: ' . $order->user->email);
+        
+        // Test the actual pickup ready email template
+        $data = [
+            'order' => $order,
+            'user' => $order->user,
+            'listing' => $order->listing,
+            'department' => $order->department,
+        ];
+        
+        \Illuminate\Support\Facades\Log::info('Email data: ' . json_encode($data));
+        
+        \Illuminate\Support\Facades\Mail::send('emails.pickup-ready', $data, function ($message) use ($order) {
+            $message->to($order->user->email)
+                    ->subject('Your Order is Ready for Pickup - ' . $order->order_number);
+        });
+        
+        return response()->json(['message' => 'Pickup ready email sent successfully']);
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Email test failed: ' . $e->getMessage());
+        \Illuminate\Support\Facades\Log::error('Stack trace: ' . $e->getTraceAsString());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 });
 
 // Simple test endpoint
@@ -46,6 +95,10 @@ Route::get('/files/{path}', function ($path) {
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
 
+// Simple order creation without authentication (for testing)
+Route::post('/simple-orders', [OrderController::class, 'simpleStore']);
+Route::get('/simple-orders', [OrderController::class, 'simpleIndex']);
+
 Route::middleware('auth:sanctum')->group(function () {
     // Basic authenticated routes
     Route::get('/user', [UserController::class, 'show']);
@@ -53,18 +106,32 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/categories', [CategoryController::class, 'index']);
     
+    // User routes (for all authenticated users)
+    Route::get('/listings', [ListingController::class, 'index']);
+    
+    // Order routes (for all authenticated users)
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+    
     // Student routes
     Route::middleware('role:student')->group(function () {
         Route::post('/listings', [ListingController::class, 'store']);
-        Route::get('/listings', [ListingController::class, 'index']);
     });
     
     // Admin routes (can manage their department)
     Route::middleware('role:admin,superadmin')->group(function () {
         Route::get('/admin/listings', [ListingController::class, 'adminIndex']);
         Route::post('/listings', [ListingController::class, 'store']);  // Allow admins to create listings
-        Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
-        Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
+        
+        // Admin order routes
+        Route::get('/admin/orders', [OrderController::class, 'adminIndex']);
+        Route::put('/admin/orders/{id}/status', [OrderController::class, 'updateStatus']);
+        
+        // Allow admins to update their own listings (but not status)
+        Route::put('/admin/listings/{listing}', [ListingController::class, 'update']);
+        Route::put('/admin/listings/{listing}/size-variants', [ListingController::class, 'updateSizeVariants']);
     });
     
     // Super Admin only routes
@@ -107,6 +174,8 @@ Route::middleware('auth:sanctum')->group(function () {
         });
         Route::get('/admin/all-listings', [ListingController::class, 'superAdminIndex']);
         Route::put('/admin/listings/{listing}/update-stock', [ListingController::class, 'updateStock']);
+        Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
+        Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
     });
     
     // Department-specific routes (admin can only access their own department)
