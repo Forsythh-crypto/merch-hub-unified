@@ -12,7 +12,7 @@ class AppConfig {
 
   static Uri api(String endpoint) {
     final url = '$_apiBaseUrl/$endpoint';
-    print('API URL: $url'); // Debug log
+    // print('API URL: $url'); // Debug log - commented out for production
     return Uri.parse(url);
   }
 
