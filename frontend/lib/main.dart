@@ -10,16 +10,16 @@ import 'screens/user_listings_screen.dart';
 import 'models/user_role.dart';
 
 void main() {
-  runApp(const MerchHubApp());
+  runApp(const UDDEssentialsApp());
 }
 
-class MerchHubApp extends StatelessWidget {
-  const MerchHubApp({super.key});
+class UDDEssentialsApp extends StatelessWidget {
+  const UDDEssentialsApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Merch Hub',
+      title: 'UDD Essentials',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.indigo,
