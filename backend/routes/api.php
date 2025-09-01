@@ -140,7 +140,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/users', [UserController::class, 'store']);
         Route::put('/admin/users/{user}', [UserController::class, 'update']);
         Route::put('/admin/users/{user}/grant-admin', [UserController::class, 'grantAdmin']);
+        Route::put('/admin/users/{user}/grant-superadmin', [UserController::class, 'grantSuperAdmin']);
         Route::put('/admin/users/{user}/revoke-admin', [UserController::class, 'revokeAdmin']);
+        Route::put('/admin/users/{user}/revoke-superadmin', [UserController::class, 'revokeSuperAdmin']);
         Route::delete('/admin/users/{user}', [UserController::class, 'destroy']);
         Route::get('/admin/departments', [DepartmentController::class, 'adminIndex']);
         Route::post('/admin/departments', [DepartmentController::class, 'store']);

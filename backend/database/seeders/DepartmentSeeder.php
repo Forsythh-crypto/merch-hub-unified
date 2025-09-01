@@ -45,6 +45,10 @@ class DepartmentSeeder extends Seeder
                 'name' => 'School of International Hospitality Management',
                 'logo_path' => 'sihm.png'
             ],
+            [
+                'name' => 'Official UDD Merch',
+                'logo_path' => 'udd_merch.png'
+            ],
         ];
 
         foreach ($departments as $department) {

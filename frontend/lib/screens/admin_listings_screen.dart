@@ -389,6 +389,31 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
                             ),
                           ),
                         ),
+                        // Approval button for pending listings
+                        if (listing.status == 'pending')
+                          Container(
+                            width: double.infinity,
+                            height: 35,
+                            margin: const EdgeInsets.only(top: 4),
+                            child: ElevatedButton(
+                              onPressed: () => _approveListing(listing),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'APPROVE',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -655,6 +680,43 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
         ),
       ),
     );
+  }
+
+  // Approve listing method
+  Future<void> _approveListing(Listing listing) async {
+    try {
+      print('🔄 Approving listing: ${listing.title} (ID: ${listing.id})');
+
+      final success = await AdminService.approveListing(listing.id);
+
+      if (success) {
+        print('✅ Listing approved successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Listing "${listing.title}" approved successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the data to show updated status
+        _loadListings();
+      } else {
+        print('❌ Failed to approve listing');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to approve listing'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error approving listing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error approving listing: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 

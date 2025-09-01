@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_role.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
 import 'admin_orders_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
@@ -20,16 +18,15 @@ class SuperAdminDashboard extends StatefulWidget {
   State<SuperAdminDashboard> createState() => _SuperAdminDashboardState();
 }
 
-class _SuperAdminDashboardState extends State<SuperAdminDashboard>
-    with SingleTickerProviderStateMixin {
+class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   Map<String, dynamic>? _dashboardStats;
   List<UserSession> _users = [];
   List<Listing> _listings = [];
   bool _isLoading = false;
-  late TabController _tabController;
+  int _selectedIndex = 0;
 
   // Department logo mapping
-  String _getDepartmentLogo(String departmentName) {
+  String? _getDepartmentLogo(String departmentName) {
     switch (departmentName.toLowerCase()) {
       case 'school of information technology education':
         return 'assets/logos/site.png';
@@ -47,6 +44,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
         return 'assets/logos/sohs.png';
       case 'school of international hospitality management':
         return 'assets/logos/sihm.png';
+      case 'official udd merch':
+        return null; // Will use fallback icon due to file size issues
       default:
         return 'assets/logos/site.png'; // Default fallback
     }
@@ -57,28 +56,20 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
   String? _selectedRoleFilter;
   String _searchQuery = '';
   List<String> _availableDepartments = [];
-  List<String> _availableRoles = ['All', 'Student', 'Admin', 'SuperAdmin'];
+  final List<String> _availableRoles = [
+    'All',
+    'Student',
+    'Admin',
+    'SuperAdmin',
+  ];
 
   // Department management variables
   List<Map<String, dynamic>> _departments = [];
-  bool _isLoadingDepartments = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
     _loadData();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
   }
 
   Future<void> _loadData() async {
@@ -141,27 +132,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E3A8A),
-        title: const Text(
-          'UDD SuperAdmin Dashboard',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _getCurrentTitle(),
+          style: const TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          isScrollable: true,
-          tabs: const [
-            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
-            Tab(icon: Icon(Icons.shopping_cart), text: 'Orders'),
-            Tab(icon: Icon(Icons.people), text: 'Users'),
-            Tab(icon: Icon(Icons.school), text: 'Departments'),
-            Tab(icon: Icon(Icons.inventory), text: 'Products'),
-            Tab(icon: Icon(Icons.analytics), text: 'Analytics'),
-            Tab(icon: Icon(Icons.settings), text: 'Settings'),
-          ],
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -200,18 +175,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildDashboardTab(),
-          AdminOrdersScreen(userSession: widget.userSession),
-          _buildUsersTab(),
-          _buildDepartmentsTab(),
-          _buildProductsTab(),
-          _buildAnalyticsTab(),
-          _buildSettingsTab(),
-        ],
-      ),
+      drawer: _buildDrawer(),
+      body: _buildCurrentBody(),
     );
   }
 
@@ -233,42 +198,34 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else
-              Row(
+              Column(
                 children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total Users',
-                      _dashboardStats?['users']?['total']?.toString() ?? '0',
-                      Icons.people,
-                      Colors.green,
-                    ),
+                  _buildStatCard(
+                    'Total Users',
+                    _dashboardStats?['users']?['total']?.toString() ?? '0',
+                    Icons.people,
+                    Colors.green,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Departments',
-                      _dashboardStats?['departments']?.toString() ?? '0',
-                      Icons.school,
-                      Colors.blue,
-                    ),
+                  const SizedBox(height: 16),
+                  _buildStatCard(
+                    'Departments',
+                    _dashboardStats?['departments']?.toString() ?? '0',
+                    Icons.school,
+                    Colors.blue,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total Listings',
-                      _dashboardStats?['listings']?['total']?.toString() ?? '0',
-                      Icons.inventory,
-                      Colors.purple,
-                    ),
+                  const SizedBox(height: 16),
+                  _buildStatCard(
+                    'Total Listings',
+                    _dashboardStats?['listings']?['total']?.toString() ?? '0',
+                    Icons.inventory,
+                    Colors.purple,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Stock Value',
-                      '₱${_formatStockValue(_dashboardStats?['totalStockValue'])}',
-                      Icons.attach_money,
-                      Colors.orange,
-                    ),
+                  const SizedBox(height: 16),
+                  _buildStatCard(
+                    'Stock Value',
+                    '₱${_formatStockValue(_dashboardStats?['totalStockValue'])}',
+                    Icons.attach_money,
+                    Colors.orange,
                   ),
                 ],
               ),
@@ -301,7 +258,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                   ),
                 ],
@@ -344,58 +301,59 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                   ),
                   const SizedBox(height: 16),
 
-                  Row(
+                  Column(
                     children: [
                       // Department Filter
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedDepartmentFilter ?? 'All',
-                          decoration: const InputDecoration(
-                            labelText: 'Department',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        value: _selectedDepartmentFilter ?? 'All',
+                        decoration: const InputDecoration(
+                          labelText: 'Department',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 8,
                           ),
-                          items: _availableDepartments.map((dept) {
-                            return DropdownMenuItem(
-                              value: dept,
-                              child: Text(dept),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedDepartmentFilter = value;
-                            });
-                          },
                         ),
+                        items: _availableDepartments.map((dept) {
+                          return DropdownMenuItem(
+                            value: dept,
+                            child: Text(
+                              dept,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedDepartmentFilter = value;
+                          });
+                        },
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(height: 16),
                       // Role Filter
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedRoleFilter ?? 'All',
-                          decoration: const InputDecoration(
-                            labelText: 'Role',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
+                      DropdownButtonFormField<String>(
+                        value: _selectedRoleFilter ?? 'All',
+                        decoration: const InputDecoration(
+                          labelText: 'Role',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                          items: _availableRoles.map((role) {
-                            return DropdownMenuItem(
-                              value: role,
-                              child: Text(role),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedRoleFilter = value;
-                            });
-                          },
                         ),
+                        items: _availableRoles.map((role) {
+                          return DropdownMenuItem(
+                            value: role,
+                            child: Text(role),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRoleFilter = value;
+                          });
+                        },
                       ),
                       const SizedBox(width: 16),
                       // Clear Filters Button
@@ -457,153 +415,214 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                     ),
                   ],
                 ),
-                child: ListView.builder(
+                child: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 1,
+                    crossAxisSpacing: 0,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.6,
+                  ),
                   itemCount: _filteredUsers.length,
                   itemBuilder: (context, index) {
                     final user = _filteredUsers[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF1E3A8A),
-                        child: Text(
-                          user.name[0].toUpperCase(),
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      title: Text(user.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(user.email),
-                          if (user.departmentName != null &&
-                              user.departmentName!.isNotEmpty)
-                            Text(
-                              'Department: ${user.departmentName}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getRoleColor(user.role),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _getRoleString(user.role).toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
                           ),
-                          const SizedBox(width: 8),
-                          if (user.role == UserRole.student)
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
-                              onSelected: (value) =>
-                                  _handleUserAction(user, value),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'grant_admin',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.admin_panel_settings,
-                                        color: Colors.blue,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text('Grant Admin'),
-                                    ],
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: const Color(0xFF1E3A8A),
+                                  child: Text(
+                                    user.name[0].toUpperCase(),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
-                                const PopupMenuItem(
-                                  value: 'grant_superadmin',
-                                  child: Row(
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        Icons.admin_panel_settings,
-                                        color: Colors.purple,
+                                      Text(
+                                        user.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
-                                      SizedBox(width: 8),
-                                      Text('Grant SuperAdmin'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
-                          else if (user.role == UserRole.admin)
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
-                              onSelected: (value) =>
-                                  _handleUserAction(user, value),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'grant_superadmin',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.admin_panel_settings,
-                                        color: Colors.purple,
+                                      Text(
+                                        user.email,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
-                                      SizedBox(width: 8),
-                                      Text('Grant SuperAdmin'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'revoke_admin',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.remove_moderator,
-                                        color: Colors.orange,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text('Revoke Admin'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
-                          else if (user.role == UserRole.superAdmin)
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
-                              onSelected: (value) =>
-                                  _handleUserAction(user, value),
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'revoke_superadmin',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.remove_moderator,
-                                        color: Colors.red,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text('Revoke SuperAdmin'),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
-                        ],
+                            const SizedBox(height: 12),
+                            if (user.departmentName != null &&
+                                user.departmentName!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  user.departmentName!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[700],
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getRoleColor(user.role),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _getRoleString(user.role).toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (user.role == UserRole.student)
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, size: 20),
+                                    onSelected: (value) =>
+                                        _handleUserAction(user, value),
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'grant_admin',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.admin_panel_settings,
+                                              color: Colors.blue,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Grant Admin'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'grant_superadmin',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.admin_panel_settings,
+                                              color: Colors.purple,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Grant SuperAdmin'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else if (user.role == UserRole.admin)
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, size: 20),
+                                    onSelected: (value) =>
+                                        _handleUserAction(user, value),
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'grant_superadmin',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.admin_panel_settings,
+                                              color: Colors.purple,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Grant SuperAdmin'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'revoke_admin',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.remove_moderator,
+                                              color: Colors.orange,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Revoke Admin'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else if (user.role == UserRole.superAdmin)
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, size: 20),
+                                    onSelected: (value) =>
+                                        _handleUserAction(user, value),
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'revoke_superadmin',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.remove_moderator,
+                                              color: Colors.red,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Revoke SuperAdmin'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -627,8 +646,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
             Row(
               children: [
                 const Text(
-                  'Department Management',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  'Departments',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
@@ -671,7 +690,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                     ),
                   ],
@@ -686,18 +705,28 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                       leading: CircleAvatar(
                         backgroundColor: const Color(0xFF1E3A8A),
                         child: ClipOval(
-                          child: Image.asset(
-                            _getDepartmentLogo(department['name']),
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Text(
-                                department['name'][0].toUpperCase(),
-                                style: const TextStyle(color: Colors.white),
-                              );
-                            },
-                          ),
+                          child: _getDepartmentLogo(department['name']) != null
+                              ? Image.asset(
+                                  _getDepartmentLogo(department['name'])!,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print(
+                                      'Error loading logo for ${department['name']}: $error',
+                                    );
+                                    return Text(
+                                      department['name'][0].toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Text(
+                                  department['name'][0].toUpperCase(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                         ),
                       ),
                       title: Text(department['name']),
@@ -743,8 +772,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
             Row(
               children: [
                 const Text(
-                  'Product Management',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  'Products',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
@@ -766,7 +795,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
               const Center(
                 child: Column(
                   children: [
-                    Icon(Icons.inventory, size: 64, color: Colors.grey),
+                    Icon(Icons.inventory, size: 84, color: Colors.grey),
                     SizedBox(height: 16),
                     Text(
                       'No products found',
@@ -788,129 +817,145 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 0.75,
+                  childAspectRatio: 0.42,
                 ),
                 itemCount: _listings.length,
                 itemBuilder: (context, index) {
                   final listing = _listings[index];
-                  return GestureDetector(
-                    onTap: () => _showEditProductDialog(listing),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
+                              ),
+                            ),
+                            child: listing.imagePath != null
+                                ? ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(12),
+                                      topRight: Radius.circular(12),
+                                    ),
+                                    child: Image.network(
+                                      Uri.encodeFull(
+                                        '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
+                                      ),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return const Icon(
+                                              Icons.image,
+                                              size: 50,
+                                              color: Colors.grey,
+                                            );
+                                          },
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                  topRight: Radius.circular(12),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  listing.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              child: listing.imagePath != null
-                                  ? ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(12),
-                                        topRight: Radius.circular(12),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '₱${_formatPrice(listing.price)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E3A8A),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
                                       ),
-                                      child: Image.network(
-                                        Uri.encodeFull(
-                                          '${AppConfig.baseUrl}/api/files/${listing.imagePath}?t=${listing.updatedAt.millisecondsSinceEpoch}',
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(listing.status),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        listing.status == 'pending'
+                                            ? 'PENDING'
+                                            : listing.status.toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return const Icon(
-                                                Icons.image,
-                                                size: 50,
-                                                color: Colors.grey,
-                                              );
-                                            },
                                       ),
-                                    )
-                                  : const Icon(
-                                      Icons.image,
-                                      size: 50,
-                                      color: Colors.grey,
                                     ),
+                                    const Spacer(),
+                                    Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () =>
+                                              _showDeleteConfirmationDialog(
+                                                listing,
+                                              ),
+                                          child: Icon(
+                                            Icons.delete,
+                                            size: 18,
+                                            color: Colors.red[600],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        GestureDetector(
+                                          onTap: () =>
+                                              _showEditProductDialog(listing),
+                                          child: Icon(
+                                            Icons.edit,
+                                            size: 18,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    listing.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '₱${_formatPrice(listing.price)}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1E3A8A),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getStatusColor(
-                                            listing.status,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          listing.status.toUpperCase(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      Icon(
-                                        Icons.edit,
-                                        size: 16,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -942,7 +987,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                   ),
                 ],
@@ -991,11 +1036,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
               [
                 _buildSettingTile(
                   'Base URL',
-                  AppConfig.baseUrl,
+                  'http://192.168.100.11:8000',
                   Icons.link,
                   onTap: () => _showEditSettingDialog(
                     'Base URL',
-                    AppConfig.baseUrl,
+                    'http://192.168.100.11:8000',
                     (value) {
                       // Update base URL logic would go here
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1193,7 +1238,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: Column(
@@ -1840,7 +1888,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: Column(
@@ -1851,7 +1902,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color),
@@ -2572,23 +2623,76 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                 const SizedBox(height: 16),
 
                 // Department Dropdown
-                DropdownButtonFormField<int>(
-                  value: selectedDepartmentId,
-                  decoration: const InputDecoration(
-                    labelText: 'Department',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: departments.map((dept) {
-                    return DropdownMenuItem<int>(
-                      value: dept['id'],
-                      child: Text(dept['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedDepartmentId = value;
-                    });
-                  },
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<int>(
+                      value: selectedDepartmentId,
+                      decoration: const InputDecoration(
+                        labelText: 'Department',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: departments.map((dept) {
+                        return DropdownMenuItem<int>(
+                          value: dept['id'],
+                          child: Text(dept['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedDepartmentId = value;
+                        });
+                      },
+                    ),
+                    // Special indicator for Official UDD Merch
+                    if (selectedDepartmentId != null)
+                      Builder(
+                        builder: (context) {
+                          final selectedDept = departments.firstWhere(
+                            (dept) => dept['id'] == selectedDepartmentId,
+                            orElse: () => {},
+                          );
+                          if (selectedDept['name'] == 'Official UDD Merch') {
+                            return Container(
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF1E3A8A,
+                                ).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF1E3A8A,
+                                  ).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.verified,
+                                    color: const Color(0xFF1E3A8A),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Official UDD Merch - Only superadmins can create listings for this department',
+                                      style: TextStyle(
+                                        color: const Color(0xFF1E3A8A),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 
@@ -2835,16 +2939,28 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                           sizeVariants: sizeVariants,
                         );
 
-                    if (success) {
+                    if (success && mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Successfully created listing with multiple sizes',
-                          ),
-                        ),
+                      print(
+                        '🔄 Product created successfully, refreshing data...',
                       );
-                      _loadData();
+                      setState(() {
+                        _selectedIndex = 4; // Switch to Products tab
+                        _isLoading = true; // Show loading indicator
+                      });
+                      await _loadData(); // Wait for data to load
+                      print(
+                        '✅ Data refresh completed. Listings count: ${_listings.length}',
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Successfully created listing with multiple sizes',
+                            ),
+                          ),
+                        );
+                      }
                     }
                   } else {
                     // Regular single listing creation
@@ -2862,15 +2978,27 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                       size: selectedSize?.trim(),
                     );
 
-                    if (success) {
+                    if (success && mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Product created successfully'),
-                          backgroundColor: Colors.green,
-                        ),
+                      print(
+                        '🔄 Product created successfully, refreshing data...',
                       );
-                      _loadData();
+                      setState(() {
+                        _selectedIndex = 4; // Switch to Products tab
+                        _isLoading = true; // Show loading indicator
+                      });
+                      await _loadData(); // Wait for data to load
+                      print(
+                        '✅ Data refresh completed. Listings count: ${_listings.length}',
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Product created successfully'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
                     }
                   }
                 } catch (e) {
@@ -3120,13 +3248,15 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                     _loadData();
 
                     // Close dialog first, then show success message
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Product updated successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Product updated successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
                   } else {
                     // Show error without closing dialog
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -3152,5 +3282,309 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
         ),
       ),
     );
+  }
+
+  // Approve listing method
+  Future<void> _approveListing(Listing listing) async {
+    try {
+      print('🔄 Approving listing: ${listing.title} (ID: ${listing.id})');
+
+      final success = await AdminService.approveListing(listing.id);
+
+      if (success) {
+        print('✅ Listing approved successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Listing "${listing.title}" approved successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the data to show updated status
+        _loadData();
+      } else {
+        print('❌ Failed to approve listing');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to approve listing'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error approving listing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error approving listing: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Delete listing confirmation dialog
+  void _showDeleteConfirmationDialog(Listing listing) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.delete, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Delete Product'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to delete "${listing.title}"?\n\nThis action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deleteListing(listing);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Delete listing method
+  Future<void> _deleteListing(Listing listing) async {
+    try {
+      print('🗑️ Deleting listing: ${listing.title} (ID: ${listing.id})');
+
+      final success = await AdminService.deleteListing(listing.id);
+
+      if (success) {
+        print('✅ Listing deleted successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Product "${listing.title}" deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the data to show updated list
+        _loadData();
+      } else {
+        print('❌ Failed to delete listing');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to delete product'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error deleting listing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting product: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Drawer Navigation Methods
+  String _getCurrentTitle() {
+    switch (_selectedIndex) {
+      case 0:
+        return 'Dashboard';
+      case 1:
+        return 'Orders';
+      case 2:
+        return 'Users';
+      case 3:
+        return 'Departments';
+      case 4:
+        return 'Products';
+      case 5:
+        return 'Analytics';
+      case 6:
+        return 'Settings';
+      default:
+        return 'UDD SuperAdmin Dashboard';
+    }
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.admin_panel_settings,
+                    size: 30,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  widget.userSession.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'SuperAdmin',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.dashboard),
+            title: const Text('Dashboard'),
+            selected: _selectedIndex == 0,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 0;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shopping_cart),
+            title: const Text('Orders'),
+            selected: _selectedIndex == 1,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 1;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.people),
+            title: const Text('Users'),
+            selected: _selectedIndex == 2,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 2;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.school),
+            title: const Text('Departments'),
+            selected: _selectedIndex == 3,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 3;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.inventory),
+            title: const Text('Products'),
+            selected: _selectedIndex == 4,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 4;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text('Analytics'),
+            selected: _selectedIndex == 5,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 5;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            selected: _selectedIndex == 6,
+            onTap: () {
+              setState(() {
+                _selectedIndex = 6;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () async {
+              Navigator.pop(context);
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Logout'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldLogout == true && context.mounted) {
+                await AuthService.logout();
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentBody() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDashboardTab();
+      case 1:
+        return AdminOrdersScreen(userSession: widget.userSession);
+      case 2:
+        return _buildUsersTab();
+      case 3:
+        return _buildDepartmentsTab();
+      case 4:
+        return _buildProductsTab();
+      case 5:
+        return _buildAnalyticsTab();
+      case 6:
+        return _buildSettingsTab();
+      default:
+        return _buildDashboardTab();
+    }
   }
 }

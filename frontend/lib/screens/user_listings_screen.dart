@@ -64,6 +64,11 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
       'logo': 'assets/logos/sihm.png',
       'color': const Color(0xFFDC2626), // Red
     },
+    {
+      'name': 'Official UDD Merch',
+      'logo': null, // Will use fallback icon due to file size issues
+      'color': const Color(0xFF1E3A8A), // UDD Blue
+    },
   ];
 
   @override
@@ -439,7 +444,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
 
   Widget _buildProductCard(Listing listing) {
     return GestureDetector(
-      onTap: listing.stockQuantity > 0 ? () => _showOrderDialog(listing) : null,
+      onTap: () => _showOrderDialog(listing),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -512,27 +517,53 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: listing.stockQuantity > 0
-                              ? Colors.green
-                              : Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          listing.stockQuantity > 0
-                              ? 'In Stock'
-                              : 'Out of Stock',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      child: Column(
+                        children: [
+                          // Official UDD Merch Badge
+                          if (listing.department?.name == 'Official UDD Merch')
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E3A8A),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'OFFICIAL',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          // Stock Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: listing.stockQuantity > 0
+                                  ? Colors.green
+                                  : const Color(0xFFFF6B35),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              listing.stockQuantity > 0
+                                  ? 'In Stock'
+                                  : 'Pre-order',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
@@ -562,9 +593,38 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                     const SizedBox(height: 4),
 
                     // Department and Category
-                    Text(
-                      '${listing.department?.name ?? 'N/A'}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    Row(
+                      children: [
+                        if (listing.department?.name == 'Official UDD Merch')
+                          Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E3A8A),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'OFFICIAL',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            '${listing.department?.name ?? 'N/A'}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const Spacer(),
@@ -644,18 +704,16 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
 
                     const SizedBox(height: 8),
 
-                    // Pre-order Button
+                    // Order Button - Reserve or Pre-order based on stock
                     SizedBox(
                       width: double.infinity,
                       height: 32,
                       child: ElevatedButton(
-                        onPressed: listing.stockQuantity > 0
-                            ? () => _showOrderDialog(listing)
-                            : null,
+                        onPressed: () => _showOrderDialog(listing),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: listing.stockQuantity > 0
-                              ? const Color(0xFF1E3A8A)
-                              : Colors.grey,
+                              ? const Color(0xFF1E3A8A) // Blue for Reserve
+                              : const Color(0xFFFF6B35), // Orange for Pre-order
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
@@ -663,9 +721,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 4),
                         ),
                         child: Text(
-                          listing.stockQuantity > 0
-                              ? 'Pre-order'
-                              : 'Out of Stock',
+                          listing.stockQuantity > 0 ? 'Reserve' : 'Pre-order',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

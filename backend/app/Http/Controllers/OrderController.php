@@ -31,6 +31,7 @@ class OrderController extends Controller
         $listing = Listing::with('sizeVariants')->findOrFail($validated['listing_id']);
 
         // Check stock based on whether it's a size variant or regular stock
+        // Allow pre-orders when stock is 0
         if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
             // Check size-specific stock
             $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
@@ -40,14 +41,15 @@ class OrderController extends Controller
                 ], 400);
             }
             
-            if ($sizeVariant->stock_quantity < $validated['quantity']) {
+            // Allow pre-orders when stock is 0, but check if trying to order more than available when stock > 0
+            if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $validated['quantity']) {
                 return response()->json([
                     'message' => 'Insufficient stock for size ' . $validated['size'] . '. Available: ' . $sizeVariant->stock_quantity
                 ], 400);
             }
         } else {
-            // Check regular stock
-            if ($listing->stock_quantity < $validated['quantity']) {
+            // Check regular stock - allow pre-orders when stock is 0
+            if ($listing->stock_quantity > 0 && $listing->stock_quantity < $validated['quantity']) {
                 return response()->json([
                     'message' => 'Insufficient stock. Available: ' . $listing->stock_quantity
                 ], 400);
@@ -72,14 +74,18 @@ class OrderController extends Controller
             'size' => $validated['size'] ?? null,
         ]);
 
-        // Update stock quantity
+        // Update stock quantity - only decrement if stock is available (not for pre-orders)
         if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-            // Decrement size-specific stock
+            // Decrement size-specific stock only if available
             $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-            $sizeVariant->decrement('stock_quantity', $validated['quantity']);
+            if ($sizeVariant->stock_quantity > 0) {
+                $sizeVariant->decrement('stock_quantity', $validated['quantity']);
+            }
         } else {
-            // Decrement regular stock
-            $listing->decrement('stock_quantity', $validated['quantity']);
+            // Decrement regular stock only if available
+            if ($listing->stock_quantity > 0) {
+                $listing->decrement('stock_quantity', $validated['quantity']);
+            }
         }
 
         // Send confirmation email to the provided email address
@@ -397,6 +403,7 @@ class OrderController extends Controller
             $listing = Listing::with('sizeVariants')->findOrFail($validated['listing_id']);
 
             // Check stock based on whether it's a size variant or regular stock
+            // Allow pre-orders when stock is 0
             if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
                 // Check size-specific stock
                 $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
@@ -406,14 +413,15 @@ class OrderController extends Controller
                     ], 400);
                 }
                 
-                if ($sizeVariant->stock_quantity < $validated['quantity']) {
+                // Allow pre-orders when stock is 0, but check if trying to order more than available when stock > 0
+                if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $validated['quantity']) {
                     return response()->json([
                         'message' => 'Insufficient stock for size ' . $validated['size'] . '. Available: ' . $sizeVariant->stock_quantity
                     ], 400);
                 }
             } else {
-                // Check regular stock
-                if ($listing->stock_quantity < $validated['quantity']) {
+                // Check regular stock - allow pre-orders when stock is 0
+                if ($listing->stock_quantity > 0 && $listing->stock_quantity < $validated['quantity']) {
                     return response()->json([
                         'message' => 'Insufficient stock. Available: ' . $listing->stock_quantity
                     ], 400);
@@ -437,14 +445,18 @@ class OrderController extends Controller
                 'size' => $validated['size'] ?? null,
             ]);
 
-            // Update stock quantity
+            // Update stock quantity - only decrement if stock is available (not for pre-orders)
             if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-                // Decrement size-specific stock
+                // Decrement size-specific stock only if available
                 $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-                $sizeVariant->decrement('stock_quantity', $validated['quantity']);
+                if ($sizeVariant->stock_quantity > 0) {
+                    $sizeVariant->decrement('stock_quantity', $validated['quantity']);
+                }
             } else {
-                // Decrement regular stock
-                $listing->decrement('stock_quantity', $validated['quantity']);
+                // Decrement regular stock only if available
+                if ($listing->stock_quantity > 0) {
+                    $listing->decrement('stock_quantity', $validated['quantity']);
+                }
             }
 
             // Send confirmation email

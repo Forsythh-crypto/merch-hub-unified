@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Listing;
 use App\Models\Category;
+use App\Models\Department;
 
 class ListingController extends Controller
 {
@@ -44,6 +45,14 @@ class ListingController extends Controller
                 $departmentId = $validated['department_id'];
             } else {
                 return response()->json(['message' => 'Cannot create listings for this department'], 403);
+            }
+        }
+
+        // Check if trying to create listing for Official UDD Merch department
+        if (isset($validated['department_id'])) {
+            $department = \App\Models\Department::find($validated['department_id']);
+            if ($department && $department->name === 'Official UDD Merch' && !$user->isSuperAdmin()) {
+                return response()->json(['message' => 'Only superadmins can create listings for Official UDD Merch'], 403);
             }
         }
 
@@ -127,12 +136,31 @@ class ListingController extends Controller
     {
         $user = $request->user();
 
+        // Log the approval request
+        \Log::info('Approval request for listing ID: ' . $listing->id);
+        \Log::info('Listing before approval: ' . json_encode([
+            'id' => $listing->id,
+            'title' => $listing->title,
+            'price' => $listing->price,
+            'stock_quantity' => $listing->stock_quantity,
+            'status' => $listing->status,
+        ]));
+
         // Check if user can manage this listing's department
         if (!$user->canManageDepartment($listing->department_id)) {
             return response()->json(['message' => 'Cannot approve listings from this department'], 403);
         }
 
         $listing->update(['status' => 'approved']);
+
+        // Log the listing after approval
+        \Log::info('Listing after approval: ' . json_encode([
+            'id' => $listing->id,
+            'title' => $listing->title,
+            'price' => $listing->price,
+            'stock_quantity' => $listing->stock_quantity,
+            'status' => $listing->status,
+        ]));
 
         return response()->json([
             'listing' => $listing->load(['category', 'user', 'department', 'sizeVariants']),

@@ -124,7 +124,12 @@ class AdminService {
       print('📦 API URL: ${AppConfig.api('admin/all-listings')}');
 
       final response = await http
-          .get(AppConfig.api('admin/all-listings'), headers: headers)
+          .get(
+            Uri.parse(
+              '${AppConfig.api('admin/all-listings')}?_t=${DateTime.now().millisecondsSinceEpoch}',
+            ),
+            headers: headers,
+          )
           .timeout(const Duration(seconds: 10));
 
       print('📦 All listings response: ${response.statusCode}');
@@ -210,11 +215,15 @@ class AdminService {
   static Future<bool> approveListing(int listingId) async {
     try {
       final headers = await _getHeaders();
+      print('🔄 Approving listing ID: $listingId');
+      print('🔄 Headers: $headers');
+
       final response = await http.put(
         AppConfig.api('admin/listings/$listingId/approve'),
         headers: headers,
       );
 
+      print('🔄 Approval response: ${response.statusCode} - ${response.body}');
       return response.statusCode == 200;
     } catch (e) {
       print('Error approving listing: $e');
@@ -243,14 +252,9 @@ class AdminService {
       print('🔧 Updating stock for listing $listingId to $stockQuantity');
 
       final response = await http.put(
-        AppConfig.api('admin/listings/$listingId'),
+        AppConfig.api('admin/listings/$listingId/update-stock'),
         headers: headers,
-        body: jsonEncode({
-          'title': 'temp', // We need to provide required fields
-          'description': 'temp',
-          'price': 0.0,
-          'stock_quantity': stockQuantity,
-        }),
+        body: jsonEncode({'stock_quantity': stockQuantity}),
       );
 
       print(

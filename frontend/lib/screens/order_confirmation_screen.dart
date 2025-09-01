@@ -37,11 +37,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       for (final variant in widget.listing.sizeVariants!) {
         _sizeQuantities[variant.size] = variant.stockQuantity;
       }
-      // Set first available size as default
+      // Set first size as default (allow pre-orders for sizes with no stock)
       final firstVariant = widget.listing.sizeVariants!.first;
-      if (firstVariant.stockQuantity > 0) {
-        _selectedSize = firstVariant.size;
-      }
+      _selectedSize = firstVariant.size;
     }
   }
 
@@ -81,14 +79,22 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                   children: [
                     Icon(Icons.check_circle, color: Colors.green, size: 28),
                     SizedBox(width: 8),
-                    Text('Order Successful!'),
+                    Text(
+                      widget.listing.stockQuantity > 0
+                          ? 'Reservation Successful!'
+                          : 'Pre-order Successful!',
+                    ),
                   ],
                 ),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Your order has been placed successfully!'),
+                    Text(
+                      widget.listing.stockQuantity > 0
+                          ? 'Your reservation has been placed successfully!'
+                          : 'Your pre-order has been placed successfully!',
+                    ),
                     SizedBox(height: 16),
                     Container(
                       padding: EdgeInsets.all(12),
@@ -178,8 +184,12 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pre-order'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        title: Text(
+          widget.listing.stockQuantity > 0 ? 'Reserve Item' : 'Pre-order Item',
+        ),
+        backgroundColor: widget.listing.stockQuantity > 0
+            ? const Color(0xFF1E3A8A)
+            : const Color(0xFFFF6B35),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -236,6 +246,54 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         widget.listing.title,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Order Type Indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: widget.listing.stockQuantity > 0
+                              ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
+                              : const Color(0xFFFF6B35).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: widget.listing.stockQuantity > 0
+                                ? const Color(0xFF1E3A8A)
+                                : const Color(0xFFFF6B35),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              widget.listing.stockQuantity > 0
+                                  ? Icons.inventory
+                                  : Icons.schedule,
+                              size: 16,
+                              color: widget.listing.stockQuantity > 0
+                                  ? const Color(0xFF1E3A8A)
+                                  : const Color(0xFFFF6B35),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              widget.listing.stockQuantity > 0
+                                  ? 'In Stock - Reserve Now'
+                                  : 'Pre-order Available',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: widget.listing.stockQuantity > 0
+                                    ? const Color(0xFF1E3A8A)
+                                    : const Color(0xFFFF6B35),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       if (widget.listing.description != null &&
@@ -342,13 +400,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             final isAvailable = variant.stockQuantity > 0;
 
                             return GestureDetector(
-                              onTap: isAvailable
-                                  ? () {
-                                      setState(() {
-                                        _selectedSize = variant.size;
-                                      });
-                                    }
-                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  _selectedSize = variant.size;
+                                });
+                              },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -356,15 +412,21 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF1E3A8A)
+                                      ? (isAvailable
+                                            ? const Color(0xFF1E3A8A)
+                                            : const Color(0xFFFF6B35))
                                       : isAvailable
                                       ? Colors.grey[200]
-                                      : Colors.grey[100],
+                                      : Colors.orange[100],
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF1E3A8A)
-                                        : Colors.grey[300]!,
+                                        ? (isAvailable
+                                              ? const Color(0xFF1E3A8A)
+                                              : const Color(0xFFFF6B35))
+                                        : isAvailable
+                                        ? Colors.grey[300]!
+                                        : Colors.orange[300]!,
                                   ),
                                 ),
                                 child: Text(
@@ -374,7 +436,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ? Colors.white
                                         : isAvailable
                                         ? Colors.black
-                                        : Colors.grey[500],
+                                        : Colors.orange[700],
                                     fontWeight: isSelected
                                         ? FontWeight.bold
                                         : FontWeight.normal,
@@ -405,7 +467,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             return 'Please enter a valid quantity';
                           }
 
-                          // Check stock based on size selection
+                          // Check stock based on size selection (allow pre-orders)
                           if (widget.listing.sizeVariants != null &&
                               widget.listing.sizeVariants!.isNotEmpty) {
                             if (_selectedSize == null) {
@@ -417,11 +479,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                   orElse: () =>
                                       throw Exception('Size not found'),
                                 );
-                            if (quantity > selectedVariant.stockQuantity) {
+                            // Allow pre-orders even when stock is 0
+                            if (selectedVariant.stockQuantity > 0 &&
+                                quantity > selectedVariant.stockQuantity) {
                               return 'Quantity exceeds available stock for selected size';
                             }
                           } else {
-                            if (quantity > widget.listing.stockQuantity) {
+                            // Allow pre-orders even when stock is 0
+                            if (widget.listing.stockQuantity > 0 &&
+                                quantity > widget.listing.stockQuantity) {
                               return 'Quantity exceeds available stock';
                             }
                           }
@@ -478,7 +544,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: const Color(0xFF1E3A8A)),
                         ),
@@ -573,17 +639,19 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitOrder,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
+                    backgroundColor: widget.listing.stockQuantity > 0
+                        ? const Color(0xFF1E3A8A)
+                        : const Color(0xFFFF6B35),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isSubmitting
-                      ? const Row(
+                      ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
@@ -593,13 +661,19 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 12),
-                            Text('Creating Order...'),
+                            const SizedBox(width: 12),
+                            Text(
+                              widget.listing.stockQuantity > 0
+                                  ? 'Creating Reservation...'
+                                  : 'Creating Pre-order...',
+                            ),
                           ],
                         )
-                      : const Text(
-                          'Pre-order',
-                          style: TextStyle(
+                      : Text(
+                          widget.listing.stockQuantity > 0
+                              ? 'Reserve Now'
+                              : 'Pre-order Now',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),

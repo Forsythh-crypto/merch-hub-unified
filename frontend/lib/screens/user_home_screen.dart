@@ -4,6 +4,7 @@ import '../services/admin_service.dart';
 import '../services/auth_services.dart';
 import '../screens/config/app_config.dart';
 import 'user_orders_screen.dart';
+import 'order_confirmation_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -14,6 +15,8 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
   List<Listing> _listings = [];
+  List<Listing> _officialMerchListings = [];
+  List<Listing> _departmentListings = [];
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _departments = [
@@ -57,6 +60,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       'logo': 'assets/logos/sihm.png',
       'color': const Color(0xFFDC2626), // Red
     },
+    {
+      'name': 'Official UDD Merch',
+      'logo': null, // Will use fallback icon due to file size issues
+      'color': const Color(0xFF1E3A8A), // UDD Blue
+    },
   ];
 
   @override
@@ -72,12 +80,111 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       final listings = await AdminService.getUserListings();
       setState(() {
         _listings = listings;
+        // Separate official UDD merch from department products
+        _officialMerchListings = listings
+            .where(
+              (listing) => listing.department?.name == 'Official UDD Merch',
+            )
+            .toList();
+        _departmentListings = listings
+            .where(
+              (listing) => listing.department?.name != 'Official UDD Merch',
+            )
+            .toList();
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading listings: $e');
       setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildProductCard(Listing listing) {
+    return InkWell(
+      onTap: () {
+        // Navigate directly to order confirmation screen to show product details
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderConfirmationScreen(listing: listing),
+          ),
+        );
+      },
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.only(right: 16),
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          elevation: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: listing.imagePath != null
+                    ? Image.network(
+                        Uri.encodeFull(
+                          '${AppConfig.baseUrl}/api/files/${listing.imagePath}?t=${listing.updatedAt.millisecondsSinceEpoch}',
+                        ),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.image,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.image,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      listing.department?.name ?? 'Unknown Department',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₱${listing.price.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -205,7 +312,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 const Text(
-                                  'UDD MERCH',
+                                  'UDD Essentials',
                                   style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
@@ -222,7 +329,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 const SizedBox(height: 24),
                                 ElevatedButton(
                                   onPressed: () {
-                                    // TODO: Navigate to all products
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/user-listings',
+                                      arguments: 'All',
+                                    );
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF1E3A8A),
@@ -243,105 +354,103 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       ),
                     ),
 
-                    // New Products Section
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'NEW PRODUCTS',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/user-listings',
-                                    arguments: 'All',
-                                  );
-                                },
-                                child: const Text(
-                                  'View All',
-                                  style: TextStyle(color: Color(0xFF1E3A8A)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 300,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _listings.take(5).length,
-                              itemBuilder: (context, index) {
-                                final listing = _listings[index];
-                                return Container(
-                                  width: 200,
-                                  margin: const EdgeInsets.only(right: 16),
-                                  child: Card(
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: listing.imagePath != null
-                                              ? Image.network(
-                                                  Uri.encodeFull(
-                                                    '${AppConfig.baseUrl}/api/files/${listing.imagePath}?t=${listing.updatedAt.millisecondsSinceEpoch}',
-                                                  ),
-                                                  fit: BoxFit.cover,
-                                                  width: double.infinity,
-                                                )
-                                              : Container(
-                                                  color: Colors.grey[200],
-                                                  child: const Icon(
-                                                    Icons.image,
-                                                  ),
-                                                ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                listing.title,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '₱${listing.price.toStringAsFixed(2)}',
-                                                style: const TextStyle(
-                                                  color: Color(0xFF1E3A8A),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                    // Official UDD Merch Section
+                    if (_officialMerchListings.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'OFFICIAL UDD MERCH',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                );
-                              },
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/user-listings',
+                                      arguments: 'Official UDD Merch',
+                                    );
+                                  },
+                                  child: const Text(
+                                    'View All',
+                                    style: TextStyle(color: Color(0xFF1E3A8A)),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 300,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _officialMerchListings
+                                    .take(5)
+                                    .length,
+                                itemBuilder: (context, index) {
+                                  final listing = _officialMerchListings[index];
+                                  return _buildProductCard(listing);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+
+                    // New Products Section (Department Products)
+                    if (_departmentListings.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'NEW PRODUCTS',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/user-listings',
+                                      arguments: 'All',
+                                    );
+                                  },
+                                  child: const Text(
+                                    'View All',
+                                    style: TextStyle(color: Color(0xFF1E3A8A)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 300,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _departmentListings.take(5).length,
+                                itemBuilder: (context, index) {
+                                  final listing = _departmentListings[index];
+                                  return _buildProductCard(listing);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
                     // Departments Section
                     Padding(
@@ -363,7 +472,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  childAspectRatio: 1.5,
+                                  childAspectRatio: 1.2,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
                                 ),
@@ -386,24 +495,64 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Image.asset(
-                                        department['logo'],
-                                        height: 60,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8.0,
-                                        ),
-                                        child: Text(
-                                          department['name'],
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                      department['logo'] != null
+                                          ? Image.asset(
+                                              department['logo'],
+                                              height: 70,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Container(
+                                                      height: 70,
+                                                      width: 70,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white
+                                                            .withOpacity(0.2),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.school,
+                                                        color: Colors.white,
+                                                        size: 30,
+                                                      ),
+                                                    );
+                                                  },
+                                            )
+                                          : Container(
+                                              height: 70,
+                                              width: 70,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(
+                                                  0.2,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons.school,
+                                                color: Colors.white,
+                                                size: 30,
+                                              ),
+                                            ),
+                                      const SizedBox(height: 12),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0,
                                           ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                          child: Text(
+                                            department['name'],
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -415,6 +564,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         ],
                       ),
                     ),
+
+                    // Add bottom padding to prevent overflow
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
