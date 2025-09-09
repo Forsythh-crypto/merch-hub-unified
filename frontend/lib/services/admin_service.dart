@@ -123,13 +123,12 @@ class AdminService {
       print('📦 Getting all listings...');
       print('📦 API URL: ${AppConfig.api('admin/all-listings')}');
 
+      final base = AppConfig.api('admin/all-listings').toString();
+      final url = base.contains('?')
+          ? '$base&_t=${DateTime.now().millisecondsSinceEpoch}'
+          : '$base?_t=${DateTime.now().millisecondsSinceEpoch}';
       final response = await http
-          .get(
-            Uri.parse(
-              '${AppConfig.api('admin/all-listings')}?_t=${DateTime.now().millisecondsSinceEpoch}',
-            ),
-            headers: headers,
-          )
+          .get(Uri.parse(url), headers: headers)
           .timeout(const Duration(seconds: 10));
 
       print('📦 All listings response: ${response.statusCode}');
@@ -165,8 +164,9 @@ class AdminService {
         '🔍 Getting admin listings from: ${AppConfig.api('admin/listings')}',
       );
 
+      final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        AppConfig.api('admin/listings'),
+        Uri.parse('${AppConfig.api('admin/listings')}&_t=$ts'.replaceFirst('/admin/listings&_t', '/admin/listings?_t')),
         headers: headers,
       );
 

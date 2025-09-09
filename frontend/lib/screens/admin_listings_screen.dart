@@ -8,6 +8,7 @@ import '../models/listing.dart';
 import '../models/user_role.dart';
 import '../services/admin_service.dart';
 import '../config/app_config.dart';
+import 'admin_orders_screen.dart';
 
 class AdminListingsScreen extends StatefulWidget {
   final UserSession userSession;
@@ -20,20 +21,17 @@ class AdminListingsScreen extends StatefulWidget {
 
 class _AdminListingsScreenState extends State<AdminListingsScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
   List<Listing> _listings = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadListings();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -55,12 +53,14 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _listings = listings;
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading listings: $e');
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -70,7 +70,9 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
     print(
       '🔧 Building AdminListingsScreen with user: ${widget.userSession.name} (${widget.userSession.role}) - Department: ${widget.userSession.departmentName}',
     );
-    return Scaffold(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
@@ -144,13 +146,13 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
               ),
               // TabBar
               TabBar(
-                controller: _tabController,
                 indicatorColor: Colors.white,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white70,
                 tabs: const [
                   Tab(text: 'Manage Listings'),
                   Tab(text: 'Add New Listing'),
+                  Tab(text: 'Manage Orders'),
                 ],
               ),
             ],
@@ -158,9 +160,14 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
         ),
       ),
       body: TabBarView(
-        controller: _tabController,
-        children: [_buildManageListingsTab(), _buildAddListingTab()],
+        children: [
+          _buildManageListingsTab(),
+          _buildAddListingTab(),
+          // Orders tab (department-scoped by backend for admins)
+          AdminOrdersScreen(userSession: widget.userSession, showAppBar: false),
+        ],
       ),
+    ),
     );
   }
 
@@ -583,7 +590,11 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -647,7 +658,9 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
                     }
 
                     // Close dialog and refresh
-                    Navigator.pop(context);
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
                     await _loadListings(); // Wait for the refresh to complete
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -721,7 +734,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
 }
 
 class _AddListingForm extends StatefulWidget {
-  final VoidCallback onListingAdded;
+  final Future<void> Function() onListingAdded;
   final UserSession userSession;
 
   const _AddListingForm({
@@ -973,15 +986,34 @@ class _AddListingFormState extends State<_AddListingForm> {
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Listing created successfully with multiple sizes',
-                ),
+            _clearForm();
+            // Success dialog with navigation
+            await showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Listing Created'),
+                content: const Text('The listing was created successfully.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      // Stay on add tab to add another
+                    },
+                    child: const Text('Add Another'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.of(ctx).pop();
+                      // Navigate to Manage Listings and refresh
+                      final controller = DefaultTabController.of(context);
+                      controller?.animateTo(0);
+                      await widget.onListingAdded();
+                    },
+                    child: const Text('View Listings'),
+                  ),
+                ],
               ),
             );
-            _clearForm();
-            widget.onListingAdded();
           }
         } else {
           if (mounted) {
@@ -1023,11 +1055,31 @@ class _AddListingFormState extends State<_AddListingForm> {
         final response = await request.send();
         if (response.statusCode == 200 || response.statusCode == 201) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Listing created successfully')),
-            );
             _clearForm();
-            widget.onListingAdded();
+            await showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Listing Created'),
+                content: const Text('The listing was created successfully.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                    },
+                    child: const Text('Add Another'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.of(ctx).pop();
+                      final controller = DefaultTabController.of(context);
+                      controller?.animateTo(0);
+                      await widget.onListingAdded();
+                    },
+                    child: const Text('View Listings'),
+                  ),
+                ],
+              ),
+            );
           }
         } else {
           if (mounted) {

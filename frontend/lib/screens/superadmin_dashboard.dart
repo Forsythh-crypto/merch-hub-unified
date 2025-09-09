@@ -102,7 +102,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           _users = users;
           _listings = listings;
           _departments = departmentsData;
-          _isLoading = false;
 
           // Extract available departments for filtering
           _availableDepartments = ['All'];
@@ -118,6 +117,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       print('✅ Superadmin data loaded successfully');
     } catch (e) {
       print('❌ Error loading superadmin data: $e');
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -140,7 +140,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
+            onPressed: () async {
+              setState(() { _isLoading = true; });
+              await _loadData();
+            },
             tooltip: 'Refresh Data',
           ),
           IconButton(
@@ -2854,7 +2857,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -2939,27 +2946,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         );
 
                     if (success && mounted) {
-                      Navigator.pop(context);
-                      print(
-                        '🔄 Product created successfully, refreshing data...',
-                      );
-                      setState(() {
-                        _selectedIndex = 4; // Switch to Products tab
-                        _isLoading = true; // Show loading indicator
-                      });
-                      await _loadData(); // Wait for data to load
-                      print(
-                        '✅ Data refresh completed. Listings count: ${_listings.length}',
-                      );
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Successfully created listing with multiple sizes',
-                            ),
-                          ),
-                        );
-                      }
+                      print('🔄 Product created successfully, refreshing data...');
+                      _loadData(); // fire-and-forget (same as delete)
+                      setState(() { _selectedIndex = 4; });
                     }
                   } else {
                     // Regular single listing creation
@@ -2978,26 +2967,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     );
 
                     if (success && mounted) {
-                      Navigator.pop(context);
-                      print(
-                        '🔄 Product created successfully, refreshing data...',
-                      );
-                      setState(() {
-                        _selectedIndex = 4; // Switch to Products tab
-                        _isLoading = true; // Show loading indicator
-                      });
-                      await _loadData(); // Wait for data to load
-                      print(
-                        '✅ Data refresh completed. Listings count: ${_listings.length}',
-                      );
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Product created successfully'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
+                      print('🔄 Product created successfully, refreshing data...');
+                      _loadData(); // fire-and-forget (same as delete)
+                      setState(() { _selectedIndex = 4; });
                     }
                   }
                 } catch (e) {
@@ -3571,7 +3543,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       case 0:
         return _buildDashboardTab();
       case 1:
-        return AdminOrdersScreen(userSession: widget.userSession);
+        return AdminOrdersScreen(userSession: widget.userSession, showAppBar: false);
       case 2:
         return _buildUsersTab();
       case 3:

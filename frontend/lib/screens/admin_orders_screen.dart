@@ -5,8 +5,9 @@ import '../services/order_service.dart';
 
 class AdminOrdersScreen extends StatefulWidget {
   final UserSession userSession;
+  final bool showAppBar;
 
-  const AdminOrdersScreen({Key? key, required this.userSession})
+  const AdminOrdersScreen({Key? key, required this.userSession, this.showAppBar = true})
     : super(key: key);
 
   @override
@@ -154,7 +155,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
               child: const Text('Cancel'),
             ),
           ],
@@ -339,14 +344,16 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Orders'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadOrders),
-        ],
-      ),
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text('Manage Orders'),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              actions: [
+                IconButton(icon: const Icon(Icons.refresh), onPressed: _loadOrders),
+              ],
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

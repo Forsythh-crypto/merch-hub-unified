@@ -135,16 +135,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Back Button
-            Positioned(
-              top: 8,
-              left: 8,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-
             SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -302,6 +292,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                   ],
                 ),
+              ),
+            ),
+
+            // Back Button (placed last so it stays on top of the stack)
+            Positioned(
+              top: 8,
+              left: 8,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
           ],

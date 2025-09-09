@@ -38,10 +38,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final List<dynamic> data = responseData is List
             ? responseData
             : responseData['departments'] ?? [];
+        // Exclude the special listing-only department from selection
+        final filteredData = data.where((dept) {
+          final name = (dept['name'] ?? '')
+              .toString()
+              .trim()
+              .toLowerCase();
+          return name != 'official udd merch';
+        }).toList();
+
+        final mapped = filteredData
+            .map((dept) => {'id': dept['id'], 'name': dept['name']})
+            .toList();
+
         setState(() {
-          departments = data
-              .map((dept) => {'id': dept['id'], 'name': dept['name']})
-              .toList();
+          departments = mapped;
+          // Reset selection if it pointed to a filtered-out option
+          if (selectedDepartmentId != null &&
+              !departments.any((d) => d['id'] == selectedDepartmentId)) {
+            selectedDepartmentId = null;
+          }
           isLoadingDepartments = false;
         });
       } else {
@@ -168,6 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               DropdownButtonFormField<int>(
                 value: selectedDepartmentId,
                 decoration: const InputDecoration(labelText: 'Department'),
+                isExpanded: true,
                 items: departments.map((dept) {
                   return DropdownMenuItem<int>(
                     value: dept['id'],
