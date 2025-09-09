@@ -1,12 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 
 class AuthService {
   static Future<bool> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.100.11:8000/api/login'),
+        AppConfig.api('login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );

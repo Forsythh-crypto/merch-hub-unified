@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/listing.dart';
 import '../models/user_role.dart';
 import '../services/admin_service.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
 
 class AdminListingsScreen extends StatefulWidget {
   final UserSession userSession;

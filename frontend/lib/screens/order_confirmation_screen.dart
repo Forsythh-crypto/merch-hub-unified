@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../models/listing.dart';
 import '../services/order_service.dart';
 import '../config/app_config.dart';
@@ -177,7 +176,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     if (widget.listing.imagePath == null || widget.listing.imagePath!.isEmpty) {
       return '';
     }
-    return 'http://192.168.100.11:8000/api/files/${widget.listing.imagePath}?t=${widget.listing.updatedAt.millisecondsSinceEpoch}';
+    return AppConfig.fileUrl(
+      '${widget.listing.imagePath}?t=${widget.listing.updatedAt.millisecondsSinceEpoch}',
+    );
   }
 
   @override

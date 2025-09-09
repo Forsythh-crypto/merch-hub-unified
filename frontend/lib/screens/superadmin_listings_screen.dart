@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
 import '../models/user_role.dart';
 
 class SuperAdminListingsScreen extends StatefulWidget {
@@ -210,7 +210,7 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                         topRight: Radius.circular(12),
                       ),
                       child: Image.network(
-                        '${AppConfig.baseUrl}/storage/${listing.imagePath}',
+                        '${AppConfig.baseUrl}/api/files/${listing.imagePath}',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/listing.dart';
 import '../models/user_role.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
 
 class AdminService {
   static Future<String?> _getToken() async {

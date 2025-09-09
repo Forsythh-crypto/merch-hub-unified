@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/admin_service.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
 
 class DebugScreen extends StatefulWidget {
   const DebugScreen({super.key});

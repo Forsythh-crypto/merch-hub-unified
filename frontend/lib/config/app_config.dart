@@ -1,19 +1,18 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConfig {
   static const bool isDevelopment = true;
-  static String get _apiBaseUrl {
-    // Try the specific IP first, fallback to 0.0.0.0
-    const ips = [
-      'http://192.168.100.11:8000/api',
-      'http://0.0.0.0:8000/api',
-      'http://10.0.2.2:8000/api', // Android emulator special IP
-    ];
-    return ips[0]; // Using first IP for now
+
+  static String get baseUrl {
+    final fromEnv = dotenv.env['API_BASE_URL']?.trim();
+    if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
+    return 'http://localhost:8000';
   }
 
+  static String get _apiBaseUrl => '$baseUrl/api';
+
   static Uri api(String endpoint) {
-    final url = '$_apiBaseUrl/$endpoint';
-    // print('API URL: $url'); // Debug log - commented out for production
-    return Uri.parse(url);
+    return Uri.parse('$_apiBaseUrl/$endpoint');
   }
 
   static String fileUrl(String? path) {

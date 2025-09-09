@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
-import '../screens/config/app_config.dart';
+import '../config/app_config.dart';
 import 'user_orders_screen.dart';
 import 'order_confirmation_screen.dart';
 

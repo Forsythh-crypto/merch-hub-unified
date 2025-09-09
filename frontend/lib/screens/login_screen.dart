@@ -115,9 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void testLaravelLink() async {
     try {
-      final response = await http.get(
-        Uri.parse('http://192.168.100.11:8000/api/ping'),
-      );
+      final response = await http.get(AppConfig.api('ping'));
       print('Ping status: ${response.statusCode}');
       print('Ping body: ${response.body}');
       ScaffoldMessenger.of(context).showSnackBar(

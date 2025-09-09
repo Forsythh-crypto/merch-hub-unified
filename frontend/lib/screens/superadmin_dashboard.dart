@@ -1036,13 +1036,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               [
                 _buildSettingTile(
                   'Base URL',
-                  'http://192.168.100.11:8000',
+                  AppConfig.baseUrl,
                   Icons.link,
                   onTap: () => _showEditSettingDialog(
                     'Base URL',
-                    'http://192.168.100.11:8000',
+                    AppConfig.baseUrl,
                     (value) {
-                      // Update base URL logic would go here
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Base URL updated to: $value'),
