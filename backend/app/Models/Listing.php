@@ -43,6 +43,11 @@ class Listing extends Model
         return $this->hasMany(ListingSizeVariant::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(ListingImage::class)->orderBy('sort_order');
+    }
+
     // Helper method to get total stock across all sizes
     public function getTotalStockAttribute()
     {

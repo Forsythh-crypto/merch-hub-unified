@@ -203,25 +203,49 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                   topRight: Radius.circular(12),
                 ),
               ),
-              child: listing.imagePath != null
+              child: listing.images != null && listing.images!.isNotEmpty
                   ? ClipRRect(
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                       ),
-                      child: Image.network(
-                        '${AppConfig.baseUrl}/api/files/${listing.imagePath}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.image,
-                            size: 50,
-                            color: Colors.grey,
+                      child: PageView.builder(
+                        itemCount: listing.images!.length,
+                        itemBuilder: (context, index) {
+                          final image = listing.images![index];
+                          return Image.network(
+                            Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.image,
+                                size: 50,
+                                color: Colors.grey,
+                              );
+                            },
                           );
                         },
                       ),
                     )
-                  : const Icon(Icons.image, size: 50, color: Colors.grey),
+                  : listing.imagePath != null
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                          child: Image.network(
+                            '${AppConfig.baseUrl}/api/files/${listing.imagePath}',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.image,
+                                size: 50,
+                                color: Colors.grey,
+                              );
+                            },
+                          ),
+                        )
+                      : const Icon(Icons.image, size: 50, color: Colors.grey),
             ),
           ),
 

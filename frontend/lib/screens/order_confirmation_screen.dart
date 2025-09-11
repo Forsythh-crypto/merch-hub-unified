@@ -24,7 +24,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   // For size selection
   String? _selectedSize;
-  Map<String, int> _sizeQuantities = {};
+  final Map<String, int> _sizeQuantities = {};
 
   @override
   void initState() {
@@ -154,8 +154,36 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Product Image
-                      if (widget.listing.imagePath != null &&
+                      // Product Images
+                      if (widget.listing.images != null &&
+                          widget.listing.images!.isNotEmpty)
+                        SizedBox(
+                          height: 200,
+                          child: PageView.builder(
+                            itemCount: widget.listing.images!.length,
+                            itemBuilder: (context, index) {
+                              final image = widget.listing.images![index];
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey[300],
+                                        child: const Icon(Icons.image, size: 50),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      else if (widget.listing.imagePath != null &&
                           widget.listing.imagePath!.isNotEmpty)
                         Center(
                           child: ClipRRect(
@@ -173,6 +201,28 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                   child: const Icon(Icons.image, size: 50),
                                 );
                               },
+                            ),
+                          ),
+                        ),
+
+                      // Image indicators for multiple images
+                      if (widget.listing.images != null &&
+                          widget.listing.images!.length > 1)
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              widget.listing.images!.length,
+                              (index) => Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
                             ),
                           ),
                         ),

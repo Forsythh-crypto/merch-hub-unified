@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
-import '../services/notification_service.dart';
 import '../widgets/notification_badge.dart';
 import '../config/app_config.dart';
 import 'user_orders_screen.dart';
@@ -80,20 +79,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final listings = await AdminService.getUserListings();
+      final listings = await AdminService.getApprovedListings();
+      
+      final officialMerch = listings
+          .where(
+            (listing) => listing.department?.name == 'Official UDD Merch',
+          )
+          .toList();
+      
+      final departmentListings = listings
+          .where(
+            (listing) => listing.department?.name != 'Official UDD Merch',
+          )
+          .toList();
+      
       setState(() {
         _listings = listings;
-        // Separate official UDD merch from department products
-        _officialMerchListings = listings
-            .where(
-              (listing) => listing.department?.name == 'Official UDD Merch',
-            )
-            .toList();
-        _departmentListings = listings
-            .where(
-              (listing) => listing.department?.name != 'Official UDD Merch',
-            )
-            .toList();
+        _officialMerchListings = officialMerch;
+        _departmentListings = departmentListings;
         _isLoading = false;
       });
     } catch (e) {

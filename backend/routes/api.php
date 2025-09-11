@@ -109,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // User routes (for all authenticated users)
     Route::get('/listings', [ListingController::class, 'index']);
+    Route::get('/user/listings', [ListingController::class, 'userListings']);
     
     // Order routes (for all authenticated users)
     Route::post('/orders', [OrderController::class, 'store']);
@@ -143,6 +144,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Allow admins to update their own listings (but not status)
         Route::put('/admin/listings/{listing}', [ListingController::class, 'update']);
         Route::put('/admin/listings/{listing}/size-variants', [ListingController::class, 'updateSizeVariants']);
+        Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
     });
     
     // Super Admin only routes
@@ -188,7 +190,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/all-listings', [ListingController::class, 'superAdminIndex']);
         Route::put('/admin/listings/{listing}/update-stock', [ListingController::class, 'updateStock']);
         Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
-        Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
     });
     
     // Department-specific routes (admin can only access their own department)

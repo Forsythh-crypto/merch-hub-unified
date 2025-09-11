@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import '../config/app_config.dart';
 import 'receipt_upload_screen.dart';
 import 'reservation_fee_payment_screen.dart';
 
@@ -269,7 +270,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
             ],
 
             // Action Buttons
-            if (order.status == 'pending' && !order.reservationFeePaid) ...[
+            if (order.status == 'pending' && !order.reservationFeePaid && order.paymentReceiptPath == null) ...[              
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -322,6 +323,56 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                 ],
               ),
             ],
+            
+            // View Receipt Button (when receipt is already uploaded)
+            if (order.status == 'pending' && !order.reservationFeePaid && order.paymentReceiptPath != null) ...[              
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReservationFeePaymentScreen(
+                              order: order,
+                              totalAmount: order.totalAmount,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.qr_code),
+                      label: const Text('View QR Code'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _showReceiptImage(context, order.paymentReceiptPath!);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00D4AA),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.image),
+                      label: const Text('View Receipt'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -330,6 +381,76 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Function to show receipt image in a dialog
+  void _showReceiptImage(BuildContext context, String receiptPath) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppBar(
+                title: const Text('Payment Receipt'),
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                centerTitle: true,
+                elevation: 0,
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.network(
+                        AppConfig.fileUrl(receiptPath),
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.red,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading receipt image',
+                                style: TextStyle(color: Colors.red[700]),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override

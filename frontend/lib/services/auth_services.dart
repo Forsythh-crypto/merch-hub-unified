@@ -53,8 +53,11 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       final userDataStr = prefs.getString('user_data');
       if (userDataStr != null) {
-        return jsonDecode(userDataStr) as Map<String, dynamic>;
+        final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
+        print('👤 Current user: ${userData['name']} (ID: ${userData['id']}, Email: ${userData['email']})');
+        return userData;
       }
+      print('👤 No user data found in SharedPreferences');
       return null;
     } catch (e) {
       print('Error getting current user: $e');

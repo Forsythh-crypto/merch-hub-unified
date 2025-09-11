@@ -35,7 +35,7 @@ class OrderController extends Controller
             ]);
 
         // Get the listing with size variants
-        $listing = Listing::with('sizeVariants')->findOrFail($validated['listing_id']);
+        $listing = Listing::with(['sizeVariants', 'images'])->findOrFail($validated['listing_id']);
 
         // Check stock based on whether it's a size variant or regular stock
         // Allow pre-orders when stock is 0
@@ -123,7 +123,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
-        $orders = Order::with(['listing', 'department'])
+        $orders = Order::with(['listing.images', 'department'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -138,7 +138,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
-        $order = Order::with(['listing', 'department'])
+        $order = Order::with(['listing.images', 'department'])
             ->where('user_id', $user->id)
             ->findOrFail($id);
 
@@ -152,7 +152,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
-        $order = Order::with('listing.sizeVariants')->where('user_id', $user->id)->findOrFail($id);
+        $order = Order::with(['listing.sizeVariants', 'listing.images'])->where('user_id', $user->id)->findOrFail($id);
 
         if (!$order->canBeCancelled()) {
             return response()->json([
@@ -191,7 +191,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         
-        $query = Order::with(['listing', 'department', 'user']);
+        $query = Order::with(['listing.images', 'department', 'user']);
 
         // If admin (not superadmin), only show their department's orders
         if ($user->isAdmin() && !$user->isSuperAdmin()) {
@@ -216,7 +216,7 @@ class OrderController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $query = Order::with(['listing', 'department', 'user']);
+        $query = Order::with(['listing.images', 'department', 'user']);
         
         // If admin (not superadmin), only update their department's orders
         if ($user->isAdmin() && !$user->isSuperAdmin()) {
@@ -363,7 +363,7 @@ class OrderController extends Controller
                 'email' => 'required|email',
             ]);
 
-            $orders = Order::with(['listing', 'department'])
+            $orders = Order::with(['listing.images', 'department'])
                 ->where('user_id', null) // Simple orders have null user_id
                 ->where('email', $validated['email'])
                 ->orderBy('created_at', 'desc')
@@ -453,7 +453,7 @@ class OrderController extends Controller
         try {
             $user = $request->user();
             
-            $query = Order::with(['listing', 'department', 'user']);
+            $query = Order::with(['listing.images', 'department', 'user']);
             
             // If admin (not superadmin), only update their department's orders
             if ($user->isAdmin() && !$user->isSuperAdmin()) {
@@ -514,7 +514,7 @@ class OrderController extends Controller
             ]);
 
             // Get the listing with size variants
-            $listing = Listing::with('sizeVariants')->findOrFail($validated['listing_id']);
+            $listing = Listing::with(['sizeVariants', 'images'])->findOrFail($validated['listing_id']);
 
             // Check stock based on whether it's a size variant or regular stock
             // Allow pre-orders when stock is 0

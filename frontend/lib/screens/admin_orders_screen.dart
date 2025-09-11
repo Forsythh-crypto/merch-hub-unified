@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../models/user_role.dart';
 import '../services/order_service.dart';
+import '../config/app_config.dart';
 
 class AdminOrdersScreen extends StatefulWidget {
   final UserSession userSession;
@@ -329,7 +330,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
               ],
             ),
             // Reservation Fee Information
-            if (order.status == 'pending') ...[
+            if (order.status == 'pending') ...[  
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -382,21 +383,55 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                             : Colors.orange[600],
                       ),
                     ),
-                    if (!order.reservationFeePaid && order.paymentReceiptPath != null) ...[
+                    if (!order.reservationFeePaid && order.paymentReceiptPath != null) ...[  
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _confirmReservationFee(order),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00D4AA),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              icon: const Icon(Icons.check_circle),
+                              label: const Text('Confirm Payment'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () => _showReceiptImage(context, order.paymentReceiptPath!),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            icon: const Icon(Icons.image),
+                            label: const Text('View Receipt'),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (order.reservationFeePaid && order.paymentReceiptPath != null) ...[  
                       const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => _confirmReservationFee(order),
+                          onPressed: () => _showReceiptImage(context, order.paymentReceiptPath!),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00D4AA),
+                            backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          icon: const Icon(Icons.check_circle),
-                          label: const Text('Confirm Payment'),
+                          icon: const Icon(Icons.image),
+                          label: const Text('View Receipt'),
                         ),
                       ),
                     ],
@@ -446,6 +481,76 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Function to show receipt image in a dialog
+  void _showReceiptImage(BuildContext context, String receiptPath) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppBar(
+                title: const Text('Payment Receipt'),
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                centerTitle: true,
+                elevation: 0,
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.network(
+                        AppConfig.fileUrl(receiptPath),
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.red,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading receipt image',
+                                style: TextStyle(color: Colors.red[700]),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override

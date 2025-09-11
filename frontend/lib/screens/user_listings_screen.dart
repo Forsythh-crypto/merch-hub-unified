@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
+import '../models/listing_image.dart';
 import '../services/admin_service.dart';
 import '../config/app_config.dart';
 import 'order_confirmation_screen.dart';
@@ -480,16 +482,30 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                       ),
-                      child: listing.imagePath != null
-                          ? Image.network(
-                              Uri.encodeFull(
-                                '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
-                              ),
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
+                      child: listing.images != null && listing.images!.isNotEmpty
+                          ? _ImageSlideshow(images: listing.images!)
+                          : listing.imagePath != null
+                              ? Image.network(
+                                  Uri.encodeFull(
+                                    '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
+                                  ),
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      color: Colors.grey[100],
+                                      child: const Icon(
+                                        Icons.image,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Container(
                                   width: double.infinity,
                                   height: double.infinity,
                                   color: Colors.grey[100],
@@ -498,19 +514,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                                     size: 50,
                                     color: Colors.grey,
                                   ),
-                                );
-                              },
-                            )
-                          : Container(
-                              width: double.infinity,
-                              height: double.infinity,
-                              color: Colors.grey[100],
-                              child: const Icon(
-                                Icons.image,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                            ),
+                                ),
                     ),
 
                     // Stock Badge
@@ -751,5 +755,129 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
         _loadListings();
       }
     });
+  }
+}
+
+class _ImageSlideshow extends StatefulWidget {
+  final List<ListingImage> images;
+
+  const _ImageSlideshow({required this.images});
+
+  @override
+  _ImageSlideshowState createState() => _ImageSlideshowState();
+}
+
+class _ImageSlideshowState extends State<_ImageSlideshow> {
+  late PageController _pageController;
+  int _currentIndex = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    print('🖼️ Slideshow initialized with ${widget.images.length} images');
+    for (int i = 0; i < widget.images.length; i++) {
+      print('  Image $i: ${widget.images[i].imagePath}');
+    }
+    _startAutoSlide();
+  }
+
+  void _startAutoSlide() {
+    if (widget.images.length > 1) {
+      _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+        if (_currentIndex < widget.images.length - 1) {
+          _currentIndex++;
+        } else {
+          _currentIndex = 0;
+        }
+        if (_pageController.hasClients) {
+          _pageController.animateToPage(
+            _currentIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: widget.images.length,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          itemBuilder: (context, index) {
+            final imagePath = widget.images[index].imagePath;
+            final baseUrl = AppConfig.fileUrl(imagePath);
+            final imageUrl = Uri.encodeFull(
+              '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}',
+            );
+            print('Slideshow Debug - Index: $index');
+            print('Slideshow Debug - Image Path: $imagePath');
+            print('Slideshow Debug - Base URL: $baseUrl');
+            print('Slideshow Debug - Final URL: $imageUrl');
+            return Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                print('Slideshow Image Error - Index: $index');
+                print('Slideshow Image Error - URL: $imageUrl');
+                print('Slideshow Image Error - Error: $error');
+                return Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: Colors.grey[100],
+                  child: const Icon(
+                    Icons.image,
+                    size: 50,
+                    color: Colors.grey,
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        if (widget.images.length > 1)
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                widget.images.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentIndex == index
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

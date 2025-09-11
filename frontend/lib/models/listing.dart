@@ -1,3 +1,5 @@
+import 'listing_image.dart';
+
 class Listing {
   final int id;
   final String title;
@@ -18,6 +20,7 @@ class Listing {
   final Department? department;
   final Category? category;
   final List<SizeVariant>? sizeVariants;
+  final List<ListingImage>? images;
 
   Listing({
     required this.id,
@@ -37,6 +40,7 @@ class Listing {
     this.department,
     this.category,
     this.sizeVariants,
+    this.images,
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -82,8 +86,15 @@ class Listing {
                 .map((variant) => SizeVariant.fromJson(variant))
                 .toList()
           : null,
+      images: json['images'] != null
+          ? (json['images'] as List)
+                .map((image) => ListingImage.fromJson(image))
+                .toList()
+          : null,
     );
   }
+
+
 
   Map<String, dynamic> toJson() {
     return {
@@ -100,6 +111,7 @@ class Listing {
       'stock_quantity': stockQuantity,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'images': images?.map((image) => image.toJson()).toList(),
     };
   }
 }

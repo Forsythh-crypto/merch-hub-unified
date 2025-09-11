@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -234,14 +235,18 @@ class AdminService {
   static Future<bool> deleteListing(int listingId) async {
     try {
       final headers = await _getHeaders();
+      print('🗑️ Deleting listing with ID: $listingId');
+      print('🔗 API URL: ${AppConfig.api('admin/listings/$listingId')}');
+      
       final response = await http.delete(
         AppConfig.api('admin/listings/$listingId'),
         headers: headers,
       );
 
+      print('🔄 Delete response: ${response.statusCode} - ${response.body}');
       return response.statusCode == 200;
     } catch (e) {
-      print('Error deleting listing: $e');
+      print('❌ Error deleting listing: $e');
       return false;
     }
   }
@@ -271,19 +276,63 @@ class AdminService {
   static Future<List<Listing>> getUserListings() async {
     try {
       final headers = await _getHeaders();
+      print('📋 Getting user listings with headers: $headers');
       final response = await http.get(
-        AppConfig.api('listings'),
+        AppConfig.api('user/listings'),
         headers: headers,
       );
 
+      print('📋 User listings response status: ${response.statusCode}');
+      print('📋 User listings response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data['listings'] as List)
+        final listings = (data['listings'] as List)
             .map((listing) => Listing.fromJson(listing))
             .toList();
+        print('📋 Parsed ${listings.length} user listings');
+        for (final listing in listings) {
+          print('📋 Listing: ${listing.title} - Images: ${listing.images?.length ?? 0}');
+        }
+        return listings;
       }
     } catch (e) {
       print('Error getting user listings: $e');
+    }
+    return [];
+  }
+
+  static Future<List<Listing>> getApprovedListings() async {
+    try {
+      final headers = await _getHeaders();
+      print('📦 Getting approved listings...');
+      print('📦 API URL: ${AppConfig.api('listings')}');
+
+      final base = AppConfig.api('listings').toString();
+      final url = base.contains('?')
+          ? '$base&_t=${DateTime.now().millisecondsSinceEpoch}'
+          : '$base?_t=${DateTime.now().millisecondsSinceEpoch}';
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['listings'] != null) {
+          final listings = (data['listings'] as List)
+              .map((listing) => Listing.fromJson(listing))
+              .toList();
+          return listings;
+        } else {
+          return [];
+        }
+      } else {
+        print(
+          '❌ Failed to get approved listings: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      print('❌ Error getting approved listings: $e');
     }
     return [];
   }
@@ -410,7 +459,7 @@ class AdminService {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(AppConfig.baseUrl + '/api/admin/departments'),
+        Uri.parse('${AppConfig.baseUrl}/api/admin/departments'),
       );
 
       // Add headers
@@ -453,7 +502,7 @@ class AdminService {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(AppConfig.baseUrl + '/api/admin/departments/$departmentId'),
+        Uri.parse('${AppConfig.baseUrl}/api/admin/departments/$departmentId'),
       );
 
       // Add _method field for PUT request
@@ -520,13 +569,13 @@ class AdminService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(AppConfig.baseUrl + '/api/listings'),
+        Uri.parse('${AppConfig.baseUrl}/api/listings'),
       );
 
       // Add auth headers ONLY (do not set Content-Type for multipart)
       final token = await _getToken();
       if (token != null) {
-        request.headers['Authorization'] = 'Bearer ' + token;
+        request.headers['Authorization'] = 'Bearer $token';
       }
       request.headers['Accept'] = 'application/json';
 
@@ -537,10 +586,12 @@ class AdminService {
       request.fields['stock_quantity'] = stockQuantity.toString();
       request.fields['status'] = status;
       if (size != null) request.fields['size'] = size;
-      if (categoryId != null)
+      if (categoryId != null) {
         request.fields['category_id'] = categoryId.toString();
-      if (departmentId != null)
+      }
+      if (departmentId != null) {
         request.fields['department_id'] = departmentId.toString();
+      }
 
       // Add image file if provided
       if (imagePath != null && imagePath.isNotEmpty) {
@@ -575,13 +626,13 @@ class AdminService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(AppConfig.baseUrl + '/api/listings'),
+        Uri.parse('${AppConfig.baseUrl}/api/listings'),
       );
 
       // Add auth headers ONLY (do not set Content-Type for multipart)
       final token = await _getToken();
       if (token != null) {
-        request.headers['Authorization'] = 'Bearer ' + token;
+        request.headers['Authorization'] = 'Bearer $token';
       }
       request.headers['Accept'] = 'application/json';
 
@@ -590,10 +641,12 @@ class AdminService {
       request.fields['description'] = description;
       request.fields['price'] = price.toString();
       request.fields['status'] = status;
-      if (categoryId != null)
+      if (categoryId != null) {
         request.fields['category_id'] = categoryId.toString();
-      if (departmentId != null)
+      }
+      if (departmentId != null) {
         request.fields['department_id'] = departmentId.toString();
+      }
 
       // Add size variants as JSON
       request.fields['size_variants'] = jsonEncode(sizeVariants);
@@ -619,54 +672,112 @@ class AdminService {
   }
 
   static Future<bool> updateListing(
-    int listingId, {
-    required String title,
-    required String description,
-    required double price,
+    int listingId,
+    {String? title,
+    String? description,
+    double? price,
+    File? image,
+    List<File>? images,
+    List<int>? imagesToRemove,
+    bool? removeAllImages,
     String? status,
-    int? stockQuantity,
+    int? stockQuantity, // Add this parameter
   }) async {
     try {
-      final headers = await _getHeaders();
-      print('🔑 Update listing headers: $headers');
-      final requestBody = {
-        'title': title,
-        'description': description,
-        'price': price,
-      };
+      final token = await _getToken();
+      if (token == null) return false;
 
-      // Only include status if provided (for superadmins)
-      if (status != null) {
-        requestBody['status'] = status;
+      final uri = AppConfig.api('admin/listings/$listingId');
+
+      if (image != null || (images != null && images.isNotEmpty)) {
+        // Handle multipart request for image upload
+        final request = http.MultipartRequest('POST', uri)
+          ..headers['Authorization'] = 'Bearer $token'
+          ..headers['Accept'] = 'application/json'
+          ..fields['_method'] = 'PUT';
+
+        if (title != null) request.fields['title'] = title;
+        if (description != null) request.fields['description'] = description;
+        if (price != null) request.fields['price'] = price.toString();
+        if (status != null) request.fields['status'] = status;
+        if (stockQuantity != null) {
+          request.fields['stock_quantity'] = stockQuantity.toString();
+        }
+        
+        // Handle image removal
+        if (image == null) {
+          request.fields['remove_image'] = 'true';
+        }
+        
+        // Handle multiple image removal
+        if (removeAllImages == true) {
+          request.fields['remove_all_images'] = 'true';
+        }
+        
+        if (imagesToRemove != null && imagesToRemove.isNotEmpty) {
+          for (int i = 0; i < imagesToRemove.length; i++) {
+            request.fields['images_to_remove[$i]'] = imagesToRemove[i].toString();
+          }
+        }
+
+        // Handle single image (legacy support)
+        if (image != null) {
+          final imageStream = http.ByteStream(image.openRead());
+          final imageLength = await image.length();
+          final multipartFile = http.MultipartFile(
+            'image',
+            imageStream,
+            imageLength,
+            filename: image.path.split('/').last,
+          );
+          request.files.add(multipartFile);
+        }
+
+        // Handle multiple images
+        if (images != null && images.isNotEmpty) {
+          for (int i = 0; i < images.length; i++) {
+            final imageFile = images[i];
+            final imageStream = http.ByteStream(imageFile.openRead());
+            final imageLength = await imageFile.length();
+            final multipartFile = http.MultipartFile(
+              i == 0 ? 'image' : 'image_$i',
+              imageStream,
+              imageLength,
+              filename: imageFile.path.split('/').last,
+            );
+            request.files.add(multipartFile);
+          }
+        }
+
+        final response = await request.send();
+        final responseBody = await response.stream.bytesToString();
+        print(
+          '🔧 Update listing (multipart) response: ${response.statusCode} - $responseBody',
+        );
+        return response.statusCode == 200;
+      } else {
+        // Handle JSON request for other fields
+        final headers = await _getHeaders();
+        final Map<String, dynamic> body = {};
+        if (title != null) body['title'] = title;
+        if (description != null) body['description'] = description;
+        if (price != null) body['price'] = price;
+        if (status != null) body['status'] = status;
+        if (stockQuantity != null) body['stock_quantity'] = stockQuantity;
+
+        final response = await http.put(
+          uri,
+          headers: headers,
+          body: jsonEncode(body),
+        );
+
+        print(
+          '🔧 Update listing (json) response: ${response.statusCode} - ${response.body}',
+        );
+        return response.statusCode == 200;
       }
-
-      // Include stock quantity if provided
-      if (stockQuantity != null) {
-        requestBody['stock_quantity'] = stockQuantity;
-      }
-
-      print(
-        '📝 Update listing data: {title: $title, description: $description, price: $price, status: $status}',
-      );
-
-      final response = await http.put(
-        AppConfig.api('admin/listings/$listingId'),
-        headers: headers,
-        body: jsonEncode(requestBody),
-      );
-
-      print(
-        '📦 Update listing response: ${response.statusCode} - ${response.body}',
-      );
-
-      if (response.statusCode != 200) {
-        print('❌ Update listing failed with status: ${response.statusCode}');
-        print('❌ Response body: ${response.body}');
-      }
-
-      return response.statusCode == 200;
     } catch (e) {
-      print('❌ Error updating listing: $e');
+      print('Error updating listing: $e');
       return false;
     }
   }
