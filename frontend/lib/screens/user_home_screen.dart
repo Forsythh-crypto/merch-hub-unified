@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
+import '../services/notification_service.dart';
+import '../widgets/notification_badge.dart';
 import '../config/app_config.dart';
 import 'user_orders_screen.dart';
 import 'order_confirmation_screen.dart';
+import 'notifications_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -202,6 +205,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          NotificationBadge(
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+              // Refresh notification count when returning
+              setState(() {});
+            },
+            child: const Icon(Icons.notifications, color: Colors.black),
+          ),
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
             onPressed: () {

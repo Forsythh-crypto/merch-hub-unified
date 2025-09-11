@@ -112,6 +112,36 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     }
   }
 
+  Future<void> _confirmReservationFee(Order order) async {
+    try {
+      final result = await OrderService.confirmReservationFee(order.id);
+
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message']),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadOrders(); // Reload orders
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message']),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error confirming reservation fee: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _showStatusUpdateDialog(Order order) async {
     final statuses = [
       'pending',
@@ -298,6 +328,83 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                 ),
               ],
             ),
+            // Reservation Fee Information
+            if (order.status == 'pending') ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: order.reservationFeePaid 
+                      ? Colors.green[50] 
+                      : Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: order.reservationFeePaid 
+                        ? Colors.green[200]! 
+                        : Colors.orange[200]!,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          order.reservationFeePaid 
+                              ? Icons.check_circle 
+                              : Icons.payment,
+                          color: order.reservationFeePaid 
+                              ? Colors.green[700] 
+                              : Colors.orange[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Reservation Fee (35%): ₱${order.calculatedReservationFeeAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: order.reservationFeePaid 
+                                ? Colors.green[700] 
+                                : Colors.orange[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      order.reservationFeePaid 
+                          ? 'Payment received - Order confirmed'
+                          : 'Payment pending - Receipt uploaded: ${order.paymentReceiptPath != null ? "Yes" : "No"}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: order.reservationFeePaid 
+                            ? Colors.green[600] 
+                            : Colors.orange[600],
+                      ),
+                    ),
+                    if (!order.reservationFeePaid && order.paymentReceiptPath != null) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _confirmReservationFee(order),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00D4AA),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text('Confirm Payment'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+
             if (order.notes != null && order.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(

@@ -53,6 +53,16 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
     // Role constants matching frontend enum
     public const ROLE_STUDENT = 'student';
     public const ROLE_ADMIN = 'admin';

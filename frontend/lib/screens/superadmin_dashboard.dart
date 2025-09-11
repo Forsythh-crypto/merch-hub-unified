@@ -6,8 +6,11 @@ import '../models/user_role.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
+import '../services/notification_service.dart';
+import '../widgets/notification_badge.dart';
 import '../config/app_config.dart';
 import 'admin_orders_screen.dart';
+import 'notifications_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   final UserSession userSession;
@@ -138,13 +141,18 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              setState(() { _isLoading = true; });
-              await _loadData();
+          NotificationBadge(
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+              // Refresh notification count when returning
+              setState(() {});
             },
-            tooltip: 'Refresh Data',
+            child: const Icon(Icons.notifications),
           ),
           IconButton(
             icon: const Icon(Icons.logout),

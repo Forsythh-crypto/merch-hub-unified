@@ -19,6 +19,9 @@ class Order extends Model
         'quantity',
         'size',
         'total_amount',
+        'reservation_fee_amount',
+        'reservation_fee_paid',
+        'payment_receipt_path',
         'status', // pending, confirmed, ready_for_pickup, completed, cancelled
         'pickup_date',
         'notes',
@@ -30,6 +33,7 @@ class Order extends Model
         'pickup_date' => 'datetime',
         'email_sent' => 'boolean',
         'user_id' => 'integer',
+        'reservation_fee_paid' => 'boolean',
     ];
 
     // Generate unique order number
@@ -81,5 +85,23 @@ class Order extends Model
     public function isReadyForPickup()
     {
         return $this->status === 'ready_for_pickup';
+    }
+
+    // Check if reservation fee is paid
+    public function hasPaidReservationFee()
+    {
+        return $this->reservation_fee_paid;
+    }
+
+    // Get reservation fee amount (35% of total)
+    public function getReservationFeeAmount()
+    {
+        return $this->total_amount * 0.35;
+    }
+
+    // Check if order can be confirmed (reservation fee must be paid)
+    public function canBeConfirmed()
+    {
+        return $this->hasPaidReservationFee() && $this->status === 'pending';
     }
 }

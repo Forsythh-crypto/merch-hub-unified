@@ -8,6 +8,7 @@ use App\Http\Controllers\ListingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\File;
 
 
@@ -114,6 +115,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+    Route::post('/orders/{id}/upload-receipt', [OrderController::class, 'uploadReceipt']);
+    
+    // Notification routes (for all authenticated users)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsReadSingle']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::delete('/notifications', [NotificationController::class, 'clearAll']);
     
     // Student routes
     Route::middleware('role:student')->group(function () {
@@ -128,6 +138,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin order routes
         Route::get('/admin/orders', [OrderController::class, 'adminIndex']);
         Route::put('/admin/orders/{id}/status', [OrderController::class, 'updateStatus']);
+        Route::post('/admin/orders/{id}/confirm-reservation-fee', [OrderController::class, 'confirmReservationFee']);
         
         // Allow admins to update their own listings (but not status)
         Route::put('/admin/listings/{listing}', [ListingController::class, 'update']);

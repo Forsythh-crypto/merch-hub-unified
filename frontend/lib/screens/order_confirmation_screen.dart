@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
+import '../models/order.dart';
 import '../services/order_service.dart';
 import '../config/app_config.dart';
+import 'reservation_fee_payment_screen.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final Listing listing;
@@ -68,80 +70,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
       if (result['success']) {
         if (mounted) {
-          // Show order success dialog with order number
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 28),
-                    SizedBox(width: 8),
-                    Text(
-                      widget.listing.stockQuantity > 0
-                          ? 'Reservation Successful!'
-                          : 'Pre-order Successful!',
-                    ),
-                  ],
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.listing.stockQuantity > 0
-                          ? 'Your reservation has been placed successfully!'
-                          : 'Your pre-order has been placed successfully!',
-                    ),
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Order Number:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[700],
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            result['order']?.orderNumber ?? 'N/A',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[900],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'A confirmation email has been sent to ${_emailController.text.trim()}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close dialog
-                      Navigator.pop(context, true); // Navigate back to listings
-                    },
-                    child: Text('OK'),
-                  ),
-                ],
-              );
-            },
+          // Navigate to payment screen for reservation fee
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ReservationFeePaymentScreen(
+                order: result['order'],
+                totalAmount: _totalAmount,
+              ),
+            ),
           );
         }
       } else {

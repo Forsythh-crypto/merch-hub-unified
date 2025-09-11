@@ -10,6 +10,9 @@ class Order {
   final int quantity;
   final String? size;
   final double totalAmount;
+  final double? reservationFeeAmount;
+  final bool reservationFeePaid;
+  final String? paymentReceiptPath;
   final String status;
   final DateTime? pickupDate;
   final String? notes;
@@ -32,6 +35,9 @@ class Order {
     required this.quantity,
     this.size,
     required this.totalAmount,
+    this.reservationFeeAmount,
+    required this.reservationFeePaid,
+    this.paymentReceiptPath,
     required this.status,
     this.pickupDate,
     this.notes,
@@ -54,6 +60,11 @@ class Order {
       quantity: json['quantity'],
       size: json['size'],
       totalAmount: double.parse(json['total_amount'].toString()),
+      reservationFeeAmount: json['reservation_fee_amount'] != null
+          ? double.parse(json['reservation_fee_amount'].toString())
+          : null,
+      reservationFeePaid: json['reservation_fee_paid'] ?? false,
+      paymentReceiptPath: json['payment_receipt_path'],
       status: json['status'],
       pickupDate: json['pickup_date'] != null
           ? DateTime.parse(json['pickup_date'])
@@ -83,6 +94,9 @@ class Order {
       'quantity': quantity,
       'size': size,
       'total_amount': totalAmount,
+      'reservation_fee_amount': reservationFeeAmount,
+      'reservation_fee_paid': reservationFeePaid,
+      'payment_receipt_path': paymentReceiptPath,
       'status': status,
       'pickup_date': pickupDate?.toIso8601String(),
       'notes': notes,
@@ -137,5 +151,25 @@ class Order {
   // Check if order is ready for pickup
   bool get isReadyForPickup {
     return status == 'ready_for_pickup';
+  }
+
+  // Check if reservation fee is paid
+  bool get hasPaidReservationFee {
+    return reservationFeePaid;
+  }
+
+  // Get reservation fee amount (35% of total)
+  double get calculatedReservationFeeAmount {
+    return totalAmount * 0.35;
+  }
+
+  // Check if order can be confirmed (reservation fee must be paid)
+  bool get canBeConfirmed {
+    return hasPaidReservationFee && status == 'pending';
+  }
+
+  // Check if order needs reservation fee payment
+  bool get needsReservationFeePayment {
+    return !reservationFeePaid && status == 'pending';
   }
 }

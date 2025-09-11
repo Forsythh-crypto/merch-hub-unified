@@ -7,8 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import '../models/listing.dart';
 import '../models/user_role.dart';
 import '../services/admin_service.dart';
+import '../services/notification_service.dart';
+import '../widgets/notification_badge.dart';
 import '../config/app_config.dart';
 import 'admin_orders_screen.dart';
+import 'notifications_screen.dart';
 
 class AdminListingsScreen extends StatefulWidget {
   final UserSession userSession;
@@ -19,10 +22,36 @@ class AdminListingsScreen extends StatefulWidget {
   State<AdminListingsScreen> createState() => _AdminListingsScreenState();
 }
 
-class _AdminListingsScreenState extends State<AdminListingsScreen>
-    with SingleTickerProviderStateMixin {
+class _AdminListingsScreenState extends State<AdminListingsScreen> {
   List<Listing> _listings = [];
   bool _isLoading = false;
+  int _selectedIndex = 0;
+
+  // Helper function to get abbreviated admin title
+  String _getAdminTitle(String? departmentName) {
+    if (departmentName == null) return 'ADMIN';
+    
+    switch (departmentName.toLowerCase()) {
+      case 'school of information technology education':
+        return 'SITE ADMIN';
+      case 'school of business and accountancy':
+        return 'SBA ADMIN';
+      case 'school of criminology':
+        return 'SOC ADMIN';
+      case 'school of engineering':
+        return 'SOE ADMIN';
+      case 'school of health sciences':
+        return 'SOHS ADMIN';
+      case 'school of humanities':
+        return 'SOH ADMIN';
+      case 'school of international hospitality management':
+        return 'SIHM ADMIN';
+      case 'school of teacher education':
+        return 'STE ADMIN';
+      default:
+        return 'ADMIN';
+    }
+  }
 
   @override
   void initState() {
@@ -70,105 +99,130 @@ class _AdminListingsScreenState extends State<AdminListingsScreen>
     print(
       '🔧 Building AdminListingsScreen with user: ${widget.userSession.name} (${widget.userSession.role}) - Department: ${widget.userSession.departmentName}',
     );
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-          'Admin Listings - ${widget.userSession.departmentName ?? "Unknown"}',
+          _getAdminTitle(widget.userSession.departmentName),
         ),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Column(
-            children: [
-              // Logout button row
-              Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+        actions: [
+          NotificationBadge(
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+              // Refresh notification count when returning
+              setState(() {});
+            },
+            child: const Icon(Icons.notifications),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLogout == true) {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('auth_token');
+                  await prefs.remove('user_data');
+                  if (mounted) {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  }
+                }
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'profile',
                 child: Row(
                   children: [
-                    const Spacer(),
-                    Text(
-                      widget.userSession.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
+                    const Icon(Icons.person, size: 20),
                     const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.logout,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      onPressed: () async {
-                        final shouldLogout = await showDialog<bool>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('Logout'),
-                              content: const Text(
-                                'Are you sure you want to logout?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.red,
-                                  ),
-                                  child: const Text('Logout'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        if (shouldLogout == true) {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.remove('auth_token');
-                          await prefs.remove('user_data');
-                          if (context.mounted) {
-                            Navigator.pushReplacementNamed(context, '/login');
-                          }
-                        }
-                      },
-                    ),
+                    Text(widget.userSession.name),
                   ],
                 ),
               ),
-              // TabBar
-              TabBar(
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: 'Manage Listings'),
-                  Tab(text: 'Add New Listing'),
-                  Tab(text: 'Manage Orders'),
-                ],
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 20, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Logout', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ),
-      body: TabBarView(
-        children: [
-          _buildManageListingsTab(),
-          _buildAddListingTab(),
-          // Orders tab (department-scoped by backend for admins)
-          AdminOrdersScreen(userSession: widget.userSession, showAppBar: false),
         ],
       ),
-    ),
+      body: _buildCurrentBody(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF1E3A8A),
+        unselectedItemColor: Colors.grey[600],
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'Manage',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_box),
+            label: 'Add New',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag),
+            label: 'Orders',
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildCurrentBody() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildManageListingsTab();
+      case 1:
+        return _buildAddListingTab();
+      case 2:
+        return AdminOrdersScreen(userSession: widget.userSession, showAppBar: false);
+      default:
+        return _buildManageListingsTab();
+    }
   }
 
   Widget _buildManageListingsTab() {

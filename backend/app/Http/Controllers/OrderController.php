@@ -6,11 +6,18 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Listing;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     /**
      * Create a new order
      */
@@ -56,8 +63,9 @@ class OrderController extends Controller
             }
         }
 
-        // Calculate total amount
+        // Calculate total amount and reservation fee
         $totalAmount = $listing->price * $validated['quantity'];
+        $reservationFeeAmount = $totalAmount * 0.35; // 35% reservation fee
 
         // Create order
         $order = Order::create([
@@ -68,6 +76,8 @@ class OrderController extends Controller
             'department_id' => $listing->department_id,
             'quantity' => $validated['quantity'],
             'total_amount' => $totalAmount,
+            'reservation_fee_amount' => $reservationFeeAmount,
+            'reservation_fee_paid' => false,
             'status' => 'pending',
             'notes' => $validated['notes'] ?? null,
             'payment_method' => 'cash_on_pickup',
@@ -90,6 +100,9 @@ class OrderController extends Controller
 
         // Send confirmation email to the provided email address
         $this->sendOrderConfirmationEmail($order, $validated['email']);
+
+        // Send notifications
+        $this->notificationService->notifyOrderCreated($order);
 
         return response()->json([
             'message' => 'Order created successfully',
@@ -220,6 +233,11 @@ class OrderController extends Controller
             $this->sendPickupReadyEmail($order);
         } elseif ($validated['status'] === 'confirmed' && $oldStatus !== 'confirmed') {
             $this->sendOrderConfirmedEmail($order);
+        }
+
+        // Send notification for status change
+        if ($oldStatus !== $validated['status']) {
+            $this->notificationService->notifyOrderStatusChanged($order, $oldStatus, $validated['status']);
         }
 
         return response()->json([
@@ -381,6 +399,102 @@ class OrderController extends Controller
             $order->update(['email_sent' => true]);
         } catch (\Exception $e) {
             Log::error('Failed to send simple order confirmation email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Upload payment receipt for reservation fee
+     */
+    public function uploadReceipt(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+            
+            $order = Order::where('user_id', $user->id)->findOrFail($id);
+
+            if ($order->reservation_fee_paid) {
+                return response()->json([
+                    'message' => 'Reservation fee already paid for this order'
+                ], 400);
+            }
+
+            $validated = $request->validate([
+                'receipt' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+
+            // Store the receipt image
+            $receiptPath = $request->file('receipt')->store('receipts', 'public');
+
+            // Update order with receipt path
+            $order->update([
+                'payment_receipt_path' => $receiptPath,
+            ]);
+
+            // Send notification to admin/superadmin about new receipt
+            $this->notificationService->notifyReceiptUploaded($order);
+
+            return response()->json([
+                'message' => 'Receipt uploaded successfully',
+                'order' => $order->load(['listing', 'department']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Receipt upload error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error uploading receipt: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Admin: Confirm reservation fee payment
+     */
+    public function confirmReservationFee(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+            
+            $query = Order::with(['listing', 'department', 'user']);
+            
+            // If admin (not superadmin), only update their department's orders
+            if ($user->isAdmin() && !$user->isSuperAdmin()) {
+                $query->where('department_id', $user->department_id);
+            }
+
+            $order = $query->findOrFail($id);
+
+            if ($order->reservation_fee_paid) {
+                return response()->json([
+                    'message' => 'Reservation fee already confirmed for this order'
+                ], 400);
+            }
+
+            if (!$order->payment_receipt_path) {
+                return response()->json([
+                    'message' => 'No receipt uploaded for this order'
+                ], 400);
+            }
+
+            // Update order to mark reservation fee as paid and confirm order
+            $order->update([
+                'reservation_fee_paid' => true,
+                'status' => 'confirmed',
+            ]);
+
+            // Send confirmation email
+            $this->sendOrderConfirmedEmail($order);
+
+            // Send notification to user about order confirmation
+            $this->notificationService->notifyOrderStatusChanged($order, 'pending', 'confirmed');
+
+            return response()->json([
+                'message' => 'Reservation fee confirmed and order confirmed successfully',
+                'order' => $order->load(['listing', 'department', 'user']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Reservation fee confirmation error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error confirming reservation fee: ' . $e->getMessage()
+            ], 500);
         }
     }
 

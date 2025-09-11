@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
@@ -209,6 +210,84 @@ class OrderService {
         return {
           'success': false,
           'message': data['message'] ?? 'Failed to update order status',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Upload payment receipt
+  static Future<Map<String, dynamic>> uploadReceipt({
+    required int orderId,
+    required File receiptFile,
+  }) async {
+    try {
+      final token = await _getToken();
+      final uri = AppConfig.api('orders/$orderId/upload-receipt');
+      
+      var request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+      
+      // Add the receipt file
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'receipt',
+          receiptFile.path,
+        ),
+      );
+
+      print('📤 Uploading receipt for order $orderId');
+      print('📤 File path: ${receiptFile.path}');
+      print('📤 URI: $uri');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('📤 Upload response status: ${response.statusCode}');
+      print('📤 Upload response body: ${response.body}');
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'],
+          'order': Order.fromJson(data['order']),
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to upload receipt',
+        };
+      }
+    } catch (e) {
+      print('❌ Error uploading receipt: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Admin: Confirm reservation fee payment
+  static Future<Map<String, dynamic>> confirmReservationFee(int orderId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        AppConfig.api('admin/orders/$orderId/confirm-reservation-fee'),
+        headers: headers,
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'],
+          'order': Order.fromJson(data['order']),
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to confirm reservation fee',
         };
       }
     } catch (e) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import 'receipt_upload_screen.dart';
+import 'reservation_fee_payment_screen.dart';
 
 class UserOrdersScreen extends StatefulWidget {
   const UserOrdersScreen({Key? key}) : super(key: key);
@@ -174,6 +176,66 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                 ),
               ],
             ),
+
+            // Reservation Fee Information
+            if (order.status == 'pending') ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: order.reservationFeePaid 
+                      ? Colors.green[50] 
+                      : Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: order.reservationFeePaid 
+                        ? Colors.green[200]! 
+                        : Colors.orange[200]!,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          order.reservationFeePaid 
+                              ? Icons.check_circle 
+                              : Icons.payment,
+                          color: order.reservationFeePaid 
+                              ? Colors.green[700] 
+                              : Colors.orange[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Reservation Fee (35%): ₱${order.calculatedReservationFeeAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: order.reservationFeePaid 
+                                ? Colors.green[700] 
+                                : Colors.orange[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      order.reservationFeePaid 
+                          ? 'Payment received - Order confirmed'
+                          : 'Payment pending - Upload receipt to confirm order',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: order.reservationFeePaid 
+                            ? Colors.green[600] 
+                            : Colors.orange[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             if (order.notes != null && order.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
@@ -203,6 +265,61 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                   color: Colors.green[700],
                   fontWeight: FontWeight.w500,
                 ),
+              ),
+            ],
+
+            // Action Buttons
+            if (order.status == 'pending' && !order.reservationFeePaid) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReservationFeePaymentScreen(
+                              order: order,
+                              totalAmount: order.totalAmount,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.qr_code),
+                      label: const Text('View QR Code'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReceiptUploadScreen(order: order),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00D4AA),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Upload Receipt'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ],
