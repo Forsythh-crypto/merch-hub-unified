@@ -382,6 +382,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
                     child: Text(
                       size,
                       style: const TextStyle(
+                        fontFamily: 'Montserrat',
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -397,7 +398,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       ),
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],

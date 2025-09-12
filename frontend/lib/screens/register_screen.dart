@@ -194,6 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
+                                    fontFamily: 'Montserrat',
                                   ),
                                 );
                               },
@@ -243,6 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             // Name Field
                             TextFormField(
                               controller: _nameController,
+                              style: AuthStyles.inputTextStyle,
                               decoration: AuthStyles.getInputDecoration(
                                 labelText: 'Name',
                                 prefixIcon: Icons.person_outline,
@@ -260,6 +262,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              style: AuthStyles.inputTextStyle,
                               decoration: AuthStyles.getInputDecoration(
                                 labelText: 'Email',
                                 prefixIcon: Icons.email_outlined,
@@ -280,6 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              style: AuthStyles.inputTextStyle,
                               decoration: AuthStyles.getInputDecoration(
                                 labelText: 'Password',
                                 prefixIcon: Icons.lock_outlined,
@@ -312,6 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             TextFormField(
                               controller: _confirmPasswordController,
                               obscureText: _obscureConfirmPassword,
+                              style: AuthStyles.inputTextStyle,
                               decoration: AuthStyles.getInputDecoration(
                                 labelText: 'Confirm Password',
                                 prefixIcon: Icons.lock_outlined,

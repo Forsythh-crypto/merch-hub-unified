@@ -20,6 +20,26 @@ class UserService {
     };
   }
 
+  // Get all departments (public endpoint)
+  static Future<List<Map<String, dynamic>>> getDepartments() async {
+    try {
+      final response = await http.get(
+        AppConfig.api('departments'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return (data as List)
+            .map((dept) => dept as Map<String, dynamic>)
+            .toList();
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+    return [];
+  }
+
   // Get user's own listings
   static Future<List<Listing>> getUserListings() async {
     try {

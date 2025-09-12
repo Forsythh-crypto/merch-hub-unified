@@ -171,69 +171,72 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       const SizedBox(height: 16),
 
                       // Product Images
-                      if (widget.listing.images != null &&
-                          widget.listing.images!.isNotEmpty)
-                        SizedBox(
-                          height: 200,
-                          child: PageView.builder(
-                            itemCount: widget.listing.images!.length,
-                            itemBuilder: (context, index) {
-                              final image = widget.listing.images![index];
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.image, size: 50),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        )
-                      else if (widget.listing.imagePath != null &&
-                          widget.listing.imagePath!.isNotEmpty)
-                        Center(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _getImageUrl(),
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 200,
-                                  width: double.infinity,
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.image, size: 50),
-                                );
-                              },
+                      Container(
+                        height: 250,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
+                          ],
                         ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: widget.listing.images != null &&
+                                  widget.listing.images!.isNotEmpty
+                              ? PageView.builder(
+                                  itemCount: widget.listing.images!.length,
+                                  itemBuilder: (context, index) {
+                                    final image = widget.listing.images![index];
+                                    return Image.network(
+                                      Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(Icons.image, size: 50),
+                                        );
+                                      },
+                                    );
+                                  },
+                                )
+                              : widget.listing.imagePath != null &&
+                                      widget.listing.imagePath!.isNotEmpty
+                                  ? Image.network(
+                                      _getImageUrl(),
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(Icons.image, size: 50),
+                                        );
+                                      },
+                                    )
+                                  : Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.image, size: 50),
+                                    ),
+                        ),
+                      ),
 
                       // Image indicators for multiple images
                       if (widget.listing.images != null &&
                           widget.listing.images!.length > 1)
                         Container(
-                          margin: const EdgeInsets.only(top: 8),
+                          margin: const EdgeInsets.only(top: 12),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
                               widget.listing.images!.length,
                               (index) => Container(
-                                width: 8,
-                                height: 8,
-                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                                width: 10,
+                                height: 10,
+                                margin: const EdgeInsets.symmetric(horizontal: 3),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.grey[400],

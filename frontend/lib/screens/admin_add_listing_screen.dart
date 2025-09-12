@@ -299,6 +299,7 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                     const Text(
                       'Size & Stock Management',
                       style: TextStyle(
+                        fontFamily: 'Montserrat',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -346,6 +347,7 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                                     child: Text(
                                       size,
                                       style: const TextStyle(
+                                        fontFamily: 'Montserrat',
                                         fontWeight: FontWeight.w600,
                                         fontSize: 12,
                                       ),
@@ -361,7 +363,10 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                                         border: OutlineInputBorder(),
                                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                       ),
-                                      style: const TextStyle(fontSize: 14),
+                                      style: const TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ],

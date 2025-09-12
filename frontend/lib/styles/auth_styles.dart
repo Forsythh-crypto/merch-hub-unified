@@ -11,6 +11,9 @@ class AuthStyles {
   }) {
     return InputDecoration(
       labelText: labelText,
+      labelStyle: const TextStyle(fontFamily: 'Montserrat'),
+      hintStyle: const TextStyle(fontFamily: 'Montserrat'),
+      errorStyle: const TextStyle(fontFamily: 'Montserrat'),
       prefixIcon: Icon(prefixIcon),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -52,22 +55,31 @@ class AuthStyles {
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: Colors.white,
+    fontFamily: 'Montserrat',
   );
 
   static const TextStyle subheadingStyle = TextStyle(
     fontSize: 16,
     color: Colors.white,
+    fontFamily: 'Montserrat',
   );
 
   static const TextStyle buttonTextStyle = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.bold,
     letterSpacing: 1,
+    fontFamily: 'Montserrat',
   );
 
  static const TextStyle accountheadingStyle = TextStyle(
     fontSize: 16,
     color: Colors.blueGrey,
+    fontFamily: 'Montserrat',
+  );
+
+  static const TextStyle inputTextStyle = TextStyle(
+    fontFamily: 'Montserrat',
+    fontSize: 16,
   );
 
 }

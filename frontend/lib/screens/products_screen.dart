@@ -240,7 +240,11 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                   if (hasSizeVariants) ...[  
                     const Text(
                       'Available Sizes:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Expanded(
@@ -268,6 +272,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                             child: Text(
                               '${variant.size}: ${variant.stockQuantity}',
                               style: TextStyle(
+                                fontFamily: 'Montserrat',
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: isAvailable

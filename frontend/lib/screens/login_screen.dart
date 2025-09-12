@@ -129,12 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24.0, 60.0, 24.0, 24.0),
+                padding: const EdgeInsets.fromLTRB(24.0, 80.0, 24.0, 24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                    const SizedBox(height: 40),
-                    // Logo and Welcome Text
+                    const SizedBox(height: 60),
+                    // Header
                     Center(
                       child: Column(
                         children: [
@@ -151,6 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
+                                    fontFamily: 'Montserrat',
                                   ),
                                 );
                               },
@@ -162,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     
                     // Wrapped text and form with Transform.translate
                     Transform.translate(
-                      offset: const Offset(0, -20),
+                       offset: const Offset(0, -45),
                       child: Column(
                         children: [
                           const Text(
@@ -171,25 +172,34 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Sign in to continue',
+                            'Sign in to continue to your account',
                             style: AuthStyles.subheadingStyle,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Login Form
-                          Container(
-                      padding: const EdgeInsets.all(24.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    // Login Form Section
+                    Transform.translate(
+                      offset: const Offset(0, 0),
+                      child: Column(
+                        children: [
+
+                          // Login Form
+                          Container(
+                            padding: const EdgeInsets.all(24.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.95),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -199,6 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
+                            style: AuthStyles.inputTextStyle,
                             decoration: AuthStyles.getInputDecoration(
                               labelText: 'Email',
                               prefixIcon: Icons.email_outlined,
@@ -219,6 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: passwordController,
                             obscureText: !isPasswordVisible,
+                            style: AuthStyles.inputTextStyle,
                             decoration: AuthStyles.getInputDecoration(
                               labelText: 'Password',
                               prefixIcon: Icons.lock_outlined,
@@ -242,27 +254,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 32),
 
                           // Login Button
                           ElevatedButton(
                             onPressed: isLoading ? null : _login,
                             style: AuthStyles.primaryButtonStyle,
                             child: isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'LOGIN',
-                                    style: AuthStyles.buttonTextStyle,
-                                  ),
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('LOGIN'),
                           ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 32),
 
                             // Register Link
                             Row(
@@ -270,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 const Text(
                                   "Don't have an account? ",
-                                  style: AuthStyles.subheadingStyle,
+                                  style: TextStyle(color: Colors.grey),
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -279,10 +281,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                       '/register',
                                     );
                                   },
-                                  child: Text(
-                                    'Register',
-                                    style: AuthStyles.buttonTextStyle.copyWith(
-                                      color: AuthStyles.primaryColor,
+                                  child: const Text(
+                                    'Register Here',
+                                    style: TextStyle(
+                                      color: Color(0xFF1E3A8A),
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Montserrat',
                                     ),
                                   ),
                                 ),

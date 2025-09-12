@@ -86,18 +86,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         ).toList();
       }
 
-      print('📋 Loaded ${filteredListings.length} listings for admin (${widget.userSession.departmentName})');
-      for (final listing in filteredListings) {
-        print(
-          '📋 Listing: ${listing.title} - Department: ${listing.department?.name} - Status: ${listing.status} - Stock: ${listing.stockQuantity}',
-        );
-        
-        if (listing.sizeVariants != null && listing.sizeVariants!.isNotEmpty) {
-          for (final variant in listing.sizeVariants!) {
-            print('📋   Size ${variant.size}: ${variant.stockQuantity}');
-          }
-        }
-      }
+
 
       if (!mounted) return;
       setState(() {
@@ -326,6 +315,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                   child: Text(
                     listing.status.toUpperCase(),
                     style: const TextStyle(
+                      fontFamily: 'Montserrat',
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -337,7 +327,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
             const SizedBox(height: 8),
             Text(
               listing.description ?? '',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                color: Colors.grey[600],
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -348,7 +341,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                 const SizedBox(width: 4),
                 Text(
                   'Stock: ${listing.stockQuantity}',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    color: Colors.grey[600],
+                  ),
                 ),
                 const Spacer(),
                 if (listing.category != null) ...[
@@ -356,7 +352,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                    const SizedBox(width: 4),
                    Text(
                      listing.category!.name,
-                     style: TextStyle(color: Colors.grey[600]),
+                     style: TextStyle(
+                       fontFamily: 'Montserrat',
+                       color: Colors.grey[600],
+                     ),
                    ),
                  ],
               ],
@@ -425,10 +424,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     final userRole = widget.userSession.role;
     final userDepartmentName = widget.userSession.departmentName;
     
-    print('🔍 Edit Debug - User Role: $userRole');
-    print('🔍 Edit Debug - User Department: "$userDepartmentName"');
-    print('🔍 Edit Debug - Listing Department: "${listing.department?.name}"');
-    print('🔍 Edit Debug - Are they equal? ${listing.department?.name == userDepartmentName}');
+
     
     if (userRole != UserRole.superAdmin && listing.department?.name != userDepartmentName) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -44,9 +44,6 @@ class Listing {
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
-    print(
-      '🔍 Listing.fromJson: Price type: ${json['price'].runtimeType}, value: ${json['price']}',
-    );
 
     double price;
     if (json['price'] is String) {

@@ -277,6 +277,7 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                         child: Text(
                           listing.title,
                           style: const TextStyle(
+                            fontFamily: 'Montserrat',
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -296,6 +297,7 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                         child: Text(
                           listing.status.toUpperCase(),
                           style: const TextStyle(
+                            fontFamily: 'Montserrat',
                             color: Colors.white,
                             fontSize: 8,
                             fontWeight: FontWeight.bold,
