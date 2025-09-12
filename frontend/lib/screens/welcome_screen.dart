@@ -65,7 +65,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Column(
                       children: [
-                        const SizedBox(height: 48),
+                        Transform.translate(
+                          offset: const Offset(0, -20),
+                          child: const SizedBox(height: 0),
+                        ),
                         // Logo and Title Section
                         FadeTransition(
                           opacity: _fadeInAnimation,
@@ -73,55 +76,52 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             position: _slideAnimation,
                             child: Column(
                               children: [
-                                Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: ClipOval(
-                                      child: Image.asset(
-                                        'assets/logos/udd_merch.png',
-                                        width: 100,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
+                                Transform.translate(
+                                  offset: const Offset(0, 55),
+                                  child: Image.asset(
+                                    'assets/logos/udd_merch.png',
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
-                                const SizedBox(height: 24),
-                                const Text(
-                                  'UDD Essentials',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Your One-Stop Shop for UDD Merchandise',
+                                 Transform.translate(
+                                   offset: const Offset(0, -10),
+                                   child: Container(
+                                     height: 220,
+                                     width: 450,
+                                     child: Image.asset(
+                                       'assets/logos/uddess_black.png',
+                                       fit: BoxFit.contain,
+                                       errorBuilder: (context, error, stackTrace) {
+                                         return const Text(
+                                           'UDD ESSENTIALS',
+                                           style: TextStyle(
+                                             fontSize: 32,
+                                             fontWeight: FontWeight.bold,
+                                             color: Colors.white,
+                                           ),
+                                         );
+                                       },
+                                     ),
+                                   ),
+                                 ),
+                                Transform.translate(
+                                  offset: const Offset(0, -20),
+                                  child: const Text(
+                                    'Your One-Stop Shop for UDD Merchandise',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white70,
-                                  ),
-                                ),
+                                       fontSize: 16,
+                                       color: Colors.white70,
+                                     ),
+                                   ),
+                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 48),
+                        const SizedBox(height: 5),
                         // Features Section
                         FadeTransition(
                           opacity: _fadeInAnimation,
@@ -133,14 +133,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 description:
                                     'Official UDD merchandise guaranteed',
                               ),
-                              const SizedBox(height: 24),
+                              Transform.translate(
+                                offset: const Offset(0, -90),
+                                child: const SizedBox(height: 20),
+                              ),
                               _buildFeatureItem(
                                 icon: Icons.local_shipping,
                                 title: 'Easy Pickup',
                                 description:
                                     'Convenient pickup locations around campus',
                               ),
-                              const SizedBox(height: 24),
+                              Transform.translate(
+                                offset: const Offset(0, -50),
+                                child: const SizedBox(height: 20),
+                              ),
                               _buildFeatureItem(
                                 icon: Icons.security,
                                 title: 'Secure Payments',
@@ -204,7 +210,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      Transform.translate(
+                        offset: const Offset(0, 0),
+                        child: const SizedBox(height: 15),
+                      ),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -279,7 +288,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                Transform.translate(
+                  offset: const Offset(0, 0),
+                  child: const SizedBox(height: 2),
+                ),
                 Text(
                   description,
                   style: TextStyle(

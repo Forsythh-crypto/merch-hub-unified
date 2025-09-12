@@ -99,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       final response = await http.post(
-        Uri.parse('http://localhost:8080/api/register'),
+        Uri.parse('http://localhost:8000/api/register'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -157,40 +157,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E3A8A),
-              Color(0xFF3B82F6),
-              Color(0xFF60A5FA),
+              const Color(0xFF1E3A8A),
+              const Color(0xFF1E3A8A).withOpacity(0.8),
             ],
           ),
         ),
         child: Stack(
           children: [
             SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                     const SizedBox(height: 20),
                     // Header
                     Center(
                       child: Column(
                         children: [
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 15,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
@@ -211,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Join Merch Hub today',
+                            'Join the UDD community',
                             style: AuthStyles.subheadingStyle,
                           ),
                         ],
@@ -220,7 +220,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 48),
 
                     // Registration Form
-                    Container(
+                    Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 400),
                       padding: const EdgeInsets.all(24.0),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
@@ -242,7 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             TextFormField(
                               controller: _nameController,
                               decoration: AuthStyles.getInputDecoration(
-                                labelText: 'Full Name',
+                                labelText: 'Name',
                                 prefixIcon: Icons.person_outline,
                               ),
                               validator: (value) {
@@ -270,61 +272,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   return 'Please enter a valid email';
                                 }
                                 return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Department Dropdown
-                            DropdownButtonFormField<String>(
-                              value: _selectedDepartment,
-                              decoration: AuthStyles.getInputDecoration(
-                                labelText: 'Department',
-                                prefixIcon: Icons.school_outlined,
-                              ),
-                              items: _departments.map((dept) {
-                                return DropdownMenuItem<String>(
-                                  value: dept['name'],
-                                  child: Text(
-                                    dept['name'],
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedDepartment = value;
-                                });
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please select a department';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Role Dropdown
-                            DropdownButtonFormField<String>(
-                              value: _selectedRole,
-                              decoration: AuthStyles.getInputDecoration(
-                                labelText: 'Role',
-                                prefixIcon: Icons.person_outline,
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'student',
-                                  child: Text('Student'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'admin',
-                                  child: Text('Admin'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedRole = value!;
-                                });
                               },
                             ),
                             const SizedBox(height: 16),
@@ -391,6 +338,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 return null;
                               },
                             ),
+                            const SizedBox(height: 16),
+
+                            // Department Dropdown
+                            SizedBox(
+                              width: double.infinity,
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedDepartment,
+                                decoration: AuthStyles.getInputDecoration(
+                                  labelText: 'Department',
+                                  prefixIcon: Icons.school_outlined,
+                                ),
+                                isExpanded: true,
+                                items: _departments.map((dept) {
+                                  return DropdownMenuItem<String>(
+                                    value: dept['name'],
+                                    child: Text(
+                                      dept['name'],
+                                      style: const TextStyle(fontSize: 14),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedDepartment = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select a department';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
                             const SizedBox(height: 24),
 
                             // Register Button
@@ -419,7 +401,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               children: [
                                 const Text(
                                   'Already have an account? ',
-                                  style: AuthStyles.subheadingStyle,
+                                  style: AuthStyles.accountheadingStyle,
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -437,8 +419,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
+                      ),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

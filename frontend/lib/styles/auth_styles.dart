@@ -64,4 +64,10 @@ class AuthStyles {
     fontWeight: FontWeight.bold,
     letterSpacing: 1,
   );
+
+ static const TextStyle accountheadingStyle = TextStyle(
+    fontSize: 16,
+    color: Colors.blueGrey,
+  );
+
 }
