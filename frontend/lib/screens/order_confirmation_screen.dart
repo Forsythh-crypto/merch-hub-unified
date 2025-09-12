@@ -109,6 +109,22 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     return widget.listing.price * quantity;
   }
 
+  // Helper method to get current stock for selected size
+  int _getCurrentStock() {
+    if (widget.listing.sizeVariants != null &&
+        widget.listing.sizeVariants!.isNotEmpty &&
+        _selectedSize != null) {
+      try {
+        final variant = widget.listing.sizeVariants!
+            .firstWhere((v) => v.size == _selectedSize);
+        return variant.stockQuantity;
+      } catch (e) {
+        return 0;
+      }
+    }
+    return widget.listing.stockQuantity;
+  }
+
   String _getImageUrl() {
     if (widget.listing.imagePath == null || widget.listing.imagePath!.isEmpty) {
       return '';
@@ -244,12 +260,12 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: widget.listing.stockQuantity > 0
+                          color: _getCurrentStock() > 0
                               ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
                               : const Color(0xFFFF6B35).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: widget.listing.stockQuantity > 0
+                            color: _getCurrentStock() > 0
                                 ? const Color(0xFF1E3A8A)
                                 : const Color(0xFFFF6B35),
                             width: 1,
@@ -259,23 +275,23 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              widget.listing.stockQuantity > 0
+                              _getCurrentStock() > 0
                                   ? Icons.inventory
                                   : Icons.schedule,
                               size: 16,
-                              color: widget.listing.stockQuantity > 0
+                              color: _getCurrentStock() > 0
                                   ? const Color(0xFF1E3A8A)
                                   : const Color(0xFFFF6B35),
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              widget.listing.stockQuantity > 0
+                              _getCurrentStock() > 0
                                   ? 'In Stock - Reserve Now'
                                   : 'Pre-order Available',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: widget.listing.stockQuantity > 0
+                                color: _getCurrentStock() > 0
                                     ? const Color(0xFF1E3A8A)
                                     : const Color(0xFFFF6B35),
                               ),
@@ -319,7 +335,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               decoration: BoxDecoration(
                                 color: variant.stockQuantity > 0
                                     ? Colors.green[100]
-                                    : Colors.red[100],
+                                    : Colors.orange[100],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -327,7 +343,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 style: TextStyle(
                                   color: variant.stockQuantity > 0
                                       ? Colors.green[800]
-                                      : Colors.red[800],
+                                      : Colors.orange[800],
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -627,7 +643,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitOrder,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.listing.stockQuantity > 0
+                    backgroundColor: _getCurrentStock() > 0
                         ? const Color(0xFF1E3A8A)
                         : const Color(0xFFFF6B35),
                     foregroundColor: Colors.white,
@@ -651,14 +667,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              widget.listing.stockQuantity > 0
+                              _getCurrentStock() > 0
                                   ? 'Creating Reservation...'
                                   : 'Creating Pre-order...',
                             ),
                           ],
                         )
                       : Text(
-                          widget.listing.stockQuantity > 0
+                          _getCurrentStock() > 0
                               ? 'Reserve Now'
                               : 'Pre-order Now',
                           style: const TextStyle(

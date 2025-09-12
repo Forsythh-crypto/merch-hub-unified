@@ -35,8 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       if (userData != null) {
-        print('User data found: $userData'); // Debug print
-
         final userSession = UserSession(
           userId: userData['id'],
           name: userData['name'] ?? '',
@@ -65,16 +63,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (userSession.isSuperAdmin) {
           if (!mounted) return;
-          print('Navigating to superadmin dashboard'); // Debug print
           Navigator.of(
             context,
           ).pushReplacementNamed('/superadmin', arguments: args);
         } else if (userSession.isAdmin) {
           if (!mounted) return;
-          print('Navigating to admin dashboard'); // Debug print
           Navigator.of(context).pushReplacementNamed('/admin', arguments: args);
-        } else {
-          print('User is a regular user'); // Debug print
         }
       } else {
         if (!mounted) return;

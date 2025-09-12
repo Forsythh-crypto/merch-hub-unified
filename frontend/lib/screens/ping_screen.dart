@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PingScreen extends StatefulWidget {
+  const PingScreen({super.key});
+
   @override
   _PingScreenState createState() => _PingScreenState();
 }

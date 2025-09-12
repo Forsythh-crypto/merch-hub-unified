@@ -11,6 +11,8 @@ import '../widgets/notification_badge.dart';
 import '../config/app_config.dart';
 import 'admin_orders_screen.dart';
 import 'notifications_screen.dart';
+import 'superadmin_edit_listing_screen.dart';
+import 'products_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   final UserSession userSession;
@@ -81,19 +83,14 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     setState(() => _isLoading = true);
 
     try {
-      print('🔄 Loading superadmin data...');
-
       // Load dashboard stats
       final stats = await AdminService.getDashboardStats();
-      print('📊 Stats loaded: $stats');
 
       // Load users
       final users = await AdminService.getAllUsers();
-      print('👥 Users loaded: ${users.length}');
 
       // Load listings
       final listings = await AdminService.getAllListings();
-      print('📦 Listings loaded: ${listings.length}');
 
       // Load departments
       final departmentsData = await AdminService.getAllDepartments();
@@ -117,9 +114,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         });
       }
 
-      print('✅ Superadmin data loaded successfully');
     } catch (e) {
-      print('❌ Error loading superadmin data: $e');
+      // Silently handle error
     } finally {
       if (mounted) {
         setState(() {
@@ -950,8 +946,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                         ),
                                         const SizedBox(width: 8),
                                         GestureDetector(
-                                          onTap: () =>
-                                              _showEditProductDialog(listing),
+                                          onTap: () => Navigator.push(
+                                             context,
+                                             MaterialPageRoute(
+                                               builder: (context) =>
+                                                   SuperAdminEditListingScreen(
+                                                 listing: listing,
+                                                 userSession: widget.userSession,
+                                                 onListingUpdated: () => _loadData(),
+                                               ),
+                                             ),
+                                           ),
                                           child: Icon(
                                             Icons.edit,
                                             size: 18,
@@ -2080,11 +2085,32 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       }
 
       if (success) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green,
+          ),
+        );
         // Refresh data to show updated user roles
         _loadData();
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       print('Error in user action: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -2498,7 +2524,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     String? selectedSize;
     List<Map<String, dynamic>> categories = [];
     List<Map<String, dynamic>> departments = [];
-    File? selectedImage;
+    List<File> selectedImages = [];
     bool isLoading = true;
 
     // Per-size stock controllers for clothing
@@ -2626,7 +2652,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                       isClothingSelected = (cat['name'] ?? '')
                           .toString()
                           .toLowerCase()
-                          .contains('cloth');
+                          .contains('clothing');
                     });
                   },
                 ),
@@ -2709,23 +2735,90 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 // Conditional Size/Stock Inputs
                 if (isClothingSelected) ...[
                   const Text(
-                    'Stock per Size:',
+                    'Stock per Size (Optional - Leave 0 for preorders):',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ..._clothingSizes
                       .map(
-                        (size) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: TextField(
-                            controller: _sizeQtyControllers[size],
-                            decoration: InputDecoration(
-                              labelText: '$size Stock',
-                              border: const OutlineInputBorder(),
+                        (size) {
+                          final controller = _sizeQtyControllers[size]!;
+                          final stockQty = int.tryParse(controller.text.trim()) ?? 0;
+                          final isAvailable = stockQty > 0;
+                          
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isAvailable
+                                        ? Colors.green[100]
+                                        : Colors.orange[100],
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isAvailable
+                                          ? Colors.green[300]!
+                                          : Colors.orange[300]!,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '$size Stock',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: isAvailable
+                                          ? Colors.green[700]
+                                          : Colors.orange[700],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                TextField(
+                                  controller: controller,
+                                  decoration: InputDecoration(
+                                    hintText: '0',
+                                    border: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: isAvailable
+                                            ? Colors.green[300]!
+                                            : Colors.orange[300]!,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: isAvailable
+                                            ? Colors.green[300]!
+                                            : Colors.orange[300]!,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: isAvailable
+                                            ? Colors.green[600]!
+                                            : Colors.orange[600]!,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    fillColor: isAvailable
+                                        ? Colors.green[50]
+                                        : Colors.orange[50],
+                                    filled: true,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    setState(() {});
+                                  },
+                                ),
+                              ],
                             ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
+                          );
+                        },
                       )
                       .toList(),
                 ] else ...[
@@ -2733,15 +2826,13 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   TextFormField(
                     controller: stockController,
                     decoration: const InputDecoration(
-                      labelText: 'Stock Quantity',
+                      labelText: 'Stock Quantity (Optional - Leave empty for preorders)',
+                      hintText: 'Enter stock quantity or leave empty for preorders',
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter stock quantity';
-                      }
-                      if (int.tryParse(value) == null) {
+                      if (value != null && value.isNotEmpty && int.tryParse(value) == null) {
                         return 'Please enter a valid quantity';
                       }
                       return null;
@@ -2783,24 +2874,61 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   child: Column(
                     children: [
                       const Text(
-                        'Product Image (Optional)',
+                        'Product Images (Optional)',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      if (selectedImage != null)
-                        Container(
-                          height: 100,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              selectedImage!,
-                              fit: BoxFit.cover,
-                            ),
+                      if (selectedImages.isNotEmpty)
+                        SizedBox(
+                          height: 120,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: selectedImages.length,
+                            itemBuilder: (context, index) {
+                              return Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    height: 100,
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(
+                                        selectedImages[index],
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 0,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedImages.removeAt(index);
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         )
                       else
@@ -2831,12 +2959,30 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                               );
                               if (image != null) {
                                 setState(() {
-                                  selectedImage = File(image.path);
+                                  selectedImages.add(File(image.path));
                                 });
                               }
                             },
                             icon: const Icon(Icons.photo_library),
                             label: const Text('Gallery'),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final ImagePicker picker = ImagePicker();
+                              final List<XFile> images = await picker.pickMultiImage(
+                                maxWidth: 512,
+                                maxHeight: 512,
+                              );
+                              if (images.isNotEmpty) {
+                                setState(() {
+                                  for (var image in images) {
+                                    selectedImages.add(File(image.path));
+                                  }
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.photo_library),
+                            label: const Text('Multiple'),
                           ),
                           ElevatedButton.icon(
                             onPressed: () async {
@@ -2848,7 +2994,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                               );
                               if (image != null) {
                                 setState(() {
-                                  selectedImage = File(image.path);
+                                  selectedImages.add(File(image.path));
                                 });
                               }
                             },
@@ -2909,36 +3055,22 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 try {
                   // Handle per-size stock for clothing
                   if (isClothingSelected) {
-                    final entries = _sizeQtyControllers.entries
-                        .map(
-                          (e) => MapEntry(
-                            e.key,
-                            int.tryParse(e.value.text.trim()),
-                          ),
-                        )
-                        .where((e) => (e.value ?? 0) > 0)
-                        .toList();
-
-                    if (entries.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Please enter stock for at least one size',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-
-                    // Create single listing with size variants
+                    // Process all sizes (allow 0 stock for preorders)
                     final sizeVariants = <Map<String, dynamic>>[];
-                    for (final entry in entries) {
+                    for (final entry in _sizeQtyControllers.entries) {
+                      final qty = int.tryParse(entry.value.text.trim()) ?? 0;
                       sizeVariants.add({
                         'size': entry.key,
-                        'stock_quantity': entry.value,
+                        'stock_quantity': qty,
                       });
                     }
 
+                    // Prepare image paths from selectedImages
+                    List<String>? imagePaths;
+                    if (selectedImages.isNotEmpty) {
+                      imagePaths = selectedImages.map((file) => file.path).toList();
+                    }
+                    
                     final success =
                         await AdminService.createListingWithVariants(
                           title: titleController.text.trim(),
@@ -2947,7 +3079,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                               double.tryParse(priceController.text.trim()) ??
                               0.0,
                           status: selectedStatus,
-                          imagePath: selectedImage?.path,
+                          imagePaths: imagePaths,
                           categoryId: selectedCategoryId,
                           departmentId: selectedDepartmentId,
                           sizeVariants: sizeVariants,
@@ -2960,6 +3092,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     }
                   } else {
                     // Regular single listing creation
+                    // Prepare image paths from selectedImages
+                    List<String>? imagePaths;
+                    if (selectedImages.isNotEmpty) {
+                      imagePaths = selectedImages.map((file) => file.path).toList();
+                    }
+                    
                     final success = await AdminService.createListing(
                       title: titleController.text.trim(),
                       description: descriptionController.text.trim(),
@@ -2968,7 +3106,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                       stockQuantity:
                           int.tryParse(stockController.text.trim()) ?? 0,
                       status: selectedStatus,
-                      imagePath: selectedImage?.path,
+                      imagePaths: imagePaths,
                       categoryId: selectedCategoryId,
                       departmentId: selectedDepartmentId,
                       size: selectedSize?.trim(),
@@ -3105,7 +3243,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 if (isClothing || hasSizeVariants) ...[
                   const SizedBox(height: 16),
                   const Text(
-                    'Stock per Size:',
+                    'Stock per Size (Optional - Leave 0 for preorders):',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -3113,15 +3251,86 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     spacing: 12,
                     runSpacing: 12,
                     children: sizeQtyControllers.entries.map((entry) {
+                      final size = entry.key;
+                      final controller = entry.value;
+                      final stockQty = int.tryParse(controller.text.trim()) ?? 0;
+                      final isAvailable = stockQty > 0;
+                      
                       return SizedBox(
                         width: 100,
-                        child: TextField(
-                          controller: entry.value,
-                          decoration: InputDecoration(
-                            labelText: entry.key,
-                            border: const OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isAvailable
+                                    ? Colors.green[100]
+                                    : Colors.orange[100],
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isAvailable
+                                      ? Colors.green[300]!
+                                      : Colors.orange[300]!,
+                                ),
+                              ),
+                              child: Text(
+                                size,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: isAvailable
+                                      ? Colors.green[700]
+                                      : Colors.orange[700],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            TextField(
+                              controller: controller,
+                              decoration: InputDecoration(
+                                hintText: '0',
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: isAvailable
+                                        ? Colors.green[300]!
+                                        : Colors.orange[300]!,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: isAvailable
+                                        ? Colors.green[300]!
+                                        : Colors.orange[300]!,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: isAvailable
+                                        ? Colors.green[600]!
+                                        : Colors.orange[600]!,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
+                                fillColor: isAvailable
+                                    ? Colors.green[50]
+                                    : Colors.orange[50],
+                                filled: true,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                // Trigger rebuild to update colors
+                                (context as Element).markNeedsBuild();
+                              },
+                            ),
+                          ],
                         ),
                       );
                     }).toList(),
@@ -3557,7 +3766,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       case 3:
         return _buildDepartmentsTab();
       case 4:
-        return _buildProductsTab();
+        return ProductsScreen(userSession: widget.userSession);
       case 5:
         return _buildAnalyticsTab();
       case 6:

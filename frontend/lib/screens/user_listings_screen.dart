@@ -2,20 +2,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../models/listing_image.dart';
+import '../services/user_service.dart';
 import '../services/admin_service.dart';
+import '../services/auth_services.dart';
+import '../services/user_service.dart';
 import '../config/app_config.dart';
 import 'order_confirmation_screen.dart';
 
 class UserListingsScreen extends StatefulWidget {
-  final String? initialDepartment;
-
-  const UserListingsScreen({super.key, this.initialDepartment});
+  const UserListingsScreen({super.key});
 
   @override
   State<UserListingsScreen> createState() => _UserListingsScreenState();
 }
 
 class _UserListingsScreenState extends State<UserListingsScreen> {
+  // Browse Tab Variables
   List<Listing> _listings = [];
   List<Listing> _newListings = []; // For new products section
   bool _isLoading = false;
@@ -23,7 +25,6 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
   String _selectedCategory = 'All';
   String _selectedDepartment = 'All';
   List<String> _categories = ['All'];
-  List<String> _departmentFilters = ['All'];
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _departments = [
     {
@@ -68,7 +69,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     },
     {
       'name': 'Official UDD Merch',
-      'logo': null, // Will use fallback icon due to file size issues
+      'logo': 'assets/logos/udd_merch.png',
       'color': const Color(0xFF1E3A8A), // UDD Blue
     },
   ];
@@ -84,22 +85,15 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Handle both direct string and map arguments
-    String? initialDepartment = widget.initialDepartment;
-    if (initialDepartment == null) {
+    
+    if (!_routeArgsInitialized) {
       final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is String) {
-        initialDepartment = args;
-      } else if (args is Map<String, dynamic>) {
-        initialDepartment = args['departmentName'] as String?;
+      if (args != null && args is String && args != 'All') {
+        setState(() {
+          _selectedDepartment = args;
+        });
       }
-    }
-
-    if (initialDepartment != null && _selectedDepartment == 'All') {
-      setState(() {
-        _selectedDepartment = initialDepartment!;
-      });
+      _routeArgsInitialized = true;
     }
   }
 
@@ -113,24 +107,19 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final listings = await AdminService.getUserListings();
+      final listings = await AdminService.getApprovedListings();
 
-      // Extract unique categories and departments
+      // Extract unique categories
       final categorySet = <String>{'All'};
-      final departmentSet = <String>{'All'};
       for (final listing in listings) {
         if (listing.category?.name != null) {
           categorySet.add(listing.category!.name);
-        }
-        if (listing.department?.name != null) {
-          departmentSet.add(listing.department!.name);
         }
       }
 
       setState(() {
         _listings = listings;
         _categories = categorySet.toList();
-        _departmentFilters = departmentSet.toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -151,7 +140,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
       final matchesCategory =
           _selectedCategory == 'All' ||
           listing.category?.name == _selectedCategory;
-
+          
       final matchesDepartment =
           _selectedDepartment == 'All' ||
           listing.department?.name == _selectedDepartment;
@@ -165,12 +154,18 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Available Products'),
+        title: const Text('Products'),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Column(
+      body: _buildBrowseTab(),
+
+    );
+  }
+  
+  Widget _buildBrowseTab() {
+    return Column(
         children: [
           // Search and Filter Section
           Container(
@@ -253,53 +248,71 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                 const SizedBox(height: 16),
 
                 // Department Filter
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Department:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _departmentFilters.map((department) {
-                          final isSelected = department == _selectedDepartment;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(department),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedDepartment = department;
-                                });
-                              },
-                              backgroundColor: Colors.grey[200],
-                              selectedColor: const Color(0xFF1E3A8A),
-                              labelStyle: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black87,
+                if (_selectedDepartment != 'All')
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Department:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E3A8A),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _selectedDepartment,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedDepartment = 'All';
+                                      });
+                                    },
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
 
                 // Active Filters Summary
                 if (_selectedCategory != 'All' ||
-                    _selectedDepartment != 'All' ||
-                    _searchQuery.isNotEmpty)
+                    _searchQuery.isNotEmpty ||
+                    _selectedDepartment != 'All')
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -440,9 +453,10 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                   ),
           ),
         ],
-      ),
-    );
-  }
+      );
+    }
+  
+
 
   Widget _buildProductCard(Listing listing) {
     return GestureDetector(
@@ -661,7 +675,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                                 decoration: BoxDecoration(
                                   color: variant.stockQuantity > 0
                                       ? Colors.green[100]
-                                      : Colors.red[100],
+                                      : Colors.orange[100],
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -671,7 +685,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                                     fontWeight: FontWeight.bold,
                                     color: variant.stockQuantity > 0
                                         ? Colors.green[800]
-                                        : Colors.red[800],
+                                        : Colors.orange[800],
                                   ),
                                 ),
                               );

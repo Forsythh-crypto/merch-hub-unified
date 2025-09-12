@@ -64,7 +64,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     },
     {
       'name': 'Official UDD Merch',
-      'logo': null, // Will use fallback icon due to file size issues
+      'logo': 'assets/logos/udd_merch.png',
       'color': const Color(0xFF1E3A8A), // UDD Blue
     },
   ];
@@ -224,19 +224,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
             onPressed: () {
-              // TODO: Implement search
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.black),
-            onPressed: () {
-              // TODO: Implement profile
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.black),
-            onPressed: () {
-              // TODO: Implement wishlist
+              Navigator.pushNamed(context, '/user-listings');
             },
           ),
           IconButton(
@@ -590,6 +578,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 ),
               ),
             ),
+
     );
   }
 }

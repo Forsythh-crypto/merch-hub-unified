@@ -281,6 +281,8 @@ class ListingController extends Controller
             'price' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:pending,approved,rejected', // Optional for admins
             'stock_quantity' => 'nullable|integer|min:0', // Optional for stock updates
+            'category_id' => 'nullable|exists:categories,id',
+            'department_id' => 'nullable|exists:departments,id',
             'images_to_remove' => 'nullable|array',
             'images_to_remove.*' => 'integer|exists:listing_images,id',
             'remove_all_images' => 'nullable|boolean',

@@ -87,11 +87,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                       ),
                                     ],
                                   ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.school,
-                                      size: 60,
-                                      color: Color(0xFF1E3A8A),
+                                  child: Center(
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        'assets/logos/udd_merch.png',
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 ),

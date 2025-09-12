@@ -21,7 +21,7 @@ class SuperAdminNavigationMenu extends StatefulWidget {
 }
 
 class _SuperAdminNavigationMenuState extends State<SuperAdminNavigationMenu> {
-  bool _isAdminPanelExpanded = false;
+  final bool _isAdminPanelExpanded = false;
 
   Widget _buildMenuItem(int index, IconData icon, String title, Color color) {
     final isSelected = widget.selectedPage == index;

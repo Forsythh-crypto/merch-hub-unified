@@ -33,10 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     final url = AppConfig.api('login');
-    print('Attempting to connect to: $url'); // Debug log
 
     try {
-      print('Sending login request...'); // Debug log
       final response = await http.post(
         url,
         headers: {
@@ -58,8 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
         await prefs.setString('user_data', jsonEncode(userData));
-
-        print('Login successful, token: $token');
 
         // Create UserSession object using fromJson for consistency
         final userSession = UserSession.fromJson(userData);
@@ -99,13 +95,11 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
-        print('Login failed: ${data['message']}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? 'Login failed')),
         );
       }
     } catch (e) {
-      print('Login error: $e');
       setState(() => isLoading = false);
       ScaffoldMessenger.of(
         context,
@@ -113,34 +107,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void testLaravelLink() async {
-    try {
-      final response = await http.get(AppConfig.api('ping'));
-      print('Ping status: ${response.statusCode}');
-      print('Ping body: ${response.body}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ping successful: ${response.statusCode}')),
-      );
-    } catch (e) {
-      print('Ping error: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ping failed')));
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF1E3A8A),
+              const Color(0xFF1E3A8A).withOpacity(0.8),
+            ],
+          ),
+        ),
         child: Stack(
           children: [
             SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                padding: const EdgeInsets.fromLTRB(24.0, 60.0, 24.0, 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     const SizedBox(height: 40),
                     // Logo and Welcome Text
                     Center(
@@ -150,20 +142,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 100,
                             height: 100,
                             decoration: BoxDecoration(
-                              color: AuthStyles.primaryColor,
+                              color: Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.school,
-                              size: 50,
-                              color: Colors.white,
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/logos/udd_merch.png',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -182,11 +177,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 48),
 
                     // Login Form
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
+                    Container(
+                      padding: const EdgeInsets.all(24.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                           // Email Field
                           TextFormField(
                             controller: emailController,
@@ -254,42 +262,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                     style: AuthStyles.buttonTextStyle,
                                   ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                    // Register Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Don't have an account? ",
-                          style: AuthStyles.subheadingStyle,
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              '/register',
-                            );
-                          },
-                          child: Text(
-                            'Register',
-                            style: AuthStyles.buttonTextStyle.copyWith(
-                              color: AuthStyles.primaryColor,
+                            // Register Link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Don't have an account? ",
+                                  style: AuthStyles.subheadingStyle,
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/register',
+                                    );
+                                  },
+                                  child: Text(
+                                    'Register',
+                                    style: AuthStyles.buttonTextStyle.copyWith(
+                                      color: AuthStyles.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
 
-                    // Debug Test Button - Only show in debug mode
-                    if (AppConfig.isDevelopment)
-                      TextButton(
-                        onPressed: testLaravelLink,
-                        child: const Text('Test Laravel Link'),
-                      ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -297,10 +301,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // Back Button (placed last so it stays on top of the stack)
             Positioned(
-              top: 8,
+              top: 50,
               left: 8,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
             ),

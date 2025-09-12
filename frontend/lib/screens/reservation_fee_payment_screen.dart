@@ -22,7 +22,7 @@ class ReservationFeePaymentScreen extends StatefulWidget {
 
 class _ReservationFeePaymentScreenState
     extends State<ReservationFeePaymentScreen> {
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   double get _reservationFeeAmount {
     return widget.totalAmount * 0.35; // 35% reservation fee
@@ -241,7 +241,7 @@ class _ReservationFeePaymentScreenState
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 // Your QR Code Image - Bigger Size
-                                Container(
+                                SizedBox(
                                   width: 220,
                                   height: 220,
                                   child: Image.asset(

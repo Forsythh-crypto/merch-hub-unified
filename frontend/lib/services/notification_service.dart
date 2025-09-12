@@ -68,7 +68,7 @@ class NotificationService {
         return 0;
       }
     } catch (e) {
-      print('Error getting unread count: $e');
+      // Silently handle error
       return 0;
     }
   }

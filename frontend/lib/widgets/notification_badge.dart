@@ -6,10 +6,10 @@ class NotificationBadge extends StatefulWidget {
   final VoidCallback? onTap;
 
   const NotificationBadge({
-    Key? key,
+    super.key,
     required this.child,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   State<NotificationBadge> createState() => _NotificationBadgeState();
@@ -33,7 +33,7 @@ class _NotificationBadgeState extends State<NotificationBadge> {
         });
       }
     } catch (e) {
-      print('Error loading unread count: $e');
+      // Silently handle error
     }
   }
 

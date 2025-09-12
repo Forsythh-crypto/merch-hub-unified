@@ -8,6 +8,7 @@ import 'screens/home_screen.dart';
 import 'screens/superadmin_dashboard.dart';
 import 'screens/admin_listings_screen.dart';
 import 'screens/user_listings_screen.dart';
+import 'screens/admin_add_listing_screen.dart';
 import 'models/user_role.dart';
 
 Future<void> main() async {
@@ -68,10 +69,10 @@ class UDDEssentialsApp extends StatelessWidget {
           return AdminListingsScreen(userSession: userSession);
         },
         '/user-listings': (context) {
-          final initialDepartment =
-              ModalRoute.of(context)?.settings.arguments as String?;
-          return UserListingsScreen(initialDepartment: initialDepartment);
+          return const UserListingsScreen();
         },
+
+        '/admin-add-listing': (context) => const AdminAddListingScreen(),
       },
     );
   }

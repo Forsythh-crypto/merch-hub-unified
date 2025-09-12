@@ -13,8 +13,6 @@ class OrderService {
 
   static Future<Map<String, String>> _getHeaders() async {
     final token = await _getToken();
-    print('🔑 Order service token: ${token?.substring(0, 20)}...');
-    print('🔑 Order service token length: ${token?.length}');
     return {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -31,7 +29,6 @@ class OrderService {
   }) async {
     try {
       final headers = await _getHeaders();
-      print('Creating order with headers: $headers');
       final requestBody = {
         'listing_id': listingId,
         'quantity': quantity,
@@ -44,17 +41,12 @@ class OrderService {
         requestBody['size'] = size;
       }
 
-      print('Request body: ${jsonEncode(requestBody)}');
-
       // Use authenticated orders endpoint
       final response = await http.post(
         AppConfig.api('orders'),
         headers: headers,
         body: jsonEncode(requestBody),
       );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       final data = jsonDecode(response.body);
 
@@ -79,30 +71,22 @@ class OrderService {
   static Future<List<Order>> getUserOrders() async {
     try {
       final headers = await _getHeaders();
-      print('🔍 Getting user orders with headers: $headers');
-      print('🔍 API URL: ${AppConfig.api('orders')}');
 
       final response = await http.get(
         AppConfig.api('orders'),
         headers: headers,
       );
 
-      print('🔍 Orders response status: ${response.statusCode}');
-      print('🔍 Orders response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final orders = (data['orders'] as List)
             .map((order) => Order.fromJson(order))
             .toList();
-        print('✅ Successfully loaded ${orders.length} orders');
         return orders;
       } else {
-        print('❌ Failed to load orders: ${response.statusCode}');
         throw Exception('Failed to load orders');
       }
     } catch (e) {
-      print('❌ Error getting user orders: $e');
       throw Exception('Network error: $e');
     }
   }
@@ -237,15 +221,8 @@ class OrderService {
         ),
       );
 
-      print('📤 Uploading receipt for order $orderId');
-      print('📤 File path: ${receiptFile.path}');
-      print('📤 URI: $uri');
-
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-
-      print('📤 Upload response status: ${response.statusCode}');
-      print('📤 Upload response body: ${response.body}');
 
       final data = jsonDecode(response.body);
 
@@ -262,7 +239,6 @@ class OrderService {
         };
       }
     } catch (e) {
-      print('❌ Error uploading receipt: $e');
       return {'success': false, 'message': 'Network error: $e'};
     }
   }

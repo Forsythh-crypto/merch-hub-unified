@@ -14,9 +14,6 @@ class AdminService {
 
   static Future<Map<String, String>> _getHeaders() async {
     final token = await _getToken();
-    print('🔑 Token retrieved: ${token?.substring(0, 20)}...');
-    print('🔑 Full token: $token');
-    print('🔑 Token length: ${token?.length}');
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -28,17 +25,16 @@ class AdminService {
   static Future<Map<String, dynamic>?> getDashboardStats() async {
     try {
       final headers = await _getHeaders();
-      print('📊 Getting dashboard stats with headers: $headers');
 
       // First test if backend is accessible
       try {
         final testResponse = await http
             .get(AppConfig.api('ping'))
             .timeout(const Duration(seconds: 5));
-        print('🔗 Backend ping response: ${testResponse.statusCode}');
-        print('🔗 Backend ping body: ${testResponse.body}');
+        if (testResponse.statusCode != 200) {
+          return null;
+        }
       } catch (e) {
-        print('❌ Backend not accessible: $e');
         return null;
       }
 
@@ -47,35 +43,21 @@ class AdminService {
         final tokenTestResponse = await http
             .get(AppConfig.api('user'), headers: headers)
             .timeout(const Duration(seconds: 5));
-        print('🔑 Token test response: ${tokenTestResponse.statusCode}');
-        print('🔑 Token test body: ${tokenTestResponse.body}');
-        if (tokenTestResponse.statusCode == 401) {
-          print('❌ Token is invalid or expired - this will cause logout');
-          // Don't return null here, let the actual API call handle it
-        }
+        // Let the actual API call handle any issues
       } catch (e) {
-        print('❌ Token test failed: $e');
-        // Don't return null here, let the actual API call handle it
+        // Let the actual API call handle it
       }
 
       final response = await http
           .get(AppConfig.api('admin/dashboard-stats'), headers: headers)
           .timeout(const Duration(seconds: 10));
 
-      print(
-        '📊 Dashboard stats response: ${response.statusCode} - ${response.body}',
-      );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['stats'];
-      } else {
-        print(
-          '❌ Dashboard stats failed: ${response.statusCode} - ${response.body}',
-        );
       }
     } catch (e) {
-      print('❌ Error getting dashboard stats: $e');
+      // Handle error silently
     }
     return null;
   }
@@ -84,14 +66,10 @@ class AdminService {
   static Future<List<UserSession>> getAllUsers() async {
     try {
       final headers = await _getHeaders();
-      print('👥 Getting users with headers: $headers');
 
       final response = await http
           .get(AppConfig.api('admin/users'), headers: headers)
           .timeout(const Duration(seconds: 10));
-
-      print('👥 Users response status: ${response.statusCode}');
-      print('👥 Users response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -100,19 +78,13 @@ class AdminService {
               .where((user) => user != null)
               .map((user) => UserSession.fromJson(user as Map<String, dynamic>))
               .toList();
-          print('✅ Parsed ${users.length} users');
           return users;
         } else {
-          print('⚠️ No users data in response');
           return [];
         }
-      } else {
-        print(
-          '❌ Failed to get users: ${response.statusCode} - ${response.body}',
-        );
       }
     } catch (e) {
-      print('❌ Error getting users: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -121,8 +93,6 @@ class AdminService {
   static Future<List<Listing>> getAllListings() async {
     try {
       final headers = await _getHeaders();
-      print('📦 Getting all listings...');
-      print('📦 API URL: ${AppConfig.api('admin/all-listings')}');
 
       final base = AppConfig.api('admin/all-listings').toString();
       final url = base.contains('?')
@@ -132,28 +102,19 @@ class AdminService {
           .get(Uri.parse(url), headers: headers)
           .timeout(const Duration(seconds: 10));
 
-      print('📦 All listings response: ${response.statusCode}');
-      print('📦 Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['listings'] != null) {
           final listings = (data['listings'] as List)
               .map((listing) => Listing.fromJson(listing))
               .toList();
-          print('✅ Loaded ${listings.length} listings');
           return listings;
         } else {
-          print('⚠️ No listings data in response');
           return [];
         }
-      } else {
-        print(
-          '❌ Failed to get listings: ${response.statusCode} - ${response.body}',
-        );
       }
     } catch (e) {
-      print('❌ Error getting all listings: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -161,18 +122,11 @@ class AdminService {
   static Future<List<Listing>> getAdminListings() async {
     try {
       final headers = await _getHeaders();
-      print(
-        '🔍 Getting admin listings from: ${AppConfig.api('admin/listings')}',
-      );
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
         Uri.parse('${AppConfig.api('admin/listings')}&_t=$ts'.replaceFirst('/admin/listings&_t', '/admin/listings?_t')),
         headers: headers,
-      );
-
-      print(
-        '🔍 Admin listings response: ${response.statusCode} - ${response.body}',
       );
 
       if (response.statusCode == 200) {
@@ -181,13 +135,10 @@ class AdminService {
             .map((listing) => Listing.fromJson(listing))
             .toList();
 
-        print('🔍 Parsed ${listings.length} listings');
         return listings;
-      } else {
-        print('❌ Failed to get admin listings: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting admin listings: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -208,7 +159,7 @@ class AdminService {
         }
       }
     } catch (e) {
-      print('Error getting categories: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -216,18 +167,15 @@ class AdminService {
   static Future<bool> approveListing(int listingId) async {
     try {
       final headers = await _getHeaders();
-      print('🔄 Approving listing ID: $listingId');
-      print('🔄 Headers: $headers');
 
       final response = await http.put(
         AppConfig.api('admin/listings/$listingId/approve'),
         headers: headers,
       );
 
-      print('🔄 Approval response: ${response.statusCode} - ${response.body}');
       return response.statusCode == 200;
     } catch (e) {
-      print('Error approving listing: $e');
+      // Handle error silently
       return false;
     }
   }
@@ -235,18 +183,15 @@ class AdminService {
   static Future<bool> deleteListing(int listingId) async {
     try {
       final headers = await _getHeaders();
-      print('🗑️ Deleting listing with ID: $listingId');
-      print('🔗 API URL: ${AppConfig.api('admin/listings/$listingId')}');
       
       final response = await http.delete(
         AppConfig.api('admin/listings/$listingId'),
         headers: headers,
       );
 
-      print('🔄 Delete response: ${response.statusCode} - ${response.body}');
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Error deleting listing: $e');
+      // Handle error silently
       return false;
     }
   }
@@ -254,7 +199,6 @@ class AdminService {
   static Future<bool> updateStock(int listingId, int stockQuantity) async {
     try {
       final headers = await _getHeaders();
-      print('🔧 Updating stock for listing $listingId to $stockQuantity');
 
       final response = await http.put(
         AppConfig.api('admin/listings/$listingId/update-stock'),
@@ -262,12 +206,9 @@ class AdminService {
         body: jsonEncode({'stock_quantity': stockQuantity}),
       );
 
-      print(
-        '🔧 Update stock response: ${response.statusCode} - ${response.body}',
-      );
       return response.statusCode == 200;
     } catch (e) {
-      print('Error updating stock: $e');
+      // Handle error silently
       return false;
     }
   }
@@ -276,28 +217,20 @@ class AdminService {
   static Future<List<Listing>> getUserListings() async {
     try {
       final headers = await _getHeaders();
-      print('📋 Getting user listings with headers: $headers');
       final response = await http.get(
         AppConfig.api('user/listings'),
         headers: headers,
       );
-
-      print('📋 User listings response status: ${response.statusCode}');
-      print('📋 User listings response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final listings = (data['listings'] as List)
             .map((listing) => Listing.fromJson(listing))
             .toList();
-        print('📋 Parsed ${listings.length} user listings');
-        for (final listing in listings) {
-          print('📋 Listing: ${listing.title} - Images: ${listing.images?.length ?? 0}');
-        }
         return listings;
       }
     } catch (e) {
-      print('Error getting user listings: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -305,8 +238,6 @@ class AdminService {
   static Future<List<Listing>> getApprovedListings() async {
     try {
       final headers = await _getHeaders();
-      print('📦 Getting approved listings...');
-      print('📦 API URL: ${AppConfig.api('listings')}');
 
       final base = AppConfig.api('listings').toString();
       final url = base.contains('?')
@@ -326,13 +257,9 @@ class AdminService {
         } else {
           return [];
         }
-      } else {
-        print(
-          '❌ Failed to get approved listings: ${response.statusCode} - ${response.body}',
-        );
       }
     } catch (e) {
-      print('❌ Error getting approved listings: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -341,9 +268,6 @@ class AdminService {
   static Future<bool> grantAdminPrivileges(int userId, int departmentId) async {
     try {
       final headers = await _getHeaders();
-      print(
-        '🔑 Granting admin privileges to user $userId for department $departmentId',
-      );
 
       final response = await http.put(
         AppConfig.api('admin/users/$userId/grant-admin'),
@@ -351,16 +275,15 @@ class AdminService {
         body: jsonEncode({'department_id': departmentId}),
       );
 
-      print('Grant admin response: ${response.statusCode} - ${response.body}');
-
-      if (response.statusCode != 200) {
-        print('❌ Failed to grant admin privileges: ${response.statusCode}');
-        print('❌ Response body: ${response.body}');
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('❌ Grant Admin Error - Status: ${response.statusCode}');
+        print('❌ Grant Admin Error - Response: ${response.body}');
+        return false;
       }
-
-      return response.statusCode == 200;
     } catch (e) {
-      print('Error granting admin privileges: $e');
+      print('❌ Grant Admin Exception: $e');
       return false;
     }
   }
@@ -373,12 +296,15 @@ class AdminService {
         headers: headers,
       );
 
-      print(
-        'Grant superadmin response: ${response.statusCode} - ${response.body}',
-      );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('❌ Grant SuperAdmin Error - Status: ${response.statusCode}');
+        print('❌ Grant SuperAdmin Error - Response: ${response.body}');
+        return false;
+      }
     } catch (e) {
-      print('Error granting superadmin privileges: $e');
+      print('❌ Grant SuperAdmin Exception: $e');
       return false;
     }
   }
@@ -391,10 +317,15 @@ class AdminService {
         headers: headers,
       );
 
-      print('Revoke admin response: ${response.statusCode} - ${response.body}');
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('❌ Revoke Admin Error - Status: ${response.statusCode}');
+        print('❌ Revoke Admin Error - Response: ${response.body}');
+        return false;
+      }
     } catch (e) {
-      print('Error revoking admin privileges: $e');
+      print('❌ Revoke Admin Exception: $e');
       return false;
     }
   }
@@ -407,12 +338,15 @@ class AdminService {
         headers: headers,
       );
 
-      print(
-        'Revoke superadmin response: ${response.statusCode} - ${response.body}',
-      );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('❌ Revoke SuperAdmin Error - Status: ${response.statusCode}');
+        print('❌ Revoke SuperAdmin Error - Response: ${response.body}');
+        return false;
+      }
     } catch (e) {
-      print('Error revoking superadmin privileges: $e');
+      print('❌ Revoke SuperAdmin Exception: $e');
       return false;
     }
   }
@@ -425,26 +359,17 @@ class AdminService {
           .get(AppConfig.api('admin/departments'), headers: headers)
           .timeout(const Duration(seconds: 10));
 
-      print(
-        '🏢 Departments response: ${response.statusCode} - ${response.body}',
-      );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['departments'] != null) {
           final departments = (data['departments'] as List)
               .map((dept) => dept as Map<String, dynamic>)
               .toList();
-          print('✅ Parsed ${departments.length} departments');
           return departments;
         }
-      } else {
-        print(
-          '❌ Failed to get departments: ${response.statusCode} - ${response.body}',
-        );
       }
     } catch (e) {
-      print('❌ Error getting departments: $e');
+      // Handle error silently
     }
     return [];
   }
@@ -562,6 +487,7 @@ class AdminService {
     required int stockQuantity,
     required String status,
     String? imagePath,
+    List<String>? imagePaths,
     String? size,
     int? categoryId,
     int? departmentId,
@@ -593,22 +519,32 @@ class AdminService {
         request.fields['department_id'] = departmentId.toString();
       }
 
-      // Add image file if provided
+      // Add single image file if provided (legacy support)
       if (imagePath != null && imagePath.isNotEmpty) {
         final file = await http.MultipartFile.fromPath('image', imagePath);
         request.files.add(file);
+      }
+      
+      // Add multiple image files if provided
+      if (imagePaths != null && imagePaths.isNotEmpty) {
+        for (int i = 0; i < imagePaths.length; i++) {
+          final path = imagePaths[i];
+          if (path.isNotEmpty) {
+            final file = await http.MultipartFile.fromPath(
+              i == 0 ? 'image' : 'image_$i', 
+              path
+            );
+            request.files.add(file);
+          }
+        }
       }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      print(
-        '📦 Create listing response: ${response.statusCode} - ${response.body}',
-      );
-
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('❌ Error creating listing: $e');
+      // Handle error silently
       return false;
     }
   }
@@ -619,6 +555,7 @@ class AdminService {
     required double price,
     required String status,
     String? imagePath,
+    List<String>? imagePaths,
     int? categoryId,
     int? departmentId,
     required List<Map<String, dynamic>> sizeVariants,
@@ -651,37 +588,48 @@ class AdminService {
       // Add size variants as JSON
       request.fields['size_variants'] = jsonEncode(sizeVariants);
 
-      // Add image file if provided
+      // Add single image file if provided (legacy support)
       if (imagePath != null && imagePath.isNotEmpty) {
         final file = await http.MultipartFile.fromPath('image', imagePath);
         request.files.add(file);
+      }
+      
+      // Add multiple image files if provided
+      if (imagePaths != null && imagePaths.isNotEmpty) {
+        for (int i = 0; i < imagePaths.length; i++) {
+          final path = imagePaths[i];
+          if (path.isNotEmpty) {
+            final file = await http.MultipartFile.fromPath(
+              i == 0 ? 'image' : 'image_$i', 
+              path
+            );
+            request.files.add(file);
+          }
+        }
       }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      print(
-        '📦 Create listing with variants response: ${response.statusCode} - ${response.body}',
-      );
-
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('❌ Error creating listing with variants: $e');
+      // Handle error silently
       return false;
     }
   }
 
   static Future<bool> updateListing(
-    int listingId,
-    {String? title,
+    int listingId, {
+    String? title,
     String? description,
     double? price,
     File? image,
     List<File>? images,
     List<int>? imagesToRemove,
-    bool? removeAllImages,
     String? status,
-    int? stockQuantity, // Add this parameter
+    int? stockQuantity,
+    int? categoryId,
+    int? departmentId,
   }) async {
     try {
       final token = await _getToken();
@@ -689,8 +637,8 @@ class AdminService {
 
       final uri = AppConfig.api('admin/listings/$listingId');
 
-      if (image != null || (images != null && images.isNotEmpty)) {
-        // Handle multipart request for image upload
+      if (image != null || (images != null && images.isNotEmpty) || (imagesToRemove != null && imagesToRemove.isNotEmpty)) {
+        // Handle multipart request for image upload or removal
         final request = http.MultipartRequest('POST', uri)
           ..headers['Authorization'] = 'Bearer $token'
           ..headers['Accept'] = 'application/json'
@@ -703,17 +651,16 @@ class AdminService {
         if (stockQuantity != null) {
           request.fields['stock_quantity'] = stockQuantity.toString();
         }
-        
-        // Handle image removal
-        if (image == null) {
-          request.fields['remove_image'] = 'true';
+        if (categoryId != null) {
+          request.fields['category_id'] = categoryId.toString();
+        }
+        if (departmentId != null) {
+          request.fields['department_id'] = departmentId.toString();
         }
         
-        // Handle multiple image removal
-        if (removeAllImages == true) {
-          request.fields['remove_all_images'] = 'true';
-        }
+
         
+        // Handle specific image removal
         if (imagesToRemove != null && imagesToRemove.isNotEmpty) {
           for (int i = 0; i < imagesToRemove.length; i++) {
             request.fields['images_to_remove[$i]'] = imagesToRemove[i].toString();
@@ -740,7 +687,7 @@ class AdminService {
             final imageStream = http.ByteStream(imageFile.openRead());
             final imageLength = await imageFile.length();
             final multipartFile = http.MultipartFile(
-              i == 0 ? 'image' : 'image_$i',
+              i == 0 && image == null ? 'image' : 'image_$i',
               imageStream,
               imageLength,
               filename: imageFile.path.split('/').last,
@@ -751,9 +698,10 @@ class AdminService {
 
         final response = await request.send();
         final responseBody = await response.stream.bytesToString();
-        print(
-          '🔧 Update listing (multipart) response: ${response.statusCode} - $responseBody',
-        );
+        print('Update listing response: ${response.statusCode} - $responseBody');
+        if (response.statusCode != 200) {
+          throw Exception('Server returned ${response.statusCode}: $responseBody');
+        }
         return response.statusCode == 200;
       } else {
         // Handle JSON request for other fields
@@ -764,6 +712,9 @@ class AdminService {
         if (price != null) body['price'] = price;
         if (status != null) body['status'] = status;
         if (stockQuantity != null) body['stock_quantity'] = stockQuantity;
+        if (categoryId != null) body['category_id'] = categoryId;
+        if (departmentId != null) body['department_id'] = departmentId;
+
 
         final response = await http.put(
           uri,
@@ -771,14 +722,15 @@ class AdminService {
           body: jsonEncode(body),
         );
 
-        print(
-          '🔧 Update listing (json) response: ${response.statusCode} - ${response.body}',
-        );
+        print('Update listing response: ${response.statusCode} - ${response.body}');
+        if (response.statusCode != 200) {
+          throw Exception('Server returned ${response.statusCode}: ${response.body}');
+        }
         return response.statusCode == 200;
       }
     } catch (e) {
       print('Error updating listing: $e');
-      return false;
+      throw Exception('Failed to update listing: $e');
     }
   }
 
@@ -788,8 +740,6 @@ class AdminService {
   ) async {
     try {
       final headers = await _getHeaders();
-      print('🔑 Update size variants headers: $headers');
-      print('📝 Update size variants data: $sizeVariants');
 
       final response = await http.put(
         AppConfig.api('admin/listings/$listingId/size-variants'),
@@ -797,20 +747,9 @@ class AdminService {
         body: jsonEncode({'size_variants': sizeVariants}),
       );
 
-      print(
-        '📦 Update size variants response: ${response.statusCode} - ${response.body}',
-      );
-
-      if (response.statusCode != 200) {
-        print(
-          '❌ Update size variants failed with status: ${response.statusCode}',
-        );
-        print('❌ Response body: ${response.body}');
-      }
-
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Error updating size variants: $e');
+      // Handle error silently
       return false;
     }
   }

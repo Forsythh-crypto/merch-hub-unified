@@ -51,11 +51,12 @@ class AuthStyles {
   static const TextStyle headingStyle = TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.bold,
+    color: Colors.white,
   );
 
   static const TextStyle subheadingStyle = TextStyle(
     fontSize: 16,
-    color: Colors.grey,
+    color: Colors.white,
   );
 
   static const TextStyle buttonTextStyle = TextStyle(

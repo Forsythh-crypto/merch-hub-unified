@@ -12,9 +12,6 @@ class AuthService {
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-      print('Login response status: ${response.statusCode}');
-      print('Login response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['token'] != null && data['user'] != null) {
@@ -25,25 +22,15 @@ class AuthService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', token);
           await prefs.setString('user_data', jsonEncode(userData));
-          print('Token and user data saved successfully');
-
-          // Verify the data was saved
-          final savedToken = prefs.getString('auth_token');
-          final savedUserData = prefs.getString('user_data');
-          print('Saved token: $savedToken');
-          print('Saved user data: $savedUserData');
 
           return true;
         } else {
-          print('Invalid response data - missing token or user data');
           return false;
         }
       } else {
-        print('Login failed with status ${response.statusCode}');
         return false;
       }
     } catch (e) {
-      print('Login error: $e');
       return false;
     }
   }
@@ -54,13 +41,28 @@ class AuthService {
       final userDataStr = prefs.getString('user_data');
       if (userDataStr != null) {
         final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
-        print('👤 Current user: ${userData['name']} (ID: ${userData['id']}, Email: ${userData['email']})');
         return userData;
       }
-      print('👤 No user data found in SharedPreferences');
       return null;
     } catch (e) {
-      print('Error getting current user: $e');
+      return null;
+    }
+  }
+
+  static Future<String?> getCurrentUserRole() async {
+    try {
+      final userData = await getCurrentUser();
+      return userData?['role'];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<int?> getCurrentUserDepartment() async {
+    try {
+      final userData = await getCurrentUser();
+      return userData?['departmentId'];
+    } catch (e) {
       return null;
     }
   }
@@ -70,7 +72,6 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString('auth_token');
     } catch (e) {
-      print('Error getting token: $e');
       return null;
     }
   }
@@ -81,7 +82,7 @@ class AuthService {
       await prefs.remove('auth_token');
       await prefs.remove('user_data');
     } catch (e) {
-      print('Error during logout: $e');
+      // Handle error silently
     }
   }
 }

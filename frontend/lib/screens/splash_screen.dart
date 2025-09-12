@@ -77,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacementNamed(context, '/welcome');
       }
     } catch (e) {
-      print('Error in splash screen: $e');
+      // Silently handle error
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/welcome');
     }
@@ -91,15 +91,29 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // UDD Logo placeholder
+            // UDD Logo
             Container(
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E3A8A),
                 borderRadius: BorderRadius.circular(60),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.school, color: Colors.white, size: 60),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(60),
+                child: Image.asset(
+                  'assets/logos/udd_merch.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             const Text(

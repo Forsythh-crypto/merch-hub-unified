@@ -10,8 +10,12 @@ import '../services/admin_service.dart';
 import '../services/notification_service.dart';
 import '../config/app_config.dart';
 import '../widgets/notification_badge.dart';
+import '../services/auth_services.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'admin_orders_screen.dart';
 import 'notifications_screen.dart';
+import 'edit_listing_screen.dart';
 
 class AdminListingsScreen extends StatefulWidget {
   final UserSession userSession;
@@ -24,8 +28,11 @@ class AdminListingsScreen extends StatefulWidget {
 
 class _AdminListingsScreenState extends State<AdminListingsScreen> {
   List<Listing> _listings = [];
-  bool _isLoading = false;
+  List<Category> _categories = [];
+  bool _isLoading = true;
+  String? _error;
   int _selectedIndex = 0;
+  final ImagePicker _picker = ImagePicker();
 
   // Helper function to get abbreviated admin title
   String _getAdminTitle(String? departmentName) {
@@ -57,6 +64,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   void initState() {
     super.initState();
     _loadListings();
+    _loadCategories();
   }
 
   @override
@@ -69,12 +77,21 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
 
     try {
       final listings = await AdminService.getAdminListings();
+      
+      // Filter listings by admin's department for regular admins
+      List<Listing> filteredListings = listings;
+      if (widget.userSession.role == UserRole.admin) {
+        filteredListings = listings.where((listing) => 
+          listing.department?.name == widget.userSession.departmentName
+        ).toList();
+      }
 
-      print('📋 Loaded ${listings.length} listings for admin');
-      for (final listing in listings) {
+      print('📋 Loaded ${filteredListings.length} listings for admin (${widget.userSession.departmentName})');
+      for (final listing in filteredListings) {
         print(
           '📋 Listing: ${listing.title} - Department: ${listing.department?.name} - Status: ${listing.status} - Stock: ${listing.stockQuantity}',
         );
+        
         if (listing.sizeVariants != null && listing.sizeVariants!.isNotEmpty) {
           for (final variant in listing.sizeVariants!) {
             print('📋   Size ${variant.size}: ${variant.stockQuantity}');
@@ -84,13 +101,25 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
 
       if (!mounted) return;
       setState(() {
-        _listings = listings;
+        _listings = filteredListings;
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading listings: $e');
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categoriesData = await AdminService.getAllCategories();
+      final categories = categoriesData.map((c) => Category.fromJson(c)).toList();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      print('❌ Error loading categories: $e');
     }
   }
 
@@ -172,6 +201,16 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         ],
       ),
       body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+                  final result = await Navigator.pushNamed(context, '/admin-add-listing');
+                  if (result == true) {
+                    _loadListings(); // Refresh listings after successful creation
+                  }
+                },
+        backgroundColor: const Color(0xFF1E3A8A),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -326,7 +365,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
             Row(
               children: [
                 if (listing.status == 'pending' &&
-                    widget.userSession.role == 'superadmin')
+                    widget.userSession.role == UserRole.superAdmin)
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _approveListing(listing),
@@ -339,7 +378,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                     ),
                   ),
                 if (listing.status == 'pending' &&
-                    widget.userSession.role == 'superadmin')
+                    widget.userSession.role == UserRole.superAdmin)
                   const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
@@ -381,12 +420,40 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     }
   }
 
-  Future<void> _editListing(Listing listing) async {
+  void _editListing(Listing listing) {
+    // Check if admin can edit this listing (same department)
+    final userRole = widget.userSession.role;
+    final userDepartmentName = widget.userSession.departmentName;
+    
+    print('🔍 Edit Debug - User Role: $userRole');
+    print('🔍 Edit Debug - User Department: "$userDepartmentName"');
+    print('🔍 Edit Debug - Listing Department: "${listing.department?.name}"');
+    print('🔍 Edit Debug - Are they equal? ${listing.department?.name == userDepartmentName}');
+    
+    if (userRole != UserRole.superAdmin && listing.department?.name != userDepartmentName) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You can only edit listings from your own department. User: "$userDepartmentName", Listing: "${listing.department?.name}"'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditListingScreen(
           listing: listing,
+          userSession: {
+            'userId': widget.userSession.userId,
+            'name': widget.userSession.name,
+            'email': widget.userSession.email,
+            'role': widget.userSession.role.toString().split('.').last,
+            'departmentId': widget.userSession.departmentId,
+            'departmentName': widget.userSession.departmentName,
+          },
+          categories: _categories,
           onListingUpdated: _loadListings,
         ),
       ),
@@ -394,6 +461,17 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   }
 
   Future<void> _approveListing(Listing listing) async {
+    // Only superadmins can approve listings
+    if (widget.userSession.role != UserRole.superAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only superadmins can approve listings'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
     try {
       await AdminService.approveListing(listing.id);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -453,435 +531,6 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
       }
     }
   }
-}
 
-class EditListingScreen extends StatefulWidget {
-  final Listing listing;
-  final VoidCallback onListingUpdated;
-
-  const EditListingScreen({
-    super.key,
-    required this.listing,
-    required this.onListingUpdated,
-  });
-
-  @override
-  State<EditListingScreen> createState() => _EditListingScreenState();
-}
-
-class _EditListingScreenState extends State<EditListingScreen> {
-  late TextEditingController _titleController;
-  late TextEditingController _descriptionController;
-  late TextEditingController _priceController;
-  late TextEditingController _stockController;
-  
-  List<File> selectedImages = [];
-  List<int> imagesToRemove = [];
-  bool removeAllImages = false;
-  
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.listing.title);
-    _descriptionController = TextEditingController(text: widget.listing.description);
-    _priceController = TextEditingController(text: widget.listing.price.toString());
-    _stockController = TextEditingController(text: widget.listing.stockQuantity.toString());
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    _stockController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Listing'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _priceController,
-                          decoration: const InputDecoration(
-                            labelText: 'Price (₱)',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextField(
-                          controller: _stockController,
-                          decoration: const InputDecoration(
-                            labelText: 'Stock Quantity',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Product Images:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildImageSection(),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _updateListing,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('Update Listing'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildImageSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Display existing images
-        if (widget.listing.images != null && widget.listing.images!.isNotEmpty && !removeAllImages)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Current Images:', style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 120,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: widget.listing.images!.length,
-                  itemBuilder: (context, index) {
-                    final image = widget.listing.images![index];
-                    final isMarkedForRemoval = imagesToRemove.contains(image.id);
-                    return Container(
-                      width: 120,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isMarkedForRemoval ? Colors.red : Colors.grey,
-                          width: isMarkedForRemoval ? 2 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              AppConfig.fileUrl(image.imagePath),
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(
-                                  child: Icon(Icons.error, color: Colors.red),
-                                );
-                              },
-                            ),
-                          ),
-                          if (isMarkedForRemoval)
-                            Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Center(
-                                child: Icon(Icons.delete, color: Colors.white, size: 32),
-                              ),
-                            ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (isMarkedForRemoval) {
-                                    imagesToRemove.remove(image.id);
-                                  } else {
-                                    imagesToRemove.add(image.id);
-                                  }
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: isMarkedForRemoval ? Colors.green : Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  isMarkedForRemoval ? Icons.undo : Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        
-        // Display new selected images
-        if (selectedImages.isNotEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('New Images:', style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 120,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: selectedImages.length,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      width: 120,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.green, width: 2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              selectedImages[index],
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedImages.removeAt(index);
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        
-        // No images placeholder
-        if ((widget.listing.images == null || widget.listing.images!.isEmpty || removeAllImages) && selectedImages.isEmpty)
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.image, size: 40, color: Colors.grey),
-                  Text('No images', style: TextStyle(color: Colors.grey)),
-                ],
-              ),
-            ),
-          ),
-        
-        const SizedBox(height: 16),
-        
-        // Image action buttons
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    final ImagePicker picker = ImagePicker();
-                    final List<XFile> images = await picker.pickMultiImage(
-                      maxWidth: 1024,
-                      maxHeight: 1024,
-                      imageQuality: 85,
-                    );
-                    if (images.isNotEmpty) {
-                      setState(() {
-                        selectedImages.addAll(images.map((img) => File(img.path)));
-                      });
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error picking images: $e')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Gallery'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    final ImagePicker picker = ImagePicker();
-                    final XFile? image = await picker.pickImage(
-                      source: ImageSource.camera,
-                      maxWidth: 1024,
-                      maxHeight: 1024,
-                      imageQuality: 85,
-                    );
-                    if (image != null) {
-                      setState(() {
-                        selectedImages.add(File(image.path));
-                      });
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error taking photo: $e')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.camera_alt),
-                label: const Text('Camera'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    selectedImages.clear();
-                    removeAllImages = true;
-                    imagesToRemove.clear();
-                  });
-                },
-                icon: const Icon(Icons.delete_sweep),
-                label: const Text('Remove All'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Future<void> _updateListing() async {
-    if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await AdminService.updateListing(
-        widget.listing.id,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        price: double.tryParse(_priceController.text) ?? widget.listing.price,
-        stockQuantity: int.tryParse(_stockController.text) ?? widget.listing.stockQuantity,
-        images: selectedImages,
-        imagesToRemove: imagesToRemove,
-        removeAllImages: removeAllImages,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Listing updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      widget.onListingUpdated();
-      Navigator.of(context).pop();
-    } catch (e) {
-      print('Error updating listing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update listing: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+  // Removed _showAddListingDialog - now using separate AdminAddListingScreen
 }

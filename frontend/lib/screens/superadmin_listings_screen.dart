@@ -3,6 +3,7 @@ import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../config/app_config.dart';
 import '../models/user_role.dart';
+import 'superadmin_edit_listing_screen.dart';
 
 class SuperAdminListingsScreen extends StatefulWidget {
   final UserSession userSession;
@@ -176,20 +177,33 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
   }
 
   Widget _buildListingCard(Listing listing) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SuperAdminEditListingScreen(
+              listing: listing,
+              userSession: widget.userSession,
+              onListingUpdated: () => _loadListings(),
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Image
           Expanded(
@@ -317,6 +331,7 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
