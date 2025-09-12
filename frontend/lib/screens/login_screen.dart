@@ -139,29 +139,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         children: [
                           Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/logos/udd_merch.png',
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
+                            height: 220,
+                            width: 450,
+                            child: Image.asset(
+                              'assets/logos/uddess_black.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Text(
+                                  'UDD ESSENTIALS',
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                    
+                    // Wrapped text and form with Transform.translate
+                    Transform.translate(
+                      offset: const Offset(0, -20),
+                      child: Column(
+                        children: [
                           const Text(
                             'Welcome Back!',
                             style: AuthStyles.headingStyle,
@@ -171,13 +174,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Sign in to continue',
                             style: AuthStyles.subheadingStyle,
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 48),
+                          const SizedBox(height: 24),
 
-                    // Login Form
-                    Container(
+                          // Login Form
+                          Container(
                       padding: const EdgeInsets.all(24.0),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
@@ -290,6 +290,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                        ],
                       ),
                     ),
 
