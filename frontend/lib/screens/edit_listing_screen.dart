@@ -143,7 +143,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Listing'),
+        title: const Text(
+          'Edit Listing',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -161,8 +164,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
                   TextField(
                     controller: _titleController,
                     enabled: !_isLoading,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
                       labelText: 'Title',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -172,8 +177,12 @@ class _EditListingScreenState extends State<EditListingScreen> {
                     controller: _descriptionController,
                     maxLines: 3,
                     enabled: !_isLoading,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
-                      labelText: 'Description',
+                      labelText: 'Description (Optional)',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
+                      hintText: 'Enter product description (optional)',
+                      hintStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -183,10 +192,13 @@ class _EditListingScreenState extends State<EditListingScreen> {
                     controller: _priceController,
                     keyboardType: TextInputType.number,
                     enabled: !_isLoading,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
                       labelText: 'Price',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                       prefixText: '₱',
+                      prefixStyle: TextStyle(fontFamily: 'Montserrat'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -198,8 +210,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
                         TextField(
                           controller: _stockController,
                           keyboardType: TextInputType.number,
+                          style: const TextStyle(fontFamily: 'Montserrat'),
                           decoration: const InputDecoration(
                             labelText: 'Stock Quantity',
+                            labelStyle: TextStyle(fontFamily: 'Montserrat'),
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -211,13 +225,18 @@ class _EditListingScreenState extends State<EditListingScreen> {
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(
                       labelText: 'Category',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                     ),
+                    style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                     value: _selectedCategoryId,
                     items: _categories
                         .map((cat) => DropdownMenuItem<int>(
                               value: cat.id,
-                              child: Text(cat.name),
+                              child: Text(
+                                cat.name,
+                                style: const TextStyle(fontFamily: 'Montserrat'),
+                              ),
                             ))
                         .toList(),
                     onChanged: (value) {
@@ -294,7 +313,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
                       ),
                       child: const Text(
                         'Update Listing',
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
                     ),
                   ),
@@ -316,7 +338,10 @@ class _EditListingScreenState extends State<EditListingScreen> {
                         SizedBox(height: 16),
                         Text(
                           'Updating listing...',
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Montserrat',
+                          ),
                         ),
                       ],
                     ),
@@ -336,6 +361,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
         fontSize: 18,
         fontWeight: FontWeight.bold,
         color: Colors.black87,
+        fontFamily: 'Montserrat',
       ),
     );
   }
@@ -603,15 +629,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
       return;
     }
     
-    if (_descriptionController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a product description'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // Description is now optional - no validation required
     
     final price = double.tryParse(_priceController.text.trim());
     if (price == null || price <= 0) {

@@ -141,18 +141,18 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Display quantity with size if available
                       Text(
-                        'Quantity: ${order.quantity}',
+                        order.size != null 
+                            ? 'Quantity: ${order.quantity} (Size: ${order.size})'
+                            : order.listing?.size != null
+                                ? 'Quantity: ${order.quantity} (Size: ${order.listing!.size})'
+                                : 'Quantity: ${order.quantity}',
                         style: const TextStyle(fontSize: 14),
                       ),
-                      if (order.listing?.size != null)
+                      if (order.email != null && order.email!.isNotEmpty)
                         Text(
-                          'Size: ${order.listing!.size}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      if (order.size != null)
-                        Text(
-                          'Size: ${order.size}',
+                          'Email: ${order.email}',
                           style: const TextStyle(fontSize: 14),
                         ),
                     ],

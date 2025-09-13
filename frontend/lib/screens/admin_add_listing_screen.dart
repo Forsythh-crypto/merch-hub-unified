@@ -4,7 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import '../services/admin_service.dart';
 
 class AdminAddListingScreen extends StatefulWidget {
-  const AdminAddListingScreen({super.key});
+  final bool showAppBar;
+  final VoidCallback? onListingCreated;
+  
+  const AdminAddListingScreen({super.key, this.showAppBar = true, this.onListingCreated});
 
   @override
   State<AdminAddListingScreen> createState() => _AdminAddListingScreenState();
@@ -94,7 +97,6 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
   Future<void> _createListing() async {
     // Basic validation
     if (_titleController.text.trim().isEmpty ||
-        _descriptionController.text.trim().isEmpty ||
         _priceController.text.trim().isEmpty ||
         _selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -202,7 +204,24 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate success
+          
+          // Clear form fields
+          _titleController.clear();
+          _descriptionController.clear();
+          _priceController.clear();
+          _stockController.clear();
+          setState(() {
+            _selectedCategoryId = null;
+            _selectedImages.clear();
+            _sizeQtyControllers.forEach((key, controller) => controller.text = '0');
+          });
+          
+          // Notify parent if callback is provided
+          if (widget.onListingCreated != null) {
+            widget.onListingCreated!();
+          } else {
+            Navigator.pop(context, true); // Return true to indicate success
+          }
         }
       } else {
         if (mounted) {
@@ -235,11 +254,14 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add New Listing'),
+      appBar: widget.showAppBar ? AppBar(
+        title: const Text(
+          'Add New Listing',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
         backgroundColor: const Color(0xFF2E3192),
         foregroundColor: Colors.white,
-      ),
+      ) : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -249,41 +271,54 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                 children: [
                   TextField(
                     controller: _titleController,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
                       labelText: 'Product Title',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _descriptionController,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
-                      labelText: 'Description',
+                      labelText: 'Description (Optional)',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
+                      hintText: 'Enter product description (optional)',
                     ),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _priceController,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
                       labelText: 'Price',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                       prefixText: '₱',
+                      prefixStyle: TextStyle(fontFamily: 'Montserrat'),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
                     value: _selectedCategoryId,
+                    style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                     decoration: const InputDecoration(
                       labelText: 'Category',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                     ),
                     items: _categories.map((category) {
                       return DropdownMenuItem<int>(
                         value: category['id'],
-                        child: Text(category['name']),
+                        child: Text(
+                          category['name'],
+                          style: const TextStyle(fontFamily: 'Montserrat'),
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -299,9 +334,9 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                     const Text(
                       'Size & Stock Management',
                       style: TextStyle(
-                        fontFamily: 'Montserrat',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Montserrat',
                         color: Colors.black87,
                       ),
                     ),
@@ -317,7 +352,11 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                         children: [
                           const Text(
                             'Stock per Size (Optional - Leave 0 for preorders):',
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              fontFamily: 'Montserrat',
+                            ),
                           ),
                           const SizedBox(height: 16),
                           GridView.builder(
@@ -379,9 +418,12 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                   ] else ...[
                     TextField(
                       controller: _stockController,
+                      style: const TextStyle(fontFamily: 'Montserrat'),
                       decoration: const InputDecoration(
                         labelText: 'Stock Quantity (Optional - Leave empty for preorders)',
+                        labelStyle: TextStyle(fontFamily: 'Montserrat'),
                         hintText: 'Enter stock quantity or leave empty for preorders',
+                        hintStyle: TextStyle(fontFamily: 'Montserrat'),
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
@@ -392,7 +434,10 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                   ElevatedButton.icon(
                     onPressed: _pickImages,
                     icon: const Icon(Icons.image),
-                    label: Text('Select Images (${_selectedImages.length})'),
+                    label: Text(
+                      'Select Images (${_selectedImages.length})',
+                      style: const TextStyle(fontFamily: 'Montserrat'),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey.shade200,
                       foregroundColor: Colors.black87,
@@ -403,7 +448,10 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                     const SizedBox(height: 16),
                     const Text(
                       'Selected Images:',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Montserrat',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
@@ -444,7 +492,11 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
                       ),
                       child: const Text(
                         'Create Listing',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
                     ),
                   ),

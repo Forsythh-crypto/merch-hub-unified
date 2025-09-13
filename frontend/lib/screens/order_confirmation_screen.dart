@@ -41,6 +41,24 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       // Set first size as default (allow pre-orders for sizes with no stock)
       final firstVariant = widget.listing.sizeVariants!.first;
       _selectedSize = firstVariant.size;
+    } else {
+      // Check if it's a clothing item without size variants
+      final isClothing = widget.listing.category?.name.toLowerCase().contains('clothing') ?? false;
+      if (isClothing) {
+        // Create virtual size variants by distributing total stock
+        final totalStock = widget.listing.stockQuantity;
+        final sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+        final stockPerSize = totalStock > 0 ? (totalStock / sizes.length).floor() : 0;
+        final remainder = totalStock > 0 ? totalStock % sizes.length : 0;
+        
+        for (int i = 0; i < sizes.length; i++) {
+          final stock = stockPerSize + (i < remainder ? 1 : 0);
+          _sizeQuantities[sizes[i]] = stock;
+        }
+        
+        // Set first size as default
+        _selectedSize = sizes.first;
+      }
     }
   }
 
@@ -319,8 +337,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                       ),
                       const SizedBox(height: 8),
-                      if (widget.listing.sizeVariants != null &&
-                          widget.listing.sizeVariants!.isNotEmpty) ...[
+                      if ((widget.listing.sizeVariants != null &&
+                          widget.listing.sizeVariants!.isNotEmpty) ||
+                          _sizeQuantities.isNotEmpty) ...[
                         Text(
                           'Available Sizes:',
                           style: Theme.of(context).textTheme.bodyMedium
@@ -329,30 +348,56 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 8,
-                          children: widget.listing.sizeVariants!.map((variant) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: variant.stockQuantity > 0
-                                    ? Colors.green[100]
-                                    : Colors.orange[100],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${variant.size}: ${variant.stockQuantity}',
-                                style: TextStyle(
-                                  color: variant.stockQuantity > 0
-                                      ? Colors.green[800]
-                                      : Colors.orange[800],
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                          children: widget.listing.sizeVariants != null &&
+                                  widget.listing.sizeVariants!.isNotEmpty
+                              ? widget.listing.sizeVariants!.map((variant) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: variant.stockQuantity > 0
+                                          ? Colors.green[100]
+                                          : Colors.orange[100],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '${variant.size}: ${variant.stockQuantity}',
+                                      style: TextStyle(
+                                        color: variant.stockQuantity > 0
+                                            ? Colors.green[800]
+                                            : Colors.orange[800],
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }).toList()
+                              : _sizeQuantities.entries.map((entry) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: entry.value > 0
+                                          ? Colors.green[100]
+                                          : Colors.orange[100],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '${entry.key}: ${entry.value}',
+                                      style: TextStyle(
+                                        color: entry.value > 0
+                                            ? Colors.green[800]
+                                            : Colors.orange[800],
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                         ),
                       ] else ...[
                         Text(
@@ -391,8 +436,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       const SizedBox(height: 16),
 
                       // Size Selection (for clothing items)
-                      if (widget.listing.sizeVariants != null &&
-                          widget.listing.sizeVariants!.isNotEmpty) ...[
+                      if ((widget.listing.sizeVariants != null &&
+                          widget.listing.sizeVariants!.isNotEmpty) ||
+                          _sizeQuantities.isNotEmpty) ...[
                         Text(
                           'Select Size:',
                           style: Theme.of(context).textTheme.titleMedium
@@ -402,56 +448,110 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: widget.listing.sizeVariants!.map((variant) {
-                            final isSelected = _selectedSize == variant.size;
-                            final isAvailable = variant.stockQuantity > 0;
+                          children: widget.listing.sizeVariants != null &&
+                                  widget.listing.sizeVariants!.isNotEmpty
+                              ? widget.listing.sizeVariants!.map((variant) {
+                                  final isSelected = _selectedSize == variant.size;
+                                  final isAvailable = variant.stockQuantity > 0;
 
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedSize = variant.size;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? (isAvailable
-                                            ? const Color(0xFF1E3A8A)
-                                            : const Color(0xFFFF6B35))
-                                      : isAvailable
-                                      ? Colors.grey[200]
-                                      : Colors.orange[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? (isAvailable
-                                              ? const Color(0xFF1E3A8A)
-                                              : const Color(0xFFFF6B35))
-                                        : isAvailable
-                                        ? Colors.grey[300]!
-                                        : Colors.orange[300]!,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${variant.size} (${variant.stockQuantity})',
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : isAvailable
-                                        ? Colors.black
-                                        : Colors.orange[700],
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedSize = variant.size;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? (isAvailable
+                                                  ? const Color(0xFF1E3A8A)
+                                                  : const Color(0xFFFF6B35))
+                                            : isAvailable
+                                            ? Colors.grey[200]
+                                            : Colors.orange[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? (isAvailable
+                                                    ? const Color(0xFF1E3A8A)
+                                                    : const Color(0xFFFF6B35))
+                                              : isAvailable
+                                              ? Colors.grey[300]!
+                                              : Colors.orange[300]!,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${variant.size} (${variant.stockQuantity})',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : isAvailable
+                                              ? Colors.black
+                                              : Colors.orange[700],
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList()
+                              : _sizeQuantities.entries.map((entry) {
+                                  final size = entry.key;
+                                  final quantity = entry.value;
+                                  final isSelected = _selectedSize == size;
+                                  final isAvailable = quantity > 0;
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedSize = size;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? (isAvailable
+                                                  ? const Color(0xFF1E3A8A)
+                                                  : const Color(0xFFFF6B35))
+                                            : isAvailable
+                                            ? Colors.grey[200]
+                                            : Colors.orange[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? (isAvailable
+                                                    ? const Color(0xFF1E3A8A)
+                                                    : const Color(0xFFFF6B35))
+                                              : isAvailable
+                                              ? Colors.grey[300]!
+                                              : Colors.orange[300]!,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '$size ($quantity)',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : isAvailable
+                                              ? Colors.black
+                                              : Colors.orange[700],
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                         ),
                         const SizedBox(height: 16),
                       ],

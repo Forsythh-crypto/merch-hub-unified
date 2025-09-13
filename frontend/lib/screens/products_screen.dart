@@ -19,7 +19,14 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Listing> _listings = [];
+  List<Listing> _filteredListings = [];
   bool _isLoading = true;
+  
+  // Search and filter variables
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedStatusFilter = 'all';
+  String _selectedCategoryFilter = 'all';
   
   // Variables for the add product form
   final titleController = TextEditingController();
@@ -66,6 +73,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     titleController.dispose();
     descriptionController.dispose();
     priceController.dispose();
@@ -86,8 +94,10 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
       final listings = await AdminService.getAllListings();
       setState(() {
         _listings = listings;
+        _filteredListings = listings;
         _isLoading = false;
       });
+      _applyFilters();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -99,6 +109,53 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
         ),
       );
     }
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _filteredListings = _listings.where((listing) {
+        // Search filter
+        bool matchesSearch = _searchQuery.isEmpty ||
+            listing.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            (listing.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+
+        // Status filter
+        bool matchesStatus = _selectedStatusFilter == 'all' ||
+            listing.status.toLowerCase() == _selectedStatusFilter.toLowerCase();
+
+        // Category filter
+        bool matchesCategory = _selectedCategoryFilter == 'all' ||
+            (listing.category?.name?.toLowerCase() == _selectedCategoryFilter.toLowerCase());
+
+        return matchesSearch && matchesStatus && matchesCategory;
+      }).toList();
+    });
+  }
+
+  List<DropdownMenuItem<String>> _buildCategoryFilterItems() {
+    List<DropdownMenuItem<String>> items = [
+      const DropdownMenuItem(value: 'all', child: Text('All Categories')),
+    ];
+
+    // Get unique categories from listings
+    Set<String> uniqueCategories = {};
+    for (var listing in _listings) {
+      if (listing.category?.name != null) {
+        uniqueCategories.add(listing.category!.name!);
+      }
+    }
+
+    // Add category items
+    for (String categoryName in uniqueCategories) {
+      items.add(
+        DropdownMenuItem(
+          value: categoryName.toLowerCase(),
+          child: Text(categoryName),
+        ),
+      );
+    }
+
+    return items;
   }
 
   @override
@@ -132,209 +189,316 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
   Widget _buildManageListingsTab() {
     return RefreshIndicator(
       onRefresh: _loadListings,
-      child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _listings.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inventory, size: 84, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'No products found',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                    ],
+      child: Column(
+        children: [
+          // Search and Filter Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.grey[50],
+            child: Column(
+              children: [
+                // Search Bar
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search products...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: _listings.length,
-                  itemBuilder: (context, index) {
-                    final listing = _listings[index];
-                    return _buildProductCard(listing);
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                    _applyFilters();
                   },
                 ),
+                const SizedBox(height: 12),
+                // Filter Row
+                Row(
+                  children: [
+                    // Status Filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedStatusFilter,
+                        decoration: InputDecoration(
+                          labelText: 'Status',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'all', child: Text('All Status')),
+                          DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                          DropdownMenuItem(value: 'approved', child: Text('Approved')),
+                          DropdownMenuItem(value: 'rejected', child: Text('Rejected')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatusFilter = value!;
+                          });
+                          _applyFilters();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Category Filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCategoryFilter,
+                        decoration: InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: _buildCategoryFilterItems(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategoryFilter = value!;
+                          });
+                          _applyFilters();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Results Section
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredListings.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inventory, size: 84, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(
+                              'No products found',
+                              style: TextStyle(fontSize: 18, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 1,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 1.7,
+                        ),
+                        itemCount: _filteredListings.length,
+                        itemBuilder: (context, index) {
+                          final listing = _filteredListings[index];
+                          return _buildProductCard(listing);
+                        },
+                      ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildProductCard(Listing listing) {
-    // Check if this is a clothing item with size variants
-    bool isClothing = listing.category?.name.toLowerCase() == 'clothing';
-    bool hasSizeVariants = isClothing && listing.sizeVariants != null && listing.sizeVariants!.isNotEmpty;
-    
     return Card(
       elevation: 3,
+      color: Colors.white.withOpacity(0.9),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Product Image
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-              ),
-              child: listing.imagePath != null
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Image.network(
-                        Uri.encodeFull(
-                          '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
-                        ),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(Icons.image_not_supported, size: 50),
-                          );
-                        },
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.image_not_supported, size: 50),
-                    ),
-            ),
-          ),
-          
-          // Product Details
-          Expanded(
-            flex: hasSizeVariants ? 3 : 2, // Increase height for clothing items with size variants
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    listing.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Product Image
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '₱${listing.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Display size variants for clothing items
-                  if (hasSizeVariants) ...[  
-                    const Text(
-                      'Available Sizes:',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Expanded(
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: listing.sizeVariants!.map((variant) {
-                          final isAvailable = variant.stockQuantity > 0;
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                  child: listing.imagePath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            Uri.encodeFull(
+                              '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
                             ),
-                            decoration: BoxDecoration(
-                              color: isAvailable
-                                  ? Colors.green[100]
-                                  : Colors.orange[100],
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: isAvailable
-                                    ? Colors.green[300]!
-                                    : Colors.orange[300]!,
-                              ),
-                            ),
-                            child: Text(
-                              '${variant.size}: ${variant.stockQuantity}',
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: isAvailable
-                                    ? Colors.green[700]
-                                    : Colors.orange[700],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ] else ...[  
-                    // For non-clothing items, show total stock
-                    Text(
-                      'Stock: ${listing.stockQuantity}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(listing.status),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          listing.status.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(Icons.image_not_supported, size: 50),
+                              );
+                            },
                           ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.image_not_supported, size: 50),
+                        ),
+                ),
+                const SizedBox(width: 8),
+                
+                // Product Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                        listing.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                        '₱${listing.price.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Color(0xFF1E3A8A),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 18),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SuperAdminEditListingScreen(
-                                listing: listing,
-                                userSession: widget.userSession,
-                                onListingUpdated: () => _loadListings(),
+                      const SizedBox(height: 8),
+                          
+                          // Department and Category
+                          if (listing.department != null)
+                            Text(
+                              'Department: ${listing.department!.name}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          if (listing.category != null)
+                            Text(
+                              'Category: ${listing.category!.name}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Actions
+                      Row(
+                        children: [
+                          // Delete Button
+                          InkWell(
+                            onTap: () => _showDeleteConfirmation(listing),
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ).then((_) => _loadListings());
-                        },
+                          ),
+                          const SizedBox(width: 10),
+                          
+                          // Edit Button
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SuperAdminEditListingScreen(
+                                    listing: listing,
+                                    userSession: widget.userSession,
+                                    onListingUpdated: () => _loadListings(),
+                                  ),
+                                ),
+                              ).then((_) => _loadListings());
+                            },
+                            icon: const Icon(Icons.edit, size: 14),
+                            label: const Text(
+                              'Edit',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A8A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Status badge in upper right corner
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 3,
+              ),
+              decoration: BoxDecoration(
+                color: _getStatusColor(listing.status),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                listing.status.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -353,6 +517,54 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  void _showDeleteConfirmation(Listing listing) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Product'),
+          content: Text('Are you sure you want to delete "${listing.title}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteListing(listing.id);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteListing(int listingId) async {
+    try {
+      await AdminService.deleteListing(listingId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Product deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadListings(); // Refresh the list
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting product: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -592,7 +804,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setInnerState) {
         return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -600,13 +812,13 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
             'Add New Product',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           
           // Product Images
           const Text('Product Images', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
-            height: 120,
+            height: 110,
             decoration: BoxDecoration(
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(12),
@@ -616,30 +828,34 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.image, size: 40, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        const Text('No images selected'),
-                        const SizedBox(height: 8),
+                        const Icon(Icons.image, size: 32, color: Colors.grey),
+                        const SizedBox(height: 6),
+                        const Text('No images selected', style: TextStyle(fontSize: 12)),
+                        const SizedBox(height: 6),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ElevatedButton.icon(
                               onPressed: () => _pickMultipleImages(setInnerState),
-                              icon: const Icon(Icons.photo_library),
-                              label: const Text('Multiple'),
+                              icon: const Icon(Icons.photo_library, size: 16),
+                              label: const Text('Multiple', style: TextStyle(fontSize: 11)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1E3A8A),
                                 foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: const Size(0, 28),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             ElevatedButton.icon(
                               onPressed: () => _pickImage(ImageSource.camera, setInnerState),
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text('Camera'),
+                              icon: const Icon(Icons.camera_alt, size: 16),
+                              label: const Text('Camera', style: TextStyle(fontSize: 11)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1E3A8A),
                                 foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: const Size(0, 28),
                               ),
                             ),
                           ],
@@ -716,7 +932,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                     },
                   ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Product Details Form
           TextField(
@@ -729,7 +945,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
               border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           TextField(
             controller: descriptionController,
                   onChanged: (value) {
@@ -741,7 +957,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
               border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -776,62 +992,62 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Category and Department Dropdowns
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(),
-                  ),
-                  value: selectedCategoryId,
-                  items: categories.map((category) {
-                    return DropdownMenuItem<int>(
-                      value: category['id'],
-                      child: Text(category['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setInnerState(() {
-                      selectedCategoryId = value;
-                      // Update size variants visibility based on category
-                      _shouldShowSizeVariants = isClothing;
-                      if (!_shouldShowSizeVariants) {
-                        for (var controller in _sizeQtyControllers.values) {
-                          controller.text = '0';
-                        }
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
+                value: selectedCategoryId,
+                items: categories.map((category) {
+                  return DropdownMenuItem<int>(
+                    value: category['id'],
+                    child: Text(category['name']),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setInnerState(() {
+                    selectedCategoryId = value;
+                    // Update size variants visibility based on category
+                    _shouldShowSizeVariants = isClothing;
+                    if (!_shouldShowSizeVariants) {
+                      for (var controller in _sizeQtyControllers.values) {
+                        controller.text = '0';
                       }
-                    });
-                  },
-                ),
+                    }
+                  });
+                },
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(
-                    labelText: 'Department',
-                    border: OutlineInputBorder(),
-                  ),
-                  value: selectedDepartmentId,
-                  items: departments.map((department) {
-                    return DropdownMenuItem<int>(
-                      value: department['id'],
-                      child: Text(department['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setInnerState(() {
-                      selectedDepartmentId = value;
-                    });
-                  },
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(
+                  labelText: 'Department',
+                  border: OutlineInputBorder(),
                 ),
+                value: selectedDepartmentId,
+                isExpanded: true,
+                items: departments.map((department) {
+                  return DropdownMenuItem<int>(
+                    value: department['id'],
+                    child: Text(
+                      department['name'],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setInnerState(() {
+                    selectedDepartmentId = value;
+                  });
+                },
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Size Variants Section (only for clothing)
           if (isClothing && _shouldShowSizeVariants) ...[
@@ -839,7 +1055,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
               'Size Variants',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -951,7 +1167,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
           
           // Status Dropdown
@@ -972,7 +1188,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
               });
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           
           // Submit Button
           SizedBox(

@@ -36,7 +36,9 @@
                 <p><strong>Department:</strong> {{ $department->name }}</p>
                 <p><strong>Quantity:</strong> {{ $order->quantity }}</p>
                 <p><strong>Price per item:</strong> ₱{{ number_format($listing->price, 2) }}</p>
-                <p class="total"><strong>Total Amount:</strong> ₱{{ number_format($order->total_amount, 2) }}</p>
+                <p><strong>Total Amount:</strong> ₱{{ number_format($order->total_amount, 2) }}</p>
+                <p><strong>Reservation Fee (35%):</strong> ₱{{ number_format($order->total_amount * 0.35, 2) }}</p>
+                <p class="total"><strong>Remaining Balance:</strong> ₱{{ number_format($order->total_amount * 0.65, 2) }}</p>
                 
                 @if($order->notes)
                 <p><strong>Notes:</strong> {{ $order->notes }}</p>
@@ -44,7 +46,9 @@
             </div>
             
             <h3>Payment Information</h3>
+            <p><strong>Reservation Fee:</strong> ₱{{ number_format($order->total_amount * 0.35, 2) }} (35% - Already Paid)</p>
             <p><strong>Payment Method:</strong> Cash on Pickup</p>
+            <p><strong>Amount to Pay on Pickup:</strong> ₱{{ number_format($order->total_amount * 0.65, 2) }} (65% remaining balance)</p>
             <p>Please bring the exact amount when picking up your order.</p>
             
             <h3>What's Next?</h3>

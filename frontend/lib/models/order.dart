@@ -18,6 +18,7 @@ class Order {
   final String? notes;
   final String paymentMethod;
   final bool emailSent;
+  final String? email;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -43,6 +44,7 @@ class Order {
     this.notes,
     required this.paymentMethod,
     required this.emailSent,
+    this.email,
     required this.createdAt,
     required this.updatedAt,
     this.listing,
@@ -72,6 +74,7 @@ class Order {
       notes: json['notes'],
       paymentMethod: json['payment_method'],
       emailSent: json['email_sent'] ?? false,
+      email: json['email'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       listing: json['listing'] != null
@@ -102,6 +105,7 @@ class Order {
       'notes': notes,
       'payment_method': paymentMethod,
       'email_sent': emailSent,
+      'email': email,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

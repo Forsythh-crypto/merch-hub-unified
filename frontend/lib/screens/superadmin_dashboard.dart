@@ -29,6 +29,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   List<Listing> _listings = [];
   bool _isLoading = false;
   int _selectedIndex = 0;
+  final GlobalKey _notificationBadgeKey = GlobalKey();
 
   // Department logo mapping
   String? _getDepartmentLogo(String departmentName) {
@@ -138,6 +139,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           NotificationBadge(
+            key: _notificationBadgeKey,
             onTap: () async {
               await Navigator.push(
                 context,
@@ -146,7 +148,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 ),
               );
               // Refresh notification count when returning
-              setState(() {});
+              (_notificationBadgeKey.currentState as dynamic)?.refreshCount();
             },
             child: const Icon(Icons.notifications),
           ),
@@ -821,17 +823,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                  crossAxisCount: 1,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 0.42,
+                  childAspectRatio: 2.5,
                 ),
                 itemCount: _listings.length,
                 itemBuilder: (context, index) {
                   final listing = _listings[index];
                   return Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -840,130 +842,191 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Expanded(
-                          flex: 2,
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(12),
-                                topRight: Radius.circular(12),
-                              ),
+                        // Product Image
+                        Container(
+                          width: 120,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12),
                             ),
-                            child: listing.imagePath != null
-                                ? ClipRRect(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(12),
-                                      topRight: Radius.circular(12),
-                                    ),
-                                    child: Image.network(
-                                      Uri.encodeFull(
-                                        '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
-                                      ),
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return const Icon(
-                                              Icons.image,
-                                              size: 50,
-                                              color: Colors.grey,
-                                            );
-                                          },
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.image,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
                           ),
+                          child: listing.imagePath != null
+                              ? ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(12),
+                                    bottomLeft: Radius.circular(12),
+                                  ),
+                                  child: Image.network(
+                                    Uri.encodeFull(
+                                      '${AppConfig.fileUrl(listing.imagePath)}?t=${listing.updatedAt.millisecondsSinceEpoch}',
+                                    ),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.image,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      );
+                                    },
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.image,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
                         ),
+                        // Product Details
                         Expanded(
-                          flex: 1,
                           child: Padding(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  listing.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '₱${_formatPrice(listing.price)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E3A8A),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(listing.status),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        listing.status == 'pending'
-                                            ? 'PENDING'
-                                            : listing.status.toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 7,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const Spacer(),
                                     Row(
                                       children: [
-                                        GestureDetector(
-                                          onTap: () =>
-                                              _showDeleteConfirmationDialog(
-                                                listing,
-                                              ),
-                                          child: Icon(
-                                            Icons.delete,
-                                            size: 18,
-                                            color: Colors.red[600],
+                                        Expanded(
+                                          child: Text(
+                                            listing.title,
+                                            style: const TextStyle(
+                                              fontFamily: 'Montserrat',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () => Navigator.push(
-                                             context,
-                                             MaterialPageRoute(
-                                               builder: (context) =>
-                                                   SuperAdminEditListingScreen(
-                                                 listing: listing,
-                                                 userSession: widget.userSession,
-                                                 onListingUpdated: () => _loadData(),
-                                               ),
-                                             ),
-                                           ),
-                                          child: Icon(
-                                            Icons.edit,
-                                            size: 18,
-                                            color: Colors.grey[600],
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _getStatusColor(listing.status),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            listing.status.toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '${listing.department} • ${listing.category}',
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '₱${_formatPrice(listing.price)}',
+                                      style: const TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E3A8A),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // Action Buttons
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.red,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(12),
+                                          onTap: () => _showDeleteConfirmationDialog(listing),
+                                          child: const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 12,
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.delete,
+                                                  size: 18,
+                                                  color: Colors.red,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  'Delete',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => SuperAdminEditListingScreen(
+                                            listing: listing,
+                                            userSession: widget.userSession,
+                                            onListingUpdated: () => _loadData(),
+                                          ),
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Edit',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF1E3A8A),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -3641,82 +3704,187 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               ],
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
-            selected: _selectedIndex == 0,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 0;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 0 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.dashboard,
+                color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Dashboard',
+                style: TextStyle(
+                  color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 0 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 0;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.shopping_cart),
-            title: const Text('Orders'),
-            selected: _selectedIndex == 1,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 1;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 1 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.shopping_cart,
+                color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Orders',
+                style: TextStyle(
+                  color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 1;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: const Text('Users'),
-            selected: _selectedIndex == 2,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 2;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 2 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.people,
+                color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Users',
+                style: TextStyle(
+                  color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 2 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 2;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.school),
-            title: const Text('Departments'),
-            selected: _selectedIndex == 3,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 3;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 3 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.school,
+                color: _selectedIndex == 3 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Departments',
+                style: TextStyle(
+                  color: _selectedIndex == 3 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 3 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 3;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.inventory),
-            title: const Text('Products'),
-            selected: _selectedIndex == 4,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 4;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 4 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.inventory,
+                color: _selectedIndex == 4 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Products',
+                style: TextStyle(
+                  color: _selectedIndex == 4 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 4 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 4;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Analytics'),
-            selected: _selectedIndex == 5,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 5;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 5 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.analytics,
+                color: _selectedIndex == 5 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Analytics',
+                style: TextStyle(
+                  color: _selectedIndex == 5 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 5 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 5;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            selected: _selectedIndex == 6,
-            onTap: () {
-              setState(() {
-                _selectedIndex = 6;
-              });
-              Navigator.pop(context);
-            },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 6 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.settings,
+                color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Settings',
+                style: TextStyle(
+                  color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 6 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 6;
+                });
+                Navigator.pop(context);
+              },
+            ),
           ),
           const Divider(),
           ListTile(

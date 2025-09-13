@@ -137,7 +137,30 @@ class NotificationController extends Controller
         try {
             $user = $request->user();
             
-            $deleted = Notification::where('user_id', $user->id)->delete();
+            // Build the same query as getUserNotifications to delete all visible notifications
+            $query = Notification::query();
+
+            if ($user->isSuperAdmin()) {
+                // Superadmins see all notifications
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhere('user_role', \App\Models\User::ROLE_SUPERADMIN);
+                });
+            } elseif ($user->isAdmin()) {
+                // Admins see their personal notifications and department notifications
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhere(function ($q2) use ($user) {
+                          $q2->where('user_role', \App\Models\User::ROLE_ADMIN)
+                             ->where('department_id', $user->department_id);
+                      });
+                });
+            } else {
+                // Students only see their personal notifications
+                $query->where('user_id', $user->id);
+            }
+            
+            $deleted = $query->delete();
 
             return response()->json([
                 'message' => 'All notifications cleared',

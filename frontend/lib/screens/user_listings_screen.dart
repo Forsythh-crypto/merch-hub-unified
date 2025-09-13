@@ -477,13 +477,90 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     );
   }
 
+  Widget _buildStockDisplay(Listing listing) {
+    // Check if it's a clothing item
+    final isClothing = listing.category?.name.toLowerCase().contains('clothing') ?? false;
+    
+    if (isClothing && listing.sizeVariants != null && listing.sizeVariants!.isNotEmpty) {
+      // Show stock per size for clothing with size variants
+      return Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        children: listing.sizeVariants!.map((variant) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: variant.stockQuantity > 0 ? Colors.green[100] : Colors.orange[100],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '${variant.size}:${variant.stockQuantity}',
+              style: TextStyle(
+                color: variant.stockQuantity > 0 ? Colors.green[700] : Colors.orange[700],
+                fontSize: 8,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    } else if (isClothing) {
+      // Show distributed stock for clothing without size variants
+      final totalStock = listing.stockQuantity;
+      final sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+      final stockPerSize = totalStock > 0 ? (totalStock / sizes.length).floor() : 0;
+      final remainder = totalStock > 0 ? totalStock % sizes.length : 0;
+      
+      return Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        children: sizes.asMap().entries.map((entry) {
+          final index = entry.key;
+          final size = entry.value;
+          final stock = stockPerSize + (index < remainder ? 1 : 0);
+          
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: stock > 0 ? Colors.green[100] : Colors.orange[100],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '$size:$stock',
+              style: TextStyle(
+                color: stock > 0 ? Colors.green[700] : Colors.orange[700],
+                fontSize: 8,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    } else {
+      // Show total stock for non-clothing items
+      return Text(
+        'Stock: ${listing.stockQuantity}',
+        style: TextStyle(
+          color: listing.stockQuantity > 0 ? Colors.green[700] : Colors.red[700],
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          fontFamily: 'Montserrat',
+        ),
+      );
+    }
+  }
+
   Widget _buildProductCard(Listing listing) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(listing: listing),
+            builder: (context) => OrderConfirmationScreen(
+              listing: listing,
+            ),
           ),
         );
       },
@@ -572,6 +649,9 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                         fontFamily: 'Montserrat',
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    // Stock display - show per size for clothing items
+                    _buildStockDisplay(listing),
                     const Spacer(),
                     Row(
                       children: [
@@ -738,7 +818,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       fontFamily: 'Montserrat',
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   
                   // Quantity Selector
                   const Text(
@@ -746,66 +826,59 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'Montserrat',
+                      color: Color(0xFF1E3A8A),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
+                      IconButton(
+                        onPressed: _quantity > 1 ? () {
+                          setState(() {
+                            _quantity--;
+                          });
+                        } : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: const Color(0xFF1E3A8A),
+                      ),
                       Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: _quantity > 1
-                                  ? () {
-                                      setState(() {
-                                        _quantity--;
-                                      });
-                                    }
-                                  : null,
-                              icon: const Icon(Icons.remove),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                _quantity.toString(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Montserrat',
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _quantity++;
-                                });
-                              },
-                              icon: const Icon(Icons.add),
-                            ),
-                          ],
+                        child: Text(
+                          _quantity.toString(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _quantity++;
+                          });
+                        },
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: const Color(0xFF1E3A8A),
+                      ),
+                      const Spacer(),
                       Text(
                         'Total: ₱${(widget.listing.price * _quantity).toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E3A8A),
-                          fontFamily: 'Montserrat',
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 24),
                   const SizedBox(height: 100), // Space for bottom button
                 ],
               ),
@@ -827,12 +900,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         child: ElevatedButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OrderConfirmationScreen(
-                  listing: widget.listing,
-                ),
+            // Handle order logic here
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Added ${_quantity}x ${widget.listing.title} to cart'),
+                backgroundColor: Colors.green,
               ),
             );
           },

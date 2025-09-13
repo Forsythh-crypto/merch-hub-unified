@@ -35,7 +35,9 @@
                 <p><strong>Product:</strong> {{ $listing->title }}</p>
                 <p><strong>Department:</strong> {{ $department->name }}</p>
                 <p><strong>Quantity:</strong> {{ $order->quantity }}</p>
-                <p class="total"><strong>Total Amount:</strong> ₱{{ number_format($order->total_amount, 2) }}</p>
+                <p><strong>Original Amount:</strong> ₱{{ number_format($order->total_amount, 2) }}</p>
+                <p><strong>Reservation Fee (35%):</strong> ₱{{ number_format($order->total_amount * 0.35, 2) }}</p>
+                <p class="total"><strong>Remaining Balance:</strong> ₱{{ number_format($order->total_amount * 0.65, 2) }}</p>
                 
                 @if($order->pickup_date)
                 <p><strong>Pickup Date:</strong> {{ \Carbon\Carbon::parse($order->pickup_date)->format('F j, Y g:i A') }}</p>
@@ -47,7 +49,8 @@
                 <p><strong>Location:</strong> {{ $department->name }} Office</p>
                 <p><strong>Payment Method:</strong> Cash on Pickup</p>
                 <p><strong>Required:</strong> Valid ID (Student ID, Driver's License, etc.)</p>
-                <p><strong>Amount to Pay:</strong> ₱{{ number_format($order->total_amount, 2) }}</p>
+                <p><strong>Amount to Pay:</strong> ₱{{ number_format($order->total_amount * 0.65, 2) }}</p>
+                <p><em>Note: 35% reservation fee already paid</em></p>
             </div>
             
             <h3>Important Reminders</h3>

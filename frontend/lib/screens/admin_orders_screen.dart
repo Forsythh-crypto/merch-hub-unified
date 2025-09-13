@@ -157,20 +157,35 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Update Order Status'),
+          title: const Text(
+            'Update Order Status',
+            style: TextStyle(fontFamily: 'Montserrat'),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Order #${order.orderNumber}'),
+              Text(
+                'Order #${order.orderNumber}',
+                style: const TextStyle(fontFamily: 'Montserrat'),
+              ),
               const SizedBox(height: 16),
-              Text('Current Status: ${_getStatusDisplay(currentStatus)}'),
+              Text(
+                'Current Status: ${_getStatusDisplay(currentStatus)}',
+                style: const TextStyle(fontFamily: 'Montserrat'),
+              ),
               const SizedBox(height: 16),
-              Text('Select New Status:'),
+              Text(
+                'Select New Status:',
+                style: const TextStyle(fontFamily: 'Montserrat'),
+              ),
               const SizedBox(height: 8),
               ...statuses
                   .map(
                     (status) => RadioListTile<String>(
-                      title: Text(_getStatusDisplay(status)),
+                      title: Text(
+                        _getStatusDisplay(status),
+                        style: const TextStyle(fontFamily: 'Montserrat'),
+                      ),
                       value: status,
                       groupValue: currentStatus,
                       onChanged: (value) {
@@ -191,7 +206,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontFamily: 'Montserrat'),
+              ),
             ),
           ],
         );
@@ -218,6 +236,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                       Text(
                         order.listing?.title ?? 'Product',
                         style: const TextStyle(
+                          fontFamily: 'Montserrat',
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -228,6 +247,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                       Text(
                         'Order #${order.orderNumber}',
                         style: TextStyle(
+                          fontFamily: 'Montserrat',
                           fontSize: 14,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
@@ -238,6 +258,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                         Text(
                           'Customer: ${order.user!.name} (${order.user!.email})',
                           style: TextStyle(
+                            fontFamily: 'Montserrat',
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
@@ -260,6 +281,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                       child: Text(
                         _getStatusDisplay(order.status),
                         style: const TextStyle(
+                          fontFamily: 'Montserrat',
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -280,7 +302,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                       ),
                       child: const Text(
                         'Update Status',
-                        style: TextStyle(fontSize: 12),
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -296,16 +321,25 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                     children: [
                       Text(
                         'Quantity: ${order.quantity}',
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 14,
+                        ),
                       ),
                       if (order.size != null)
                         Text(
                           'Size: ${order.size}',
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 14,
+                          ),
                         ),
                       Text(
                         'Department: ${order.department?.name ?? 'Unknown'}',
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -314,16 +348,21 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '₱${order.totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        '₱${order.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
                       ),
-                    ),
                     Text(
                       'Ordered: ${_formatDate(order.createdAt)}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
                     ),
                   ],
                 ),
@@ -566,66 +605,180 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
               ],
             )
           : null,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: RefreshIndicator(
+        onRefresh: _loadOrders,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading orders',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  const Text(
+                    'Order Management',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: _loadOrders,
-                    child: const Text('Try Again'),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ],
               ),
-            )
-          : _orders.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
+              const SizedBox(height: 24),
+              
+              // Stats Section
+               if (!_isLoading && _error == null) ...[
+                 Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No orders found',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  child: Column(
+                    children: [
+                      _buildStatCard(
+                        'Total Orders',
+                        _orders.length.toString(),
+                        Icons.shopping_cart,
+                        Colors.blue,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildStatCard(
+                        'Pending',
+                        _orders.where((o) => o.status == 'pending').length.toString(),
+                        Icons.pending_actions,
+                        Colors.orange,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildStatCard(
+                        'Completed',
+                        _orders.where((o) => o.status == 'completed').length.toString(),
+                        Icons.check_circle,
+                        Colors.green,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Orders will appear here when customers place them',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
+                ),
+                 const SizedBox(height: 24),
+               ],
+              
+              // Content Section
+              _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(50),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading orders',
+                            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _error!,
+                            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadOrders,
+                            child: const Text('Try Again'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _orders.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No orders found',
+                            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Orders will appear here when customers place them',
+                            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: _orders.map((order) => _buildOrderCard(order)).toList(),
+                    ),
+            ],
+          ),
+         ),
+       ),
+     ),
+   );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
               ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadOrders,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: _orders.length,
-                itemBuilder: (context, index) {
-                  return _buildOrderCard(_orders[index]);
-                },
-              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
+          ),
+        ],
+      ),
     );
   }
 }

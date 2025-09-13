@@ -22,6 +22,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   List<Listing> _officialMerchListings = [];
   List<Listing> _departmentListings = [];
   bool _isLoading = false;
+  final GlobalKey _notificationBadgeKey = GlobalKey();
 
   final List<Map<String, dynamic>> _departments = [
     {
@@ -611,6 +612,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 1.0),
             child: NotificationBadge(
+              key: _notificationBadgeKey,
               onTap: () async {
                 await Navigator.push(
                   context,
@@ -619,7 +621,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ),
                 );
                 // Refresh notification count when returning
-                setState(() {});
+                (_notificationBadgeKey.currentState as dynamic)?.refreshCount();
               },
               child: const Icon(Icons.notifications, color: Colors.black),
             ),

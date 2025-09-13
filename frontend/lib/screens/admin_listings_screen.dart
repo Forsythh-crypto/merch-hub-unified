@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'admin_orders_screen.dart';
 import 'notifications_screen.dart';
 import 'edit_listing_screen.dart';
+import 'admin_add_listing_screen.dart';
 
 class AdminListingsScreen extends StatefulWidget {
   final UserSession userSession;
@@ -33,6 +34,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   String? _error;
   int _selectedIndex = 0;
   final ImagePicker _picker = ImagePicker();
+  final GlobalKey _notificationBadgeKey = GlobalKey();
 
   // Helper function to get abbreviated admin title
   String _getAdminTitle(String? departmentName) {
@@ -122,44 +124,219 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
       appBar: AppBar(
         title: Text(
           _getAdminTitle(widget.userSession.departmentName),
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,
+          ),
         ),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          NotificationBadge(
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
-              // Refresh notification count when returning
-              setState(() {});
-            },
-            child: const Icon(Icons.notifications),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: NotificationBadge(
+              key: _notificationBadgeKey,
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
+                  ),
+                );
+                // Refresh notification count when returning
+                (_notificationBadgeKey.currentState as dynamic)?.refreshCount();
+              },
+              child: const Icon(Icons.notifications),
+            ),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle),
-            onSelected: (value) async {
-              if (value == 'logout') {
+        ],
+      ),
+      drawer: _buildDrawer(),
+      body: _buildCurrentBody(),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E3A8A),
+            ),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.admin_panel_settings,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _getAdminTitle(widget.userSession.departmentName),
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    widget.userSession.name,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Menu Items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == 0 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.inventory,
+                      color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+                    ),
+                    title: Text(
+                      'Listings',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                        fontWeight: _selectedIndex == 0 ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 0;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == 1 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.add_box,
+                      color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+                    ),
+                    title: Text(
+                      'Add Listing',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                        fontWeight: _selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _selectedIndex = 1;
+                      });
+                    },
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == 2 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.shopping_cart,
+                      color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+                    ),
+                    title: Text(
+                      'Orders',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                        fontWeight: _selectedIndex == 2 ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 2;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Logout
+          const Divider(),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: ListTile(
+              leading: const Icon(
+                Icons.logout,
+                color: Colors.red,
+              ),
+              title: const Text(
+                'Logout',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: Colors.red,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
                 final shouldLogout = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
+                    title: const Text(
+                      'Logout',
+                      style: TextStyle(fontFamily: 'Montserrat'),
+                    ),
+                    content: const Text(
+                      'Are you sure you want to logout?',
+                      style: TextStyle(fontFamily: 'Montserrat'),
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontFamily: 'Montserrat'),
+                        ),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.red,
                         ),
-                        child: const Text('Logout'),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(fontFamily: 'Montserrat'),
+                        ),
                       ),
                     ],
                   ),
@@ -172,71 +349,37 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                     Navigator.of(context).pushReplacementNamed('/');
                   }
                 }
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Logout'),
-                  ],
-                ),
-              ),
-            ],
+              },
+            ),
           ),
-        ],
-      ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-                  final result = await Navigator.pushNamed(context, '/admin-add-listing');
-                  if (result == true) {
-                    _loadListings(); // Refresh listings after successful creation
-                  }
-                },
-        backgroundColor: const Color(0xFF1E3A8A),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AdminOrdersScreen(
-                  userSession: widget.userSession,
-                  showAppBar: false,
-                ),
-              ),
-            ).then((_) {
-              setState(() {
-                _selectedIndex = 0;
-              });
-            });
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory),
-            label: 'Listings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Orders',
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildCurrentBody() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildListingsBody();
+      case 1:
+        return AdminAddListingScreen(
+          showAppBar: false,
+          onListingCreated: () {
+            _loadListings();
+            setState(() {
+              _selectedIndex = 0;
+            });
+          },
+        );
+      case 2:
+        return AdminOrdersScreen(userSession: widget.userSession, showAppBar: false);
+      default:
+        return _buildListingsBody();
+    }
+  }
+
+  Widget _buildListingsBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -250,29 +393,35 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
             SizedBox(height: 16),
             Text(
               'No listings found',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 18,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadListings,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _listings.length,
-        itemBuilder: (context, index) {
-          final listing = _listings[index];
-          return _buildListingCard(listing);
-        },
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _loadListings,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: _listings.length,
+          itemBuilder: (context, index) {
+            final listing = _listings[index];
+            return _buildListingCard(listing);
+          },
+        ),
       ),
     );
   }
 
   Widget _buildListingCard(Listing listing) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -287,6 +436,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       Text(
                         listing.title,
                         style: const TextStyle(
+                          fontFamily: 'Montserrat',
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -295,6 +445,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       Text(
                         '₱${listing.price.toStringAsFixed(2)}',
                         style: const TextStyle(
+                          fontFamily: 'Montserrat',
                           fontSize: 16,
                           color: Colors.green,
                           fontWeight: FontWeight.w600,
@@ -369,7 +520,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _approveListing(listing),
                       icon: const Icon(Icons.check),
-                      label: const Text('Approve'),
+                      label: const Text(
+                        'Approve',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -383,7 +537,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _editListing(listing),
                     icon: const Icon(Icons.edit),
-                    label: const Text('Edit'),
+                    label: const Text(
+                      'Edit',
+                      style: TextStyle(fontFamily: 'Montserrat'),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -391,7 +548,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _deleteListing(listing),
                     icon: const Icon(Icons.delete),
-                    label: const Text('Delete'),
+                    label: const Text(
+                      'Delete',
+                      style: TextStyle(fontFamily: 'Montserrat'),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: const BorderSide(color: Colors.red),
@@ -491,17 +651,29 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Listing'),
-        content: Text('Are you sure you want to delete "${listing.title}"?'),
+        title: const Text(
+          'Delete Listing',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${listing.title}"?',
+          style: const TextStyle(fontFamily: 'Montserrat'),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontFamily: 'Montserrat'),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontFamily: 'Montserrat'),
+            ),
           ),
         ],
       ),

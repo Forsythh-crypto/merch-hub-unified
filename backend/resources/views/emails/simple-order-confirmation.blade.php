@@ -91,8 +91,10 @@
                 <strong>Price:</strong> ₱{{ number_format($listing->price, 2) }}
             </div>
 
-            <div class="total">
-                Total Amount: ₱{{ number_format($order->total_amount, 2) }}
+            <div style="margin-top: 15px;">
+                <strong>Total Amount:</strong> ₱{{ number_format($order->total_amount, 2) }}<br>
+                <strong>Reservation Fee (35%):</strong> ₱{{ number_format($order->total_amount * 0.35, 2) }}<br>
+                <div class="total">Remaining Balance: ₱{{ number_format($order->total_amount * 0.65, 2) }}</div>
             </div>
 
             <div style="margin-top: 20px;">
@@ -114,7 +116,9 @@
         <div style="background-color: #FEF3C7; padding: 15px; border-radius: 4px; margin: 20px 0;">
             <h4>📍 Pickup Information</h4>
             <p><strong>Location:</strong> {{ $department->name }} Office<br>
+            <strong>Reservation Fee:</strong> ₱{{ number_format($order->total_amount * 0.35, 2) }} (35% - Already Paid)<br>
             <strong>Payment Method:</strong> Cash on Pickup<br>
+            <strong>Amount to Pay:</strong> ₱{{ number_format($order->total_amount * 0.65, 2) }} (65% remaining)<br>
             <strong>Please bring:</strong> This order confirmation email or your order number</p>
         </div>
     </div>

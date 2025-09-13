@@ -160,10 +160,10 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
               : GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                    crossAxisCount: 1,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.75,
+                    childAspectRatio: 2.5,
                   ),
                   itemCount: _filteredListings.length,
                   itemBuilder: (context, index) {
@@ -177,154 +177,183 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
   }
 
   Widget _buildListingCard(Listing listing) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SuperAdminEditListingScreen(
-              listing: listing,
-              userSession: widget.userSession,
-              onListingUpdated: () => _loadListings(),
-            ),
-          ),
-        );
-      },
-      child: Container(
+    return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Image
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
+          Container(
+            width: 120,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
               ),
-              child: listing.images != null && listing.images!.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: PageView.builder(
-                        itemCount: listing.images!.length,
-                        itemBuilder: (context, index) {
-                          final image = listing.images![index];
-                          return Image.network(
-                            Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.image,
-                                size: 50,
-                                color: Colors.grey,
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    )
-                  : listing.imagePath != null
-                      ? ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
-                          ),
-                          child: Image.network(
-                            '${AppConfig.baseUrl}/api/files/${listing.imagePath}',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.image,
-                                size: 50,
-                                color: Colors.grey,
-                              );
-                            },
-                          ),
-                        )
-                      : const Icon(Icons.image, size: 50, color: Colors.grey),
             ),
-          ),
+             child: listing.images != null && listing.images!.isNotEmpty
+                 ? ClipRRect(
+                     borderRadius: const BorderRadius.only(
+                       topLeft: Radius.circular(16),
+                       bottomLeft: Radius.circular(16),
+                     ),
+                     child: PageView.builder(
+                       itemCount: listing.images!.length,
+                       itemBuilder: (context, index) {
+                         final image = listing.images![index];
+                         return Image.network(
+                           Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
+                           fit: BoxFit.cover,
+                           errorBuilder: (context, error, stackTrace) {
+                             return const Icon(
+                               Icons.image,
+                               size: 50,
+                               color: Colors.grey,
+                             );
+                           },
+                         );
+                       },
+                     ),
+                   )
+                 : listing.imagePath != null
+                     ? ClipRRect(
+                         borderRadius: const BorderRadius.only(
+                           topLeft: Radius.circular(16),
+                           bottomLeft: Radius.circular(16),
+                         ),
+                         child: Image.network(
+                           '${AppConfig.baseUrl}/api/files/${listing.imagePath}',
+                           fit: BoxFit.cover,
+                           errorBuilder: (context, error, stackTrace) {
+                             return const Icon(
+                               Icons.image,
+                               size: 50,
+                               color: Colors.grey,
+                             );
+                           },
+                         ),
+                       )
+                     : const Icon(Icons.image, size: 50, color: Colors.grey),
+           ),
 
           // Product Details
           Expanded(
-            flex: 2,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              listing.title,
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(listing.status),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              listing.status.toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                       Text(
+                         '${listing.department?.name ?? 'N/A'} • ${listing.category?.name ?? 'N/A'}',
+                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                       ),
+                       const SizedBox(height: 8),
+                       Text(
+                         '₱${listing.price.toStringAsFixed(2)}',
+                         style: const TextStyle(
+                           fontWeight: FontWeight.bold,
+                           color: Color(0xFF1E3A8A),
+                           fontSize: 16,
+                         ),
+                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          listing.title,
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(listing.status),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          listing.status.toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SuperAdminEditListingScreen(
+                                  listing: listing,
+                                  userSession: widget.userSession,
+                                  onListingUpdated: () => _loadListings(),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit, size: 18),
+                          label: const Text('Edit', style: TextStyle(fontSize: 14)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E3A8A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${listing.department?.name ?? 'N/A'} • ${listing.category?.name ?? 'N/A'}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        '₱${listing.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E3A8A),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _deleteListing(listing),
+                          icon: const Icon(Icons.delete, size: 18),
+                          label: const Text('Delete', style: TextStyle(fontSize: 14)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red, width: 2),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Stock: ${listing.stockQuantity}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       ),
                     ],
                   ),
@@ -333,9 +362,44 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
             ),
           ),
         ],
-        ),
       ),
     );
+  }
+
+  Future<void> _deleteListing(Listing listing) async {
+    try {
+      print('🗑️ Deleting listing: ${listing.title} (ID: ${listing.id})');
+
+      final success = await AdminService.deleteListing(listing.id);
+
+      if (success) {
+        print('✅ Listing deleted successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Product "${listing.title}" deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the data to show updated list
+        _loadListings();
+      } else {
+        print('❌ Failed to delete listing');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to delete product'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error deleting listing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting product: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Color _getStatusColor(String status) {
