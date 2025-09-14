@@ -353,54 +353,9 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Get simple orders by email (no authentication required)
-     */
-    public function simpleIndex(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'email' => 'required|email',
-            ]);
 
-            $orders = Order::with(['listing.images', 'department'])
-                ->where('user_id', null) // Simple orders have null user_id
-                ->where('email', $validated['email'])
-                ->orderBy('created_at', 'desc')
-                ->get();
 
-            return response()->json(['orders' => $orders]);
-        } catch (\Exception $e) {
-            Log::error('Simple orders fetch error: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Error fetching orders: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
-    /**
-     * Send simple order confirmation email
-     */
-    private function sendSimpleOrderConfirmationEmail($order, $email, $customerName)
-    {
-        try {
-            $data = [
-                'order' => $order,
-                'customer_name' => $customerName,
-                'listing' => $order->listing,
-                'department' => $order->department,
-            ];
-
-            Mail::send('emails.simple-order-confirmation', $data, function ($message) use ($order, $email) {
-                $message->to($email)
-                    ->subject('Order Confirmation - ' . $order->order_number);
-            });
-
-            $order->update(['email_sent' => true]);
-        } catch (\Exception $e) {
-            Log::error('Failed to send simple order confirmation email: ' . $e->getMessage());
-        }
-    }
 
     /**
      * Upload payment receipt for reservation fee
@@ -498,94 +453,5 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Simple order creation without authentication (for testing)
-     */
-    public function simpleStore(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'listing_id' => 'required|exists:listings,id',
-                'quantity' => 'required|integer|min:1',
-                'email' => 'required|email',
-                'notes' => 'nullable|string|max:500',
-                'size' => 'nullable|string|max:10',
-                'customer_name' => 'required|string|max:255',
-            ]);
 
-            // Get the listing with size variants
-            $listing = Listing::with(['sizeVariants', 'images'])->findOrFail($validated['listing_id']);
-
-            // Check stock based on whether it's a size variant or regular stock
-            // Allow pre-orders when stock is 0
-            if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-                // Check size-specific stock
-                $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-                if (!$sizeVariant) {
-                    return response()->json([
-                        'message' => 'Selected size not available'
-                    ], 400);
-                }
-                
-                // Allow pre-orders when stock is 0, but check if trying to order more than available when stock > 0
-                if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $validated['quantity']) {
-                    return response()->json([
-                        'message' => 'Insufficient stock for size ' . $validated['size'] . '. Available: ' . $sizeVariant->stock_quantity
-                    ], 400);
-                }
-            } else {
-                // Check regular stock - allow pre-orders when stock is 0
-                if ($listing->stock_quantity > 0 && $listing->stock_quantity < $validated['quantity']) {
-                    return response()->json([
-                        'message' => 'Insufficient stock. Available: ' . $listing->stock_quantity
-                    ], 400);
-                }
-            }
-
-            // Calculate total amount
-            $totalAmount = $listing->price * $validated['quantity'];
-
-            // Create order (without user_id for simple orders)
-            $order = Order::create([
-                'order_number' => Order::generateOrderNumber(),
-                'user_id' => null, // No user for simple orders
-                'listing_id' => $validated['listing_id'],
-                'department_id' => $listing->department_id,
-                'quantity' => $validated['quantity'],
-                'total_amount' => $totalAmount,
-                'status' => 'pending',
-                'notes' => $validated['notes'] ?? null,
-                'payment_method' => 'cash_on_pickup',
-                'size' => $validated['size'] ?? null,
-            ]);
-
-            // Update stock quantity - only decrement if stock is available (not for pre-orders)
-            if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-                // Decrement size-specific stock only if available
-                $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-                if ($sizeVariant->stock_quantity > 0) {
-                    $sizeVariant->decrement('stock_quantity', $validated['quantity']);
-                }
-            } else {
-                // Decrement regular stock only if available
-                if ($listing->stock_quantity > 0) {
-                    $listing->decrement('stock_quantity', $validated['quantity']);
-                }
-            }
-
-            // Send confirmation email
-            $this->sendSimpleOrderConfirmationEmail($order, $validated['email'], $validated['customer_name']);
-
-            return response()->json([
-                'message' => 'Order created successfully',
-                'order' => $order->load(['listing', 'department']),
-                'order_number' => $order->order_number,
-            ], 201);
-        } catch (\Exception $e) {
-            Log::error('Simple order creation error: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Error creating order: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }
