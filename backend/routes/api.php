@@ -175,6 +175,14 @@ Route::middleware('auth:sanctum')->group(function () {
                             'pending' => \App\Models\Listing::where('status', 'pending')->count(),
                             'approved' => \App\Models\Listing::where('status', 'approved')->count(),
                         ],
+                        'orders' => [
+                            'total' => \App\Models\Order::count(),
+                            'pending' => \App\Models\Order::where('status', 'pending')->count(),
+                            'confirmed' => \App\Models\Order::where('status', 'confirmed')->count(),
+                            'ready_for_pickup' => \App\Models\Order::where('status', 'ready_for_pickup')->count(),
+                            'completed' => \App\Models\Order::where('status', 'completed')->count(),
+                            'cancelled' => \App\Models\Order::where('status', 'cancelled')->count(),
+                        ],
                         'departments' => \App\Models\Department::count(),
                         'totalStockValue' => \App\Models\Listing::where('status', 'approved')->sum(\DB::raw('price * stock_quantity')),
                     ]

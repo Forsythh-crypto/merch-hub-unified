@@ -184,8 +184,8 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -196,9 +196,9 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
           Container(
             width: 120,
             height: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              color: Colors.grey,
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(16),
                 bottomLeft: Radius.circular(16),
               ),
@@ -275,7 +275,7 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
+                              horizontal: 8,
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
@@ -295,22 +295,29 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                       Text(
-                         '${listing.department?.name ?? 'N/A'} • ${listing.category?.name ?? 'N/A'}',
-                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                       ),
-                       const SizedBox(height: 8),
-                       Text(
-                         '₱${listing.price.toStringAsFixed(2)}',
-                         style: const TextStyle(
-                           fontWeight: FontWeight.bold,
-                           color: Color(0xFF1E3A8A),
-                           fontSize: 16,
-                         ),
-                       ),
+                      Text(
+                        '${listing.department?.name ?? 'N/A'} • ${listing.category?.name ?? 'N/A'}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontFamily: 'Montserrat',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '₱${listing.price.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E3A8A),
+                          fontSize: 16,
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -327,24 +334,26 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.edit, size: 18),
-                          label: const Text('Edit', style: TextStyle(fontSize: 14)),
+                          icon: const Icon(Icons.edit, size: 20),
+                          label: const Text('Edit', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1E3A8A),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(15),
                             ),
+                            elevation: 3,
+                            shadowColor: const Color(0xFF1E3A8A).withOpacity(0.3),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _deleteListing(listing),
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: const Text('Delete', style: TextStyle(fontSize: 14)),
+                          icon: const Icon(Icons.delete, size: 20),
+                          label: const Text('Delete', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
                             side: const BorderSide(color: Colors.red, width: 2),

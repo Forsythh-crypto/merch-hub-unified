@@ -54,6 +54,26 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
       'color': const Color(0xFF059669), // Green
     },
     {
+      'name': 'School of Health Sciences',
+      'logo': 'assets/logos/sohs.png',
+      'color': const Color(0xFF10B981), // Emerald
+    },
+    {
+      'name': 'School of Humanities',
+      'logo': 'assets/logos/soh.png',
+      'color': const Color(0xFF8B5CF6), // Violet
+    },
+    {
+      'name': 'School of International Hospitality Management',
+      'logo': 'assets/logos/sihm.png',
+      'color': const Color(0xFFEC4899), // Pink
+    },
+    {
+      'name': 'Official UDD Merch',
+      'logo': 'assets/logos/udd_merch.png',
+      'color': const Color(0xFF1F2937), // Dark Gray
+    },
+    {
       'name': 'School of Arts and Sciences',
       'logo': 'assets/logos/uddess.png',
       'color': const Color(0xFF7C3AED), // Purple
@@ -74,7 +94,12 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     final String? departmentArg = ModalRoute.of(context)?.settings.arguments as String?;
     if (departmentArg != null && departmentArg != _selectedDepartment) {
       setState(() {
-        _selectedDepartment = departmentArg;
+        // If coming from Shop Now button, show all departments
+        if (departmentArg == 'Shop') {
+          _selectedDepartment = 'All';
+        } else {
+          _selectedDepartment = departmentArg;
+        }
       });
     }
   }
@@ -460,9 +485,9 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.85,
+                            crossAxisSpacing: 20,
+                            mainAxisSpacing: 20,
+                            childAspectRatio: 0.7,
                           ),
                           itemCount: _filteredListings.length,
                           itemBuilder: (context, index) {
@@ -552,6 +577,38 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     }
   }
 
+  Widget _getDepartmentLogo(String departmentName) {
+    final department = _departments.firstWhere(
+      (dept) => dept['name'] == departmentName,
+      orElse: () => {
+        'name': 'Unknown Department',
+        'logo': 'assets/logos/uddess.png', // Use UDD logo as fallback
+        'color': const Color(0xFF6B7280),
+      },
+    );
+    
+    return ClipOval(
+      child: Image.asset(
+        department['logo'],
+        width: 24,
+        height: 24,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 24,
+            height: 24,
+            color: department['color'],
+            child: const Icon(
+              Icons.school,
+              color: Colors.white,
+              size: 16,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildProductCard(Listing listing) {
     return GestureDetector(
       onTap: () {
@@ -565,16 +622,8 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
         );
       },
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,38 +635,62 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  child: listing.images?.isNotEmpty == true
-                      ? Image.network(
-                          AppConfig.fileUrl(listing.images!.first.imagePath),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(0),
+                      child: listing.images?.isNotEmpty == true
+                          ? Image.network(
+                              AppConfig.fileUrl(listing.images!.first.imagePath),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    color: Colors.grey,
+                                    size: 50,
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
                               color: Colors.grey[200],
                               child: const Icon(
-                                Icons.image_not_supported,
+                                Icons.image,
                                 color: Colors.grey,
                                 size: 50,
                               ),
-                            );
-                          },
-                        )
-                      : Container(
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.image,
-                            color: Colors.grey,
-                            size: 50,
-                          ),
+                            ),
+                    ),
+                    // Department logo in top right
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
+                        child: _getDepartmentLogo(listing.department?.name ?? 'Unknown'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -625,7 +698,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
             Expanded(
               flex: 2,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -633,47 +706,23 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                       listing.title,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 16,
                         fontFamily: 'Montserrat',
+                        color: Colors.black,
+                        height: 1.3,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Text(
                       '₱${listing.price.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        color: Color(0xFF1E3A8A),
+                        color: Colors.black,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         fontFamily: 'Montserrat',
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Stock display - show per size for clothing items
-                    _buildStockDisplay(listing),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.store,
-                          size: 12,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            listing.department?.name ?? 'Unknown',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 10,
-                              fontFamily: 'Montserrat',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),

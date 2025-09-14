@@ -51,7 +51,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       case 'school of international hospitality management':
         return 'assets/logos/sihm.png';
       case 'official udd merch':
-        return null; // Will use fallback icon due to file size issues
+        return 'assets/logos/udd_merch.png';
       default:
         return 'assets/logos/site.png'; // Default fallback
     }
@@ -116,7 +116,22 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       }
 
     } catch (e) {
-      // Silently handle error
+      print('❌ Error loading dashboard data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading dashboard: ${e.toString().contains('authentication') ? 'Authentication failed. Please login again.' : 'Failed to load data'}'),
+            backgroundColor: Colors.red,
+            action: e.toString().contains('authentication') ? SnackBarAction(
+              label: 'Login',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+            ) : null,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -163,7 +178,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
+                      child: const Text(
+                'Cancel',
+                style: TextStyle(fontFamily: 'Montserrat'),
+              ),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(true),
@@ -200,7 +218,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           children: [
             const Text(
               'Dashboard Overview',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -236,6 +258,20 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     Icons.attach_money,
                     Colors.orange,
                   ),
+                  const SizedBox(height: 16),
+                  _buildStatCard(
+                    'Total Orders',
+                    _dashboardStats?['orders']?['total']?.toString() ?? '0',
+                    Icons.shopping_cart,
+                    Colors.indigo,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStatCard(
+                    'Pending Orders',
+                    _dashboardStats?['orders']?['pending']?.toString() ?? '0',
+                    Icons.pending_actions,
+                    Colors.red,
+                  ),
                 ],
               ),
           ],
@@ -255,7 +291,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           children: [
             const Text(
               'User Management',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -277,7 +317,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 children: [
                   const Text(
                     'Filters',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -475,6 +519,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                       Text(
                                         user.name,
                                         style: const TextStyle(
+                                          fontFamily: 'Montserrat',
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -484,6 +529,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                       Text(
                                         user.email,
                                         style: TextStyle(
+                                          fontFamily: 'Montserrat',
                                           fontSize: 12,
                                           color: Colors.grey[600],
                                         ),
@@ -532,6 +578,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                   child: Text(
                                     _getRoleString(user.role).toUpperCase(),
                                     style: const TextStyle(
+                                      fontFamily: 'Montserrat',
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -782,13 +829,20 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               children: [
                 const Text(
                   'Products',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showAddProductDialog(),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Product'),
+                  label: const Text(
+                    'Add Product',
+                    style: TextStyle(fontFamily: 'Montserrat'),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A8A),
                     foregroundColor: Colors.white,
@@ -808,7 +862,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     SizedBox(height: 16),
                     Text(
                       'No products found',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 18,
+                        color: Colors.grey,
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text(
@@ -918,6 +976,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                           child: Text(
                                             listing.status.toUpperCase(),
                                             style: const TextStyle(
+                                              fontFamily: 'Montserrat',
                                               color: Colors.white,
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
@@ -1045,53 +1104,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     );
   }
 
-  // Analytics Tab
-  Widget _buildAnalyticsTab() {
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Analytics',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: const Column(
-                children: [
-                  Icon(Icons.analytics, size: 64, color: Colors.orange),
-                  SizedBox(height: 16),
-                  Text(
-                    'Analytics Dashboard',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'This feature will be implemented soon.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   // Settings Tab
   Widget _buildSettingsTab() {
@@ -1147,47 +1160,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
             const SizedBox(height: 24),
 
-            // User Management Settings
-            _buildSettingsSection('User Management', Icons.people, [
-              _buildSettingTile(
-                'Default User Role',
-                'Student',
-                Icons.person_add,
-                onTap: () => _showRoleSelectionDialog(),
-              ),
-              _buildSettingTile(
-                'Auto-approve Registrations',
-                'Disabled',
-                Icons.auto_awesome,
-                onTap: () =>
-                    _showToggleDialog('Auto-approve Registrations', false),
-              ),
-              _buildSettingTile(
-                'Email Verification Required',
-                'Enabled',
-                Icons.email,
-                onTap: () =>
-                    _showToggleDialog('Email Verification Required', true),
-              ),
-              _buildSettingTile(
-                'Max Login Attempts',
-                '5',
-                Icons.security,
-                onTap: () => _showEditSettingDialog('Max Login Attempts', '5', (
-                  value,
-                ) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Max login attempts updated to: $value'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }),
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
             // System Preferences
             _buildSettingsSection('System Preferences', Icons.tune, [
               _buildSettingTile(
@@ -1197,106 +1169,16 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 onTap: () => _showToggleDialog('Maintenance Mode', false),
               ),
               _buildSettingTile(
-                'Debug Mode',
-                'Disabled',
-                Icons.bug_report,
-                onTap: () => _showToggleDialog('Debug Mode', false),
-              ),
-              _buildSettingTile(
-                'Data Backup Frequency',
-                'Daily',
-                Icons.backup,
-                onTap: () => _showBackupFrequencyDialog(),
-              ),
-              _buildSettingTile(
-                'Session Timeout',
-                '30 minutes',
-                Icons.timer,
-                onTap: () => _showSessionTimeoutDialog(),
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
-            // Data Management
-            _buildSettingsSection('Data Management', Icons.storage, [
-              _buildSettingTile(
-                'Database Size',
-                '2.5 MB',
-                Icons.storage,
-                isEditable: false,
-              ),
-              _buildSettingTile(
-                'Backup Database',
-                'Last backup: 2 hours ago',
-                Icons.save_alt,
-                onTap: () => _showBackupDialog(),
-              ),
-              _buildSettingTile(
                 'Clear Cache',
                 'Cache size: 15 MB',
                 Icons.clear_all,
                 onTap: () => _showClearCacheDialog(),
               ),
               _buildSettingTile(
-                'Export Data',
-                'Export all data to CSV',
-                Icons.file_download,
-                onTap: () => _showExportDialog(),
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
-            // Security Settings
-            _buildSettingsSection('Security', Icons.security, [
-              _buildSettingTile(
-                'Password Policy',
-                'Minimum 8 characters',
-                Icons.lock,
-                onTap: () => _showPasswordPolicyDialog(),
-              ),
-              _buildSettingTile(
-                'Two-Factor Authentication',
-                'Optional',
-                Icons.phone_android,
-                onTap: () => _showTwoFactorDialog(),
-              ),
-              _buildSettingTile(
-                'API Rate Limiting',
-                '100 requests/hour',
-                Icons.speed,
-                onTap: () => _showRateLimitDialog(),
-              ),
-              _buildSettingTile(
-                'Audit Log',
-                'View system logs',
-                Icons.history,
-                onTap: () => _showAuditLogDialog(),
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
-            // Maintenance Actions
-            _buildSettingsSection('Maintenance', Icons.build_circle, [
-              _buildSettingTile(
-                'System Health Check',
-                'Run diagnostics',
-                Icons.health_and_safety,
-                onTap: () => _runSystemHealthCheck(),
-              ),
-              _buildSettingTile(
-                'Optimize Database',
-                'Improve performance',
-                Icons.speed,
-                onTap: () => _optimizeDatabase(),
-              ),
-              _buildSettingTile(
-                'Reset System',
-                'Reset to default settings',
-                Icons.restore,
-                onTap: () => _showResetSystemDialog(),
+                'Backup Database',
+                'Last backup: 2 hours ago',
+                Icons.save_alt,
+                onTap: () => _showBackupDialog(),
               ),
             ]),
           ],
@@ -1448,203 +1330,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     );
   }
 
-  void _showRoleSelectionDialog() {
-    String selectedRole = 'Student';
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Default User Role'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                title: const Text('Student'),
-                value: 'Student',
-                groupValue: selectedRole,
-                onChanged: (value) {
-                  setState(() {
-                    selectedRole = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Admin'),
-                value: 'Admin',
-                groupValue: selectedRole,
-                onChanged: (value) {
-                  setState(() {
-                    selectedRole = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Default role set to: $selectedRole'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showBackupFrequencyDialog() {
-    String selectedFrequency = 'Daily';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Backup Frequency'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                title: const Text('Daily'),
-                value: 'Daily',
-                groupValue: selectedFrequency,
-                onChanged: (value) {
-                  setState(() {
-                    selectedFrequency = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Weekly'),
-                value: 'Weekly',
-                groupValue: selectedFrequency,
-                onChanged: (value) {
-                  setState(() {
-                    selectedFrequency = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Monthly'),
-                value: 'Monthly',
-                groupValue: selectedFrequency,
-                onChanged: (value) {
-                  setState(() {
-                    selectedFrequency = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Backup frequency set to: $selectedFrequency'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSessionTimeoutDialog() {
-    String selectedTimeout = '30 minutes';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Session Timeout'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                title: const Text('15 minutes'),
-                value: '15 minutes',
-                groupValue: selectedTimeout,
-                onChanged: (value) {
-                  setState(() {
-                    selectedTimeout = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('30 minutes'),
-                value: '30 minutes',
-                groupValue: selectedTimeout,
-                onChanged: (value) {
-                  setState(() {
-                    selectedTimeout = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('1 hour'),
-                value: '1 hour',
-                groupValue: selectedTimeout,
-                onChanged: (value) {
-                  setState(() {
-                    selectedTimeout = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Never'),
-                value: 'Never',
-                groupValue: selectedTimeout,
-                onChanged: (value) {
-                  setState(() {
-                    selectedTimeout = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Session timeout set to: $selectedTimeout'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showBackupDialog() {
     showDialog(
@@ -1694,207 +1380,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     );
   }
 
-  void _showExportDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Export Data'),
-        content: const Text('Export all system data to CSV format?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _exportData();
-            },
-            child: const Text('Export'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showPasswordPolicyDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Password Policy'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Current Policy:'),
-            SizedBox(height: 8),
-            Text('• Minimum 8 characters'),
-            Text('• At least 1 uppercase letter'),
-            Text('• At least 1 lowercase letter'),
-            Text('• At least 1 number'),
-            Text('• At least 1 special character'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showTwoFactorDialog() {
-    String selectedOption = 'Optional';
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Two-Factor Authentication'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                title: const Text('Disabled'),
-                value: 'Disabled',
-                groupValue: selectedOption,
-                onChanged: (value) {
-                  setState(() {
-                    selectedOption = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Optional'),
-                value: 'Optional',
-                groupValue: selectedOption,
-                onChanged: (value) {
-                  setState(() {
-                    selectedOption = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Required for Admins'),
-                value: 'Required for Admins',
-                groupValue: selectedOption,
-                onChanged: (value) {
-                  setState(() {
-                    selectedOption = value!;
-                  });
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Required for All'),
-                value: 'Required for All',
-                groupValue: selectedOption,
-                onChanged: (value) {
-                  setState(() {
-                    selectedOption = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('2FA set to: $selectedOption'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showRateLimitDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('API Rate Limiting'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Current Limits:'),
-            SizedBox(height: 8),
-            Text('• General users: 100 requests/hour'),
-            Text('• Admin users: 500 requests/hour'),
-            Text('• SuperAdmin users: 1000 requests/hour'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showAuditLogDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Audit Log'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.history, size: 48, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('Audit log feature will be implemented soon.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showResetSystemDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset System'),
-        content: const Text(
-          'This will reset all system settings to default values. This action cannot be undone. Are you sure?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _resetSystem();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Reset', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
+
+
+
+
+
 
   // Action methods
   void _performBackup() {
@@ -1915,43 +1411,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     );
   }
 
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Data exported successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
 
-  void _runSystemHealthCheck() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'System health check completed. All systems operational.',
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _optimizeDatabase() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Database optimization completed'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _resetSystem() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('System reset completed'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
 
   // Helper Methods
   Widget _buildStatCard(
@@ -1991,10 +1451,21 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           const SizedBox(height: 16),
           Text(
             value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
-          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
         ],
       ),
     );
@@ -2305,7 +1776,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                               }
                             },
                             icon: const Icon(Icons.photo_library),
-                            label: const Text('Gallery'),
+                            label: const Text(
+                              'Gallery',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
                           ),
                           ElevatedButton.icon(
                             onPressed: () async {
@@ -2322,7 +1796,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                               }
                             },
                             icon: const Icon(Icons.camera_alt),
-                            label: const Text('Camera'),
+                            label: const Text(
+                              'Camera',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
                           ),
                         ],
                       ),
@@ -2366,7 +1843,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   print('Error creating department: $e');
                 }
               },
-              child: const Text('Create'),
+              child: const Text(
+                'Create',
+                style: TextStyle(fontFamily: 'Montserrat'),
+              ),
             ),
           ],
         ),
@@ -2642,7 +2122,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Add Product'),
+          title: const Text(
+            'Add Product',
+            style: TextStyle(fontFamily: 'Montserrat'),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2651,16 +2134,20 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   controller: titleController,
                   decoration: const InputDecoration(
                     labelText: 'Product Title',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
@@ -2671,8 +2158,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         controller: priceController,
                         decoration: const InputDecoration(
                           labelText: 'Price (₱)',
+                          labelStyle: TextStyle(fontFamily: 'Montserrat'),
                           border: OutlineInputBorder(),
                         ),
+                        style: const TextStyle(fontFamily: 'Montserrat'),
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -2682,8 +2171,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         controller: stockController,
                         decoration: const InputDecoration(
                           labelText: 'Stock Quantity',
+                          labelStyle: TextStyle(fontFamily: 'Montserrat'),
                           border: OutlineInputBorder(),
                         ),
+                        style: const TextStyle(fontFamily: 'Montserrat'),
                         keyboardType: TextInputType.number,
                       ),
                     ),
@@ -2696,12 +2187,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   value: selectedCategoryId,
                   decoration: const InputDecoration(
                     labelText: 'Category',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                   items: categories.map((category) {
                     return DropdownMenuItem<int>(
                       value: category['id'],
-                      child: Text(category['name']),
+                      child: Text(
+                        category['name'],
+                        style: const TextStyle(fontFamily: 'Montserrat'),
+                      ),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -2729,12 +2225,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                       value: selectedDepartmentId,
                       decoration: const InputDecoration(
                         labelText: 'Department',
+                        labelStyle: TextStyle(fontFamily: 'Montserrat'),
                         border: OutlineInputBorder(),
                       ),
+                      style: const TextStyle(fontFamily: 'Montserrat'),
                       items: departments.map((dept) {
                         return DropdownMenuItem<int>(
                           value: dept['id'],
-                          child: Text(dept['name']),
+                          child: Text(
+                            dept['name'],
+                            style: const TextStyle(fontFamily: 'Montserrat'),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -2781,6 +2284,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                         color: const Color(0xFF1E3A8A),
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
+                                        fontFamily: 'Montserrat',
                                       ),
                                     ),
                                   ),
@@ -2799,7 +2303,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 if (isClothingSelected) ...[
                   const Text(
                     'Stock per Size (Optional - Leave 0 for preorders):',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Montserrat',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   ..._clothingSizes
@@ -2835,6 +2342,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
+                                      fontFamily: 'Montserrat',
                                       color: isAvailable
                                           ? Colors.green[700]
                                           : Colors.orange[700],
@@ -2846,6 +2354,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                   controller: controller,
                                   decoration: InputDecoration(
                                     hintText: '0',
+                                    hintStyle: TextStyle(fontFamily: 'Montserrat'),
                                     border: OutlineInputBorder(
                                       borderSide: BorderSide(
                                         color: isAvailable
@@ -2873,6 +2382,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                         : Colors.orange[50],
                                     filled: true,
                                   ),
+                                  style: const TextStyle(fontFamily: 'Montserrat'),
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     setState(() {});
@@ -2890,9 +2400,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     controller: stockController,
                     decoration: const InputDecoration(
                       labelText: 'Stock Quantity (Optional - Leave empty for preorders)',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
                       hintText: 'Enter stock quantity or leave empty for preorders',
+                      hintStyle: TextStyle(fontFamily: 'Montserrat'),
                       border: OutlineInputBorder(),
                     ),
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value != null && value.isNotEmpty && int.tryParse(value) == null) {
@@ -2908,17 +2421,31 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   value: selectedStatus,
                   decoration: const InputDecoration(
                     labelText: 'Status',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                   items: const [
-                    DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                    DropdownMenuItem(
+                      value: 'pending',
+                      child: Text(
+                        'Pending',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
+                    ),
                     DropdownMenuItem(
                       value: 'approved',
-                      child: Text('Approved'),
+                      child: Text(
+                        'Approved',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
                     ),
                     DropdownMenuItem(
                       value: 'rejected',
-                      child: Text('Rejected'),
+                      child: Text(
+                        'Rejected',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
                     ),
                   ],
                   onChanged: (value) {
@@ -2938,7 +2465,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     children: [
                       const Text(
                         'Product Images (Optional)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
                       const SizedBox(height: 8),
                       if (selectedImages.isNotEmpty)
@@ -3045,7 +2575,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                               }
                             },
                             icon: const Icon(Icons.photo_library),
-                            label: const Text('Multiple'),
+                            label: const Text(
+                              'Multiple',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
                           ),
                           ElevatedButton.icon(
                             onPressed: () async {
@@ -3086,7 +2619,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 if (titleController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Product title is required'),
+                      content: Text(
+                        'Product title is required',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -3096,7 +2632,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 if (selectedCategoryId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please select a category'),
+                      content: Text(
+                        'Please select a category',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -3106,7 +2645,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 if (selectedDepartmentId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please select a department'),
+                      content: Text(
+                        'Please select a department',
+                        style: TextStyle(fontFamily: 'Montserrat'),
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -3842,11 +3384,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             ),
             child: ListTile(
               leading: Icon(
-                Icons.analytics,
+                Icons.settings,
                 color: _selectedIndex == 5 ? const Color(0xFF1E3A8A) : Colors.grey[600],
               ),
               title: Text(
-                'Analytics',
+                'Settings',
                 style: TextStyle(
                   color: _selectedIndex == 5 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 5 ? FontWeight.w600 : FontWeight.w400,
@@ -3855,32 +3397,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               onTap: () {
                 setState(() {
                   _selectedIndex = 5;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: _selectedIndex == 6 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ListTile(
-              leading: Icon(
-                Icons.settings,
-                color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[600],
-              ),
-              title: Text(
-                'Settings',
-                style: TextStyle(
-                  color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[800],
-                  fontWeight: _selectedIndex == 6 ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 6;
                 });
                 Navigator.pop(context);
               },
@@ -3936,8 +3452,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       case 4:
         return ProductsScreen(userSession: widget.userSession);
       case 5:
-        return _buildAnalyticsTab();
-      case 6:
         return _buildSettingsTab();
       default:
         return _buildDashboardTab();

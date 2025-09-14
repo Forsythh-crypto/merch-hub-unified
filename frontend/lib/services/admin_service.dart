@@ -14,6 +14,9 @@ class AdminService {
 
   static Future<Map<String, String>> _getHeaders() async {
     final token = await _getToken();
+    if (token == null) {
+      throw Exception('Authentication failed - no token found');
+    }
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -55,11 +58,17 @@ class AdminService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['stats'];
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed - please login again');
+      } else {
+        throw Exception('Failed to load dashboard stats: ${response.statusCode}');
       }
     } catch (e) {
-      // Handle error silently
+      if (e.toString().contains('Authentication failed')) {
+        rethrow;
+      }
+      throw Exception('Network error loading dashboard stats');
     }
-    return null;
   }
 
   // User Management

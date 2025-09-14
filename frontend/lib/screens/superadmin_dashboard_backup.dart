@@ -230,7 +230,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard>
                     ..._departments.map((dept) {
                       return DropdownMenuItem(
                         value: dept['name'],
-                        child: Text(dept['name']),
+                        child: Text(
+                          dept['name'],
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       );
                     }),
                   ],

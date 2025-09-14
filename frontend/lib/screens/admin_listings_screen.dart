@@ -35,6 +35,12 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   int _selectedIndex = 0;
   final ImagePicker _picker = ImagePicker();
   final GlobalKey _notificationBadgeKey = GlobalKey();
+  Map<String, dynamic> _dashboardStats = {
+    'totalListings': 0,
+    'totalOrders': 0,
+    'pendingOrders': 0,
+    'completedOrders': 0,
+  };
 
   // Helper function to get abbreviated admin title
   String _getAdminTitle(String? departmentName) {
@@ -67,6 +73,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     super.initState();
     _loadListings();
     _loadCategories();
+    _loadDashboardStats();
   }
 
   @override
@@ -111,6 +118,62 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
       });
     } catch (e) {
       print('❌ Error loading categories: $e');
+    }
+  }
+
+  Future<void> _loadDashboardStats() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      // Load listings count for this department
+      final listingsResponse = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/api/admin/listings'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      // Load orders count for this department
+      final ordersResponse = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/api/admin/orders'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (listingsResponse.statusCode == 200 && ordersResponse.statusCode == 200) {
+        final listingsData = json.decode(listingsResponse.body);
+        final ordersData = json.decode(ordersResponse.body);
+        
+        final orders = ordersData['orders'] as List;
+        final pendingOrders = orders.where((order) => order['status'] == 'pending').length;
+        final completedOrders = orders.where((order) => order['status'] == 'completed').length;
+
+        setState(() {
+          _dashboardStats = {
+            'totalListings': listingsData['listings']?.length ?? 0,
+            'totalOrders': orders.length,
+            'pendingOrders': pendingOrders,
+            'completedOrders': completedOrders,
+          };
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading dashboard stats: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -213,11 +276,11 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                   ),
                   child: ListTile(
                     leading: Icon(
-                      Icons.inventory,
+                      Icons.dashboard,
                       color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[600],
                     ),
                     title: Text(
-                      'Listings',
+                      'Dashboard',
                       style: TextStyle(
                         fontFamily: 'Montserrat',
                         color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[800],
@@ -240,11 +303,11 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                   ),
                   child: ListTile(
                     leading: Icon(
-                      Icons.add_box,
+                      Icons.inventory,
                       color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[600],
                     ),
                     title: Text(
-                      'Add Listing',
+                      'Listings',
                       style: TextStyle(
                         fontFamily: 'Montserrat',
                         color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[800],
@@ -252,10 +315,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       ),
                     ),
                     onTap: () {
-                      Navigator.pop(context);
                       setState(() {
                         _selectedIndex = 1;
                       });
+                      Navigator.pop(context);
                     },
                   ),
                 ),
@@ -267,11 +330,11 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                   ),
                   child: ListTile(
                     leading: Icon(
-                      Icons.shopping_cart,
+                      Icons.add_box,
                       color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[600],
                     ),
                     title: Text(
-                      'Orders',
+                      'Add Listing',
                       style: TextStyle(
                         fontFamily: 'Montserrat',
                         color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[800],
@@ -279,8 +342,35 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       ),
                     ),
                     onTap: () {
+                      Navigator.pop(context);
                       setState(() {
                         _selectedIndex = 2;
+                      });
+                    },
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == 3 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.shopping_cart,
+                      color: _selectedIndex == 3 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+                    ),
+                    title: Text(
+                      'Orders',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: _selectedIndex == 3 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                        fontWeight: _selectedIndex == 3 ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 3;
                       });
                       Navigator.pop(context);
                     },
@@ -361,21 +451,23 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   Widget _buildCurrentBody() {
     switch (_selectedIndex) {
       case 0:
-        return _buildListingsBody();
+        return _buildDashboardBody();
       case 1:
+        return _buildListingsBody();
+      case 2:
         return AdminAddListingScreen(
           showAppBar: false,
           onListingCreated: () {
             _loadListings();
             setState(() {
-              _selectedIndex = 0;
+              _selectedIndex = 1;
             });
           },
         );
-      case 2:
+      case 3:
         return AdminOrdersScreen(userSession: widget.userSession, showAppBar: false);
       default:
-        return _buildListingsBody();
+        return _buildDashboardBody();
     }
   }
 
@@ -698,6 +790,97 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         );
       }
     }
+  }
+
+  Widget _buildDashboardBody() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Dashboard Overview',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              children: [
+                _buildStatCard(
+                  'Total Listings',
+                  _dashboardStats['totalListings'].toString(),
+                  Icons.inventory,
+                  Colors.blue,
+                ),
+                _buildStatCard(
+                  'Total Orders',
+                  _dashboardStats['totalOrders'].toString(),
+                  Icons.shopping_cart,
+                  Colors.green,
+                ),
+                _buildStatCard(
+                  'Pending Orders',
+                  _dashboardStats['pendingOrders'].toString(),
+                  Icons.pending,
+                  Colors.orange,
+                ),
+                _buildStatCard(
+                  'Completed Orders',
+                  _dashboardStats['completedOrders'].toString(),
+                  Icons.check_circle,
+                  Colors.purple,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 40,
+              color: color,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // Removed _showAddListingDialog - now using separate AdminAddListingScreen

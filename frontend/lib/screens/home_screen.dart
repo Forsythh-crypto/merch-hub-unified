@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (userData != null) {
         final userSession = UserSession(
-          userId: userData['id'],
+          userId: userData['id']?.toString() ?? '',
           name: userData['name'] ?? '',
           email: userData['email'] ?? '',
           role: userData['role'] == 'superadmin'
@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : userData['role'] == 'admin'
               ? UserRole.admin
               : UserRole.student,
-          departmentId: userData['department_id'],
+          departmentId: userData['department_id'] is int ? userData['department_id'] : null,
           departmentName: userData['department_name'] ?? '',
         );
 
@@ -53,11 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
         });
 
         final args = {
-          'userId': userData['id'],
+          'userId': userData['id']?.toString() ?? '',
           'name': userData['name'] ?? '',
           'email': userData['email'] ?? '',
           'role': userData['role'] ?? '',
-          'departmentId': userData['department_id'],
+          'departmentId': userData['department_id'] is int ? userData['department_id'] : null,
           'departmentName': userData['department_name'] ?? '',
         };
 

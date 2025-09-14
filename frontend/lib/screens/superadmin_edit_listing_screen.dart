@@ -281,7 +281,11 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                             items: departments
                                 .map((dept) => DropdownMenuItem<int>(
                                       value: dept.id,
-                                      child: Text(dept.name),
+                                      child: Text(
+                                        dept.name,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
                                     ))
                                 .toList(),
                             onChanged: (value) {

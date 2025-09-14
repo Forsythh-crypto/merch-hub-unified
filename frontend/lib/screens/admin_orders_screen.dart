@@ -619,7 +619,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                 children: [
                   const Text(
                     'Order Management',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   ElevatedButton.icon(
                     onPressed: _loadOrders,
@@ -761,6 +765,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
               Text(
                 title,
                 style: TextStyle(
+                  fontFamily: 'Montserrat',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.grey[700],
@@ -772,6 +777,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
           Text(
             value,
             style: TextStyle(
+              fontFamily: 'Montserrat',
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: color,
