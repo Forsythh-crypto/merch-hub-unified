@@ -1,3 +1,6 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
 enum UserRole { superAdmin, admin, student }
 
 class UserSession {
@@ -76,5 +79,20 @@ class UserSession {
       'departmentId': departmentId,
       'departmentName': departmentName,
     };
+  }
+
+  // Load user session from storage
+  static Future<UserSession?> fromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataStr = prefs.getString('user_data');
+      if (userDataStr != null) {
+        final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
+        return UserSession.fromJson(userData);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 }

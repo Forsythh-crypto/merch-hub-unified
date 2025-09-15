@@ -388,6 +388,94 @@ class AdminService {
     }
   }
 
+  // Discount Code Management
+  Future<List<Map<String, dynamic>>> getDiscountCodes() async {
+    try {
+      final headers = await _getHeaders();
+      print('🔄 Fetching discount codes from API...');
+      final response = await http.get(
+        AppConfig.api('admin/discount-codes'),
+        headers: headers,
+      );
+
+      print('📡 API Response Status: ${response.statusCode}');
+      print('📡 API Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final codes = List<Map<String, dynamic>>.from(data['discount_codes'] ?? []);
+        print('✅ Successfully parsed ${codes.length} discount codes');
+        return codes;
+      }
+      print('❌ API returned status ${response.statusCode}');
+      return [];
+    } catch (e) {
+      print('❌ Get Discount Codes Exception: $e');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getDepartments() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        AppConfig.api('admin/departments'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['departments'] ?? []);
+      }
+      return [];
+    } catch (e) {
+      print('❌ Get Departments Exception: $e');
+      return [];
+    }
+  }
+
+  Future<bool> createDiscountCode(Map<String, dynamic> discountData) async {
+    try {
+      final headers = await _getHeaders();
+      print('🔄 Creating discount code: ${discountData['code']}');
+      final response = await http.post(
+        AppConfig.api('admin/discount-codes'),
+        headers: headers,
+        body: jsonEncode(discountData),
+      );
+
+      print('📡 Create Discount Code Response Status: ${response.statusCode}');
+      print('📡 Create Discount Code Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        print('✅ Discount code created successfully');
+        return true;
+      } else {
+        final errorData = jsonDecode(response.body);
+        final errorMessage = errorData['error'] ?? 'Failed to create discount code';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('❌ Create Discount Code Exception: $e');
+      throw e;
+    }
+  }
+
+  Future<bool> deleteDiscountCode(int id) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        AppConfig.api('admin/discount-codes/$id'),
+        headers: headers,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('❌ Delete Discount Code Exception: $e');
+      return false;
+    }
+  }
+
   // Department Management Methods
   static Future<List<Map<String, dynamic>>> getAllDepartments() async {
     try {

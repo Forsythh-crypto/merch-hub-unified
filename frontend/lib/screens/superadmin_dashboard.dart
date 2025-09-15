@@ -13,6 +13,7 @@ import 'admin_orders_screen.dart';
 import 'notifications_screen.dart';
 import 'superadmin_edit_listing_screen.dart';
 import 'products_screen.dart';
+import 'admin_discount_codes_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   final UserSession userSession;
@@ -3202,7 +3203,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       case 5:
         return 'Analytics';
       case 6:
-        return 'Settings';
+        return 'Discount Codes';
       default:
         return 'UDD SuperAdmin Dashboard';
     }
@@ -3402,6 +3403,32 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               },
             ),
           ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 6 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.local_offer,
+                color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Discount Codes',
+                style: TextStyle(
+                  color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 6 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 6;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
@@ -3453,8 +3480,14 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         return ProductsScreen(userSession: widget.userSession);
       case 5:
         return _buildSettingsTab();
+      case 6:
+        return _buildDiscountCodesTab();
       default:
         return _buildDashboardTab();
     }
+  }
+
+  Widget _buildDiscountCodesTab() {
+    return const AdminDiscountCodesScreen();
   }
 }

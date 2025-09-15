@@ -21,12 +21,18 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   final _quantityController = TextEditingController(text: '1');
   final _emailController = TextEditingController();
   final _notesController = TextEditingController();
+  final _discountCodeController = TextEditingController();
   bool _isSubmitting = false;
   bool _isGuestMode = true;
 
   // For size selection
   String? _selectedSize;
   final Map<String, int> _sizeQuantities = {};
+  
+  // For discount functionality
+  double _discountAmount = 0.0;
+  String? _appliedDiscountCode;
+  bool _isValidatingDiscount = false;
 
   @override
   void initState() {
@@ -86,7 +92,68 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     _quantityController.dispose();
     _emailController.dispose();
     _notesController.dispose();
+    _discountCodeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _validateDiscountCode() async {
+    final code = _discountCodeController.text.trim().toUpperCase();
+    if (code.isEmpty) return;
+
+    setState(() => _isValidatingDiscount = true);
+
+    try {
+      // Call actual API to validate discount code
+      final result = await OrderService.validateDiscountCode(
+        code: code,
+        orderAmount: _totalAmount,
+        departmentId: widget.listing.departmentId,
+      );
+
+      if (mounted) {
+        if (result['success'] && result['valid']) {
+          setState(() {
+            _appliedDiscountCode = code;
+            _discountAmount = result['discount_amount']?.toDouble() ?? 0.0;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Discount code applied successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Invalid discount code'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error validating discount code: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isValidatingDiscount = false);
+      }
+    }
+  }
+
+  void _removeDiscountCode() {
+    setState(() {
+      _appliedDiscountCode = null;
+      _discountAmount = 0.0;
+      _discountCodeController.clear();
+    });
   }
 
   Future<void> _submitOrder() async {
@@ -124,6 +191,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             ? null
             : _notesController.text.trim(),
         size: _selectedSize, // Add size parameter
+        discountCode: _appliedDiscountCode,
+        discountAmount: _discountAmount,
       );
 
       if (result['success']) {
@@ -134,7 +203,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             MaterialPageRoute(
               builder: (context) => ReservationFeePaymentScreen(
                 order: result['order'],
-                totalAmount: _totalAmount,
+                totalAmount: _totalAmount - _discountAmount,
               ),
             ),
           );
@@ -777,6 +846,79 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
                       const SizedBox(height: 16),
 
+                      // Discount Code Input
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _discountCodeController,
+                              decoration: const InputDecoration(
+                                labelText: 'Discount Code (Optional)',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.local_offer),
+                                hintText: 'Enter discount code',
+                              ),
+                              textCapitalization: TextCapitalization.characters,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: _isValidatingDiscount ? null : _validateDiscountCode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A8A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
+                            child: _isValidatingDiscount
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text('Apply'),
+                          ),
+                        ],
+                      ),
+
+                      if (_appliedDiscountCode != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.green[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Discount code "$_appliedDiscountCode" applied!',
+                                  style: TextStyle(
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _removeDiscountCode,
+                                child: Text(
+                                  'Remove',
+                                  style: TextStyle(color: Colors.green[700]),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+
                       // Total Amount
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -785,25 +927,69 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: const Color(0xFF1E3A8A)),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Column(
                           children: [
-                            Text(
-                              'Total Amount:',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Montserrat',
+                            if (_discountAmount > 0) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Subtotal:',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                    ),
                                   ),
-                            ),
-                            Text(
-                              '₱${_totalAmount.toStringAsFixed(2)}',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF1E3A8A),
-                                    fontFamily: 'Montserrat',
+                                  Text(
+                                    '₱${_totalAmount.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontFamily: 'Montserrat',
+                                    ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Discount ($_appliedDiscountCode):',
+                                    style: TextStyle(
+                                      color: Colors.green[700],
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                  Text(
+                                    '-₱${_discountAmount.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: Colors.green[700],
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(),
+                            ],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Total Amount:',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                ),
+                                Text(
+                                  '₱${(_totalAmount - _discountAmount).toStringAsFixed(2)}',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF1E3A8A),
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

@@ -158,6 +158,12 @@ class _SuperAdminNavigationMenuState extends State<SuperAdminNavigationMenu> {
                       'Orders',
                       const Color(0xFF1E3A8A),
                     ),
+                    _buildMenuItem(
+                      6,
+                      Icons.local_offer,
+                      'Discount Codes',
+                      const Color(0xFF1E3A8A),
+                    ),
                   ],
                 ),
               ),
