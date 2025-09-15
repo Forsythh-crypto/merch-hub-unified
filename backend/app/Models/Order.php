@@ -19,6 +19,9 @@ class Order extends Model
         'quantity',
         'size',
         'total_amount',
+        'discount_code_id',
+        'discount_amount',
+        'original_amount',
         'reservation_fee_amount',
         'reservation_fee_paid',
         'payment_receipt_path',
@@ -62,6 +65,11 @@ class Order extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function discountCode()
+    {
+        return $this->belongsTo(DiscountCode::class);
+    }
+
     // Get status display name
     public function getStatusDisplayAttribute()
     {
@@ -103,5 +111,26 @@ class Order extends Model
     public function canBeConfirmed()
     {
         return $this->hasPaidReservationFee() && $this->status === 'pending';
+    }
+
+    // Check if order has discount applied
+    public function hasDiscount()
+    {
+        return $this->discount_code_id !== null && $this->discount_amount > 0;
+    }
+
+    // Get final amount after discount
+    public function getFinalAmount()
+    {
+        return $this->total_amount;
+    }
+
+    // Get discount percentage
+    public function getDiscountPercentage()
+    {
+        if (!$this->hasDiscount() || $this->original_amount <= 0) {
+            return 0;
+        }
+        return round(($this->discount_amount / $this->original_amount) * 100, 2);
     }
 }

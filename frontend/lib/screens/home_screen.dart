@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/user_role.dart';
-import '../screens/superadmin_dashboard.dart';
-import '../screens/admin_listings_screen.dart';
-import '../screens/user_home_screen.dart';
+import 'superadmin_dashboard.dart';
+import 'admin_listings_screen.dart';
+import 'user_home_screen.dart';
 import '../services/auth_services.dart';
 
 class HomeScreen extends StatefulWidget {

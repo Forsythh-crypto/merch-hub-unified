@@ -22,6 +22,9 @@ class AuthService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', token);
           await prefs.setString('user_data', jsonEncode(userData));
+          
+          // Clear guest mode after successful login
+          await prefs.remove('is_guest_mode');
 
           return true;
         } else {

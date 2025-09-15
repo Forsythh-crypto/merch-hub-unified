@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../styles/auth_styles.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String? returnRoute;
+  final Map<String, dynamic>? returnArguments;
+
+  const RegisterScreen({
+    super.key,
+    this.returnRoute,
+    this.returnArguments,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -122,7 +130,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context);
+          
+          // Navigate to login screen with return route info
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoginScreen(
+                returnRoute: widget.returnRoute,
+                returnArguments: widget.returnArguments,
+              ),
+            ),
+          );
         }
       } else {
         final errorData = jsonDecode(response.body);

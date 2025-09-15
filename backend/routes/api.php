@@ -9,6 +9,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DiscountCodeController;
 use Illuminate\Support\Facades\File;
 
 
@@ -84,6 +85,9 @@ Route::get('/test', function () {
 });
 Route::get('/departments', [DepartmentController::class, 'index']);
 
+// Public listings endpoint for guest users
+Route::get('/public/listings', [ListingController::class, 'index']);
+
 // Public file serving for uploaded assets (avoids 403 on /storage symlink)
 Route::get('/files/{path}', function ($path) {
     $fullPath = storage_path('app/public/' . $path);
@@ -118,6 +122,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{id}/upload-receipt', [OrderController::class, 'uploadReceipt']);
     
+    // Discount code validation route
+    Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate']);
+    Route::post('/discount-codes/calculate', [DiscountCodeController::class, 'calculate']);
+    
     // Notification routes (for all authenticated users)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
@@ -145,6 +153,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/listings/{listing}', [ListingController::class, 'update']);
         Route::put('/admin/listings/{listing}/size-variants', [ListingController::class, 'updateSizeVariants']);
         Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
+        
+        // Discount code routes for admins (department-restricted)
+        Route::get('/admin/discount-codes', [DiscountCodeController::class, 'index']);
+        Route::post('/admin/discount-codes', [DiscountCodeController::class, 'store']);
+        Route::put('/admin/discount-codes/{discountCode}', [DiscountCodeController::class, 'update']);
+        Route::delete('/admin/discount-codes/{discountCode}', [DiscountCodeController::class, 'destroy']);
+        Route::get('/admin/discount-codes/stats', [DiscountCodeController::class, 'stats']);
     });
     
     // Super Admin only routes
@@ -198,6 +213,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/all-listings', [ListingController::class, 'superAdminIndex']);
         Route::put('/admin/listings/{listing}/update-stock', [ListingController::class, 'updateStock']);
         Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
+        
+        // Additional discount code routes for superadmins (all departments)
+        Route::get('/admin/discount-codes/all', [DiscountCodeController::class, 'superAdminIndex']);
     });
     
     // Department-specific routes (admin can only access their own department)

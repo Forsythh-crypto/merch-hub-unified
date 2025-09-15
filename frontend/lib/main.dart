@@ -9,7 +9,9 @@ import 'screens/superadmin_dashboard.dart';
 import 'screens/admin_listings_screen.dart';
 import 'screens/user_listings_screen.dart';
 import 'screens/admin_add_listing_screen.dart';
+import 'screens/order_confirmation_screen.dart';
 import 'models/user_role.dart';
+import 'models/listing.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,7 +73,11 @@ class UDDEssentialsApp extends StatelessWidget {
         '/user-listings': (context) {
           return const UserListingsScreen();
         },
-
+        '/order-confirmation': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final listing = args['listing'] as Listing;
+          return OrderConfirmationScreen(listing: listing);
+        },
         '/admin-add-listing': (context) => const AdminAddListingScreen(),
       },
     );

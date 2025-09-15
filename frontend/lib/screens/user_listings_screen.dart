@@ -5,6 +5,7 @@ import '../models/listing_image.dart';
 import '../services/user_service.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
+import '../services/guest_service.dart';
 import '../config/app_config.dart';
 import 'order_confirmation_screen.dart';
 
@@ -116,7 +117,10 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
     });
 
     try {
-      final listings = await AdminService.getApprovedListings();
+      final isGuest = await GuestService.isGuestMode();
+      final listings = isGuest 
+          ? await AdminService.getPublicListings()
+          : await AdminService.getApprovedListings();
       
       setState(() {
         _listings = listings;

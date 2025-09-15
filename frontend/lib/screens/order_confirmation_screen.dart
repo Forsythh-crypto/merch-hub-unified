@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import '../services/guest_service.dart';
 import '../config/app_config.dart';
 import 'reservation_fee_payment_screen.dart';
 
@@ -21,6 +22,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   final _emailController = TextEditingController();
   final _notesController = TextEditingController();
   bool _isSubmitting = false;
+  bool _isGuestMode = true;
 
   // For size selection
   String? _selectedSize;
@@ -30,6 +32,23 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   void initState() {
     super.initState();
     _initializeSizeData();
+    _checkGuestStatus();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh guest status when returning from login
+    _checkGuestStatus();
+  }
+
+  Future<void> _checkGuestStatus() async {
+    final isGuest = await GuestService.isGuestMode();
+    if (mounted) {
+      setState(() {
+        _isGuestMode = isGuest;
+      });
+    }
   }
 
   void _initializeSizeData() {
@@ -72,6 +91,27 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   Future<void> _submitOrder() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Check if user is authenticated before allowing order placement
+    if (_isGuestMode) {
+      final loggedIn = await GuestService.promptLogin(
+        context, 
+        'reserve_product',
+        returnRoute: '/order-confirmation',
+        returnArguments: {'listing': widget.listing},
+      );
+      if (loggedIn) {
+        // Refresh guest status and retry order submission
+        await _checkGuestStatus();
+        if (!_isGuestMode) {
+          // Validate form again before proceeding
+          if (_formKey.currentState!.validate()) {
+            _submitOrder();
+          }
+        }
+      }
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -158,6 +198,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       appBar: AppBar(
         title: Text(
           widget.listing.stockQuantity > 0 ? 'Reserve Item' : 'Pre-order Item',
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+          ),
         ),
         backgroundColor: widget.listing.stockQuantity > 0
             ? const Color(0xFF1E3A8A)
@@ -173,7 +216,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             children: [
               // Product Information Card
               Card(
-                elevation: 4,
+                elevation: 0,
+                color: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -184,25 +228,16 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1E3A8A),
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                       const SizedBox(height: 16),
 
                       // Product Images
                       Container(
-                        height: 250,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                        height: 300,
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(0),
                           child: widget.listing.images != null &&
                                   widget.listing.images!.isNotEmpty
                               ? PageView.builder(
@@ -212,11 +247,41 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     return Image.network(
                                       Uri.encodeFull(AppConfig.fileUrl(image.imagePath)),
                                       width: double.infinity,
-                                      fit: BoxFit.cover,
+                                      height: 300,
+                                      fit: BoxFit.contain,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          color: Colors.grey[100],
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress.expectedTotalBytes != null
+                                                  ? loadingProgress.cumulativeBytesLoaded /
+                                                      loadingProgress.expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                       errorBuilder: (context, error, stackTrace) {
                                         return Container(
-                                          color: Colors.grey[300],
-                                          child: const Icon(Icons.image, size: 50),
+                                          color: Colors.grey[200],
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.image_not_supported, 
+                                                   size: 60, color: Colors.grey[400]),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Image not available',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontFamily: 'Montserrat',
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         );
                                       },
                                     );
@@ -227,17 +292,62 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                   ? Image.network(
                                       _getImageUrl(),
                                       width: double.infinity,
-                                      fit: BoxFit.cover,
+                                      height: 300,
+                                      fit: BoxFit.contain,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          color: Colors.grey[100],
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress.expectedTotalBytes != null
+                                                  ? loadingProgress.cumulativeBytesLoaded /
+                                                      loadingProgress.expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                       errorBuilder: (context, error, stackTrace) {
                                         return Container(
-                                          color: Colors.grey[300],
-                                          child: const Icon(Icons.image, size: 50),
+                                          color: Colors.grey[200],
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.image_not_supported, 
+                                                   size: 60, color: Colors.grey[400]),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Image not available',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontFamily: 'Montserrat',
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         );
                                       },
                                     )
                                   : Container(
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.image, size: 50),
+                                      color: Colors.grey[200],
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.image_not_supported, 
+                                               size: 60, color: Colors.grey[400]),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'No image available',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontFamily: 'Montserrat',
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                         ),
                       ),
@@ -270,7 +380,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       Text(
                         widget.listing.title,
                         style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Montserrat',
+                            ),
                       ),
                       const SizedBox(height: 8),
 
@@ -315,6 +428,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 color: _getCurrentStock() > 0
                                     ? const Color(0xFF1E3A8A)
                                     : const Color(0xFFFF6B35),
+                                fontFamily: 'Montserrat',
                               ),
                             ),
                           ],
@@ -325,15 +439,18 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           widget.listing.description!.isNotEmpty)
                         Text(
                           widget.listing.description!,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontFamily: 'Montserrat',
+                          ),
                         ),
                       const SizedBox(height: 8),
                       Text(
                         'Price: ₱${widget.listing.price.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              color: const Color(0xFF1E3A8A),
+                              color: Colors.black,
                               fontWeight: FontWeight.bold,
+                              fontFamily: 'Montserrat',
                             ),
                       ),
                       const SizedBox(height: 8),
@@ -343,7 +460,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         Text(
                           'Available Sizes:',
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w500),
+                              ?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Montserrat',
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Wrap(
@@ -370,6 +490,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                             : Colors.orange[800],
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
+                                        fontFamily: 'Montserrat',
                                       ),
                                     ),
                                   );
@@ -394,6 +515,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                             : Colors.orange[800],
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
+                                        fontFamily: 'Montserrat',
                                       ),
                                     ),
                                   );
@@ -408,6 +530,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     ? Colors.green
                                     : Colors.red,
                                 fontWeight: FontWeight.w500,
+                                fontFamily: 'Montserrat',
                               ),
                         ),
                       ],
@@ -420,7 +543,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
               // Order Details Card
               Card(
-                elevation: 4,
+                elevation: 0,
+                color: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -430,7 +554,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         'Order Details',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E3A8A),
+                          color: Colors.black,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -442,7 +567,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         Text(
                           'Select Size:',
                           style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Montserrat',
+                              ),
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -495,6 +623,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           fontWeight: isSelected
                                               ? FontWeight.bold
                                               : FontWeight.normal,
+                                          fontFamily: 'Montserrat',
                                         ),
                                       ),
                                     ),
@@ -547,6 +676,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           fontWeight: isSelected
                                               ? FontWeight.bold
                                               : FontWeight.normal,
+                                          fontFamily: 'Montserrat',
                                         ),
                                       ),
                                     ),
@@ -661,7 +791,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             Text(
                               'Total Amount:',
                               style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Montserrat',
+                                  ),
                             ),
                             Text(
                               '₱${_totalAmount.toStringAsFixed(2)}',
@@ -669,6 +802,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: const Color(0xFF1E3A8A),
+                                    fontFamily: 'Montserrat',
                                   ),
                             ),
                           ],
@@ -683,7 +817,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
               // Payment Information Card
               Card(
-                elevation: 4,
+                elevation: 0,
+                color: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -693,7 +828,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         'Payment Information',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E3A8A),
+                          color: Colors.black,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -707,6 +843,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                         ],
@@ -714,15 +851,24 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       const SizedBox(height: 8),
                       const Text(
                         '• Please bring the exact amount in cash',
-                        style: TextStyle(fontSize: 14),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
                       const Text(
                         '• Valid ID required for pickup',
-                        style: TextStyle(fontSize: 14),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
                       const Text(
                         '• Pickup location: Department Office',
-                        style: TextStyle(fontSize: 14),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -730,6 +876,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                     ],
@@ -773,6 +920,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               _getCurrentStock() > 0
                                   ? 'Creating Reservation...'
                                   : 'Creating Pre-order...',
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                              ),
                             ),
                           ],
                         )
@@ -783,6 +933,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'Montserrat',
                           ),
                         ),
                 ),

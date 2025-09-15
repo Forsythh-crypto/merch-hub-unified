@@ -7,7 +7,14 @@ import '../styles/auth_styles.dart';
 import '../models/user_role.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String? returnRoute;
+  final Map<String, dynamic>? returnArguments;
+
+  const LoginScreen({
+    super.key,
+    this.returnRoute,
+    this.returnArguments,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -56,43 +63,70 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
         await prefs.setString('user_data', jsonEncode(userData));
+        
+        // Clear guest mode after successful login
+        await prefs.remove('is_guest_mode');
 
         // Create UserSession object using fromJson for consistency
         final userSession = UserSession.fromJson(userData);
 
-        // Navigate based on role
+        // Navigate based on role or return route
         if (!mounted) return;
 
+        // Always go to home screen first after successful login
+        Navigator.pushReplacementNamed(context, '/home');
+        
+        // If there's a return route, navigate to it after a short delay
+        if (widget.returnRoute != null) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              Navigator.pushNamed(
+                context,
+                widget.returnRoute!,
+                arguments: widget.returnArguments,
+              );
+            }
+          });
+          return;
+        }
+
+        // For admin/superadmin roles, navigate to their respective dashboards after delay
         if (userSession.isSuperAdmin) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/superadmin',
-            arguments: {
-              'userId': userSession.userId,
-              'name': userSession.name,
-              'email': userSession.email,
-              'role': userSession.role == UserRole.superAdmin
-                  ? 'superadmin'
-                  : 'admin',
-              'departmentId': userSession.departmentId,
-              'departmentName': userSession.departmentName,
-            },
-          );
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              Navigator.pushReplacementNamed(
+                context,
+                '/superadmin',
+                arguments: {
+                  'userId': userSession.userId,
+                  'name': userSession.name,
+                  'email': userSession.email,
+                  'role': userSession.role == UserRole.superAdmin
+                      ? 'superadmin'
+                      : 'admin',
+                  'departmentId': userSession.departmentId,
+                  'departmentName': userSession.departmentName,
+                },
+              );
+            }
+          });
         } else if (userSession.isAdmin) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/admin',
-            arguments: {
-              'userId': userSession.userId,
-              'name': userSession.name,
-              'email': userSession.email,
-              'role': userSession.role == UserRole.admin ? 'admin' : 'student',
-              'departmentId': userSession.departmentId,
-              'departmentName': userSession.departmentName,
-            },
-          );
-        } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              Navigator.pushReplacementNamed(
+                context,
+                '/admin',
+                arguments: {
+                  'userId': userSession.userId,
+                  'name': userSession.name,
+                  'email': userSession.email,
+                  'role': userSession.role == UserRole.admin ? 'admin' : 'student',
+                  'departmentId': userSession.departmentId,
+                  'departmentName': userSession.departmentName,
+                },
+              );
+            }
+          });
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

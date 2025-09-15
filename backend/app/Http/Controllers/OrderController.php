@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Listing;
 use App\Models\User;
+use App\Models\DiscountCode;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,7 @@ class OrderController extends Controller
                 'email' => 'required|email',
                 'notes' => 'nullable|string|max:500',
                 'size' => 'nullable|string|max:10',
+                'discount_code' => 'nullable|string|max:50',
             ]);
 
         // Get the listing with size variants
@@ -63,8 +65,26 @@ class OrderController extends Controller
             }
         }
 
-        // Calculate total amount and reservation fee
-        $totalAmount = $listing->price * $validated['quantity'];
+        // Calculate original amount
+        $originalAmount = $listing->price * $validated['quantity'];
+        $discountAmount = 0;
+        $discountCodeId = null;
+        
+        // Apply discount code if provided
+        if (!empty($validated['discount_code'])) {
+            $discountCode = DiscountCode::where('code', $validated['discount_code'])
+                ->active()
+                ->valid()
+                ->first();
+                
+            if ($discountCode && $discountCode->canBeUsedBy($user, $listing->department_id)) {
+                $discountAmount = $discountCode->calculateDiscount($originalAmount);
+                $discountCodeId = $discountCode->id;
+            }
+        }
+        
+        // Calculate final amount after discount
+        $totalAmount = $originalAmount - $discountAmount;
         $reservationFeeAmount = $totalAmount * 0.35; // 35% reservation fee
 
         // Create order
@@ -76,6 +96,9 @@ class OrderController extends Controller
             'department_id' => $listing->department_id,
             'quantity' => $validated['quantity'],
             'total_amount' => $totalAmount,
+            'original_amount' => $originalAmount,
+            'discount_code_id' => $discountCodeId,
+            'discount_amount' => $discountAmount,
             'reservation_fee_amount' => $reservationFeeAmount,
             'reservation_fee_paid' => false,
             'status' => 'pending',
@@ -83,6 +106,11 @@ class OrderController extends Controller
             'payment_method' => 'cash_on_pickup',
             'size' => $validated['size'] ?? null,
         ]);
+        
+        // Increment discount code usage if applied
+        if ($discountCodeId) {
+            DiscountCode::where('id', $discountCodeId)->increment('used_count');
+        }
 
         // Update stock quantity - only decrement if stock is available (not for pre-orders)
         if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {

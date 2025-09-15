@@ -4,9 +4,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_role.dart';
 import '../config/app_config.dart';
-import '../screens/superadmin_dashboard.dart';
-import '../screens/admin_listings_screen.dart';
-import '../screens/home_screen.dart';
+import 'superadmin_dashboard.dart';
+import 'admin_listings_screen.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

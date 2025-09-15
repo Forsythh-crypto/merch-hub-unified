@@ -98,6 +98,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -109,6 +110,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                           fontSize: 14,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                     ],
@@ -129,6 +131,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Montserrat',
                     ),
                   ),
                 ),
@@ -166,7 +169,8 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: Color(0xFF1E3A8A),
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                     Text(
@@ -457,11 +461,21 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Orders'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'My Orders',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadOrders),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadOrders,
+          ),
         ],
       ),
       body: _isLoading

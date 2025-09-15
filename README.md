@@ -1,60 +1,38 @@
-# Merch Hub - Unified Full-Stack Project
+# Merch Hub - Merchandise Ordering System
 
-A complete marketplace application with Flutter frontend and Laravel backend, featuring role-based access control for students, admins, and super admins.
+A simple merchandise ordering system for students and admins of school departments.
 
-## 🏗️ Project Structure
+## What is Merch Hub?
 
-```
-Merch Hub Unified/
-├── backend/                 # Laravel API Backend
-│   ├── app/                # Laravel application code
-│   ├── routes/api.php      # API routes
-│   ├── database/           # Migrations, seeders
-│   └── ...
-├── frontend/               # Flutter Web/Mobile Frontend
-│   ├── lib/                # Flutter application code
-│   ├── pubspec.yaml        # Flutter dependencies
-│   └── ...
-├── docs/                   # Documentation
-├── scripts/                # Development scripts
-├── docker-compose.yml      # Docker setup (optional)
-└── README.md              # This file
-```
+Merch Hub is an online platform where:
+- **Students** can browse and order merchandise
+- **Admins** can manage products and orders in their department
+- **Super Admin** can manage the entire system
 
-## 🚀 Quick Start
+## How to Use the App
 
-### Prerequisites
-- XAMPP (with PHP 8.1+ and MySQL)
-- Flutter SDK (3.0+)
-- Node.js (16+)
-- Git
+### For Students:
+1. **Register** using your school email
+2. **Browse** available merchandise in your department
+3. **Order** your desired items
+4. **Pay** the reservation fee (if required)
+5. **Pick up** your order when ready
 
-### Detailed Setup
-For complete setup instructions, see [SETUP.md](SETUP.md)
+### For Admins:
+1. **Login** using your admin account
+2. **Add** new merchandise to your department
+3. **Manage** incoming orders
+4. **Update** order status (confirmed, ready for pickup, completed)
+5. **Send** notifications to customers
 
-### Quick Commands
-```bash
-# Backend Setup
-cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan db:seed
-php artisan serve
+### For Super Admin:
+1. **Manage** all departments
+2. **Create** admin accounts
+3. **Monitor** system-wide activities
 
-# Frontend Setup
-cd frontend
-flutter pub get
-flutter run -d web
+## Test Accounts
 
-# Database Export (for sharing)
-scripts/export_db.bat
-```
-
-## 🔐 Default Users
-
-After running `php artisan db:seed`:
+You can use these test accounts:
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -62,75 +40,51 @@ After running `php artisan db:seed`:
 | Admin | admin@example.com | admin123 |
 | Student | student@example.com | student123 |
 
-## 🛠️ Development Commands
+## For Developers
 
-```bash
-# Start both frontend and backend
-npm run dev
+If you're a developer and want to set up the system, check [SETUP.md](SETUP.md) for detailed instructions.
 
-# Backend only
-npm run backend
+## System Features
 
-# Frontend only  
-npm run frontend
+### For All Users:
+- **User-friendly interface** - Easy-to-use design
+- **Mobile and Web support** - Can be used on phone, tablet, or computer
+- **Real-time notifications** - Get updates on orders
+- **Secure login** - Safe authentication system
 
-# Create new super admin
-cd backend && php artisan user:create-superadmin
+### For Students:
+- **Browse merchandise** - View available products
+- **Place orders** - Order merchandise
+- **Track order status** - Monitor order status
+- **Upload payment receipts** - Upload proof of payment
 
-# Reset database
-cd backend && php artisan migrate:fresh --seed
-```
+### For Admins:
+- **Manage products** - Add, edit, delete merchandise
+- **Process orders** - Manage incoming orders
+- **Update order status** - Update order status
+- **Send notifications** - Send updates to customers
+- **View reports** - View sales and order reports
 
-## 📚 API Documentation
+### For Super Admin:
+- **Manage departments** - Manage all departments
+- **Create admin accounts** - Create admin accounts
+- **System monitoring** - Monitor the entire system
+- **User management** - Manage all users
 
-See [API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md) for complete API reference.
+## Need Help?
 
-## 🔧 Features
+If you have questions or problems using the system:
 
-### Backend (Laravel)
-- ✅ Role-based authentication (Student/Admin/SuperAdmin)
-- ✅ JWT token authentication with Laravel Sanctum
-- ✅ Department-based access control
-- ✅ RESTful API endpoints
-- ✅ File upload support
-- ✅ Database migrations and seeders
+1. **For technical issues**: Contact IT support
+2. **For order concerns**: Contact the department admin
+3. **For account issues**: Contact the super admin
 
-### Frontend (Flutter)
-- ✅ Cross-platform (Web/Mobile)
-- ✅ Role-based UI rendering
-- ✅ HTTP API integration
-- ✅ State management
-- ✅ Responsive design
-- ✅ Authentication flow
+## Additional Documentation
 
-## 🐳 Docker Support (Optional)
+- [SETUP.md](SETUP.md) - For developers setting up the system
+- [API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md) - For API reference
+- [ERD_MerchHub.md](ERD_MerchHub.md) - Database structure documentation
 
-```bash
-# Start all services
-docker-compose up -d
+---
 
-# Access:
-# Frontend: http://localhost:3000
-# Backend: http://localhost:8000
-# Database: localhost:3306
-```
-
-## 📱 Platforms Supported
-
-- ✅ Web (Chrome, Firefox, Safari, Edge)
-- ✅ Android
-- ✅ iOS
-- ✅ Windows
-- ✅ macOS
-- ✅ Linux
-
-## 🤝 Contributing
-
-1. Make changes in respective `backend/` or `frontend/` directories
-2. Test both applications
-3. Update documentation if needed
-4. Submit pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
+**Thank you for using Merch Hub!**

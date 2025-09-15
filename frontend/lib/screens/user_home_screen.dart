@@ -4,25 +4,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/listing.dart';
 import '../services/admin_service.dart';
 import '../services/auth_services.dart';
+import '../services/guest_service.dart';
 import '../widgets/notification_badge.dart';
+import '../widgets/login_prompt_dialog.dart';
 import '../config/app_config.dart';
 import 'user_orders_screen.dart';
 import 'order_confirmation_screen.dart';
 import 'notifications_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
-  const UserHomeScreen({super.key});
+  final bool isGuest;
+  
+  const UserHomeScreen({super.key, this.isGuest = false});
 
   @override
   State<UserHomeScreen> createState() => _UserHomeScreenState();
 }
 
-class _UserHomeScreenState extends State<UserHomeScreen> {
+class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObserver {
   List<Listing> _listings = [];
   List<Listing> _officialMerchListings = [];
   List<Listing> _departmentListings = [];
   bool _isLoading = false;
   final GlobalKey _notificationBadgeKey = GlobalKey();
+  bool _isGuest = false;
 
   final List<Map<String, dynamic>> _departments = [
     {
@@ -70,14 +75,57 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkGuestStatus();
     _loadListings();
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Refresh guest status when app becomes active
+      _checkGuestStatus();
+    }
+  }
+  
+  @override
+  void didUpdateWidget(UserHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh guest status when widget updates
+    _checkGuestStatus();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh guest status when returning from login
+    _checkGuestStatus();
+  }
+  
+  Future<void> _checkGuestStatus() async {
+    final isGuest = await GuestService.isGuestMode();
+    if (mounted) {
+      setState(() {
+        _isGuest = isGuest;
+      });
+    }
   }
 
   Future<void> _loadListings() async {
     setState(() => _isLoading = true);
 
     try {
-      final listings = await AdminService.getApprovedListings();
+      final isGuest = await GuestService.isGuestMode();
+      final listings = isGuest 
+          ? await AdminService.getPublicListings()
+          : await AdminService.getApprovedListings();
       
       final officialMerch = listings
           .where(
@@ -124,7 +172,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               children: [
                 Image.asset(
                   'assets/logos/uddess_black.png',
-                  height: 10,
+                  height: 60,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return const Text(
@@ -139,13 +187,26 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Your One-Stop Shop for UDD Merchandise',
-                  style: TextStyle(
+                Text(
+                  _isGuest 
+                    ? 'Browsing as Guest'
+                    : 'Your One-Stop Shop for UDD Merchandise',
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
                   ),
                 ),
+                if (_isGuest)
+                  const SizedBox(height: 4),
+                if (_isGuest)
+                  const Text(
+                    'Login to access all features',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -164,19 +225,36 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               Navigator.pushNamed(context, '/user-listings');
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E3A8A)),
-            title: const Text('My Orders'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const UserOrdersScreen(),
-                ),
-              );
-            },
-          ),
+          if (!_isGuest)
+            ListTile(
+              leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E3A8A)),
+              title: const Text('My Orders'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserOrdersScreen(),
+                  ),
+                );
+              },
+            ),
+          if (_isGuest)
+            ListTile(
+              leading: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+              title: const Text('My Orders', style: TextStyle(color: Colors.grey)),
+              onTap: () async {
+                Navigator.pop(context);
+                final loggedIn = await GuestService.promptLogin(
+                  context, 
+                  'view_orders',
+                  returnRoute: '/home',
+                );
+                if (loggedIn) {
+                  _checkGuestStatus();
+                }
+              },
+            ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.info_outline, color: Color(0xFF1E3A8A)),
@@ -196,15 +274,35 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Logout', style: TextStyle(color: Colors.red)),
+            leading: Icon(
+              _isGuest ? Icons.login : Icons.logout,
+              color: _isGuest ? Color(0xFF1E3A8A) : Colors.red,
+            ),
+            title: Text(
+              _isGuest ? 'Login' : 'Logout',
+              style: TextStyle(
+                color: _isGuest ? Color(0xFF1E3A8A) : Colors.red,
+              ),
+            ),
             onTap: () async {
                Navigator.pop(context);
-               // Clear user session and navigate to welcome
-               final prefs = await SharedPreferences.getInstance();
-               await prefs.clear();
-               if (mounted) {
-                 Navigator.of(context).pushReplacementNamed('/welcome');
+               if (_isGuest) {
+                 // Navigate to login screen
+                 final loggedIn = await GuestService.promptLogin(
+                   context, 
+                   'login',
+                   returnRoute: '/home',
+                 );
+                 if (loggedIn) {
+                   _checkGuestStatus();
+                 }
+               } else {
+                 // Clear user session and navigate to welcome
+                 final prefs = await SharedPreferences.getInstance();
+                 await prefs.clear();
+                 if (mounted) {
+                   Navigator.of(context).pushReplacementNamed('/welcome');
+                 }
                }
              },
           ),
@@ -258,7 +356,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'UDD Essentials is your premier destination for authentic University of Dagupan merchandise. We provide a comprehensive platform that connects students, faculty, and alumni with official UDD products and department-specific merchandise.',
+                  'UDD Essentials is your premier destination for authentic University de Dagupan merchandise. We provide a comprehensive platform that connects students, faculty, and alumni with official UDD products and department-specific merchandise.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, height: 1.5),
                 ),
@@ -400,19 +498,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 _buildContactItem(
                   icon: Icons.location_on,
                   title: 'Address',
-                  content: 'University of Dagupan\nArellano Street, Dagupan City\nPangasinan, Philippines',
+                  content: 'Universidad de Dagupan\nArellano Street, Dagupan City\nPangasinan, Philippines',
                 ),
                 const SizedBox(height: 16),
                 _buildContactItem(
                   icon: Icons.phone,
                   title: 'Phone',
-                  content: '+63 75 522 3922\n+63 75 515 1143',
+                  content: '(075) 522 2405',
                 ),
                 const SizedBox(height: 16),
                 _buildContactItem(
                   icon: Icons.email,
                   title: 'Email',
-                  content: 'info@ud.edu.ph\nregistrar@ud.edu.ph',
+                  content: 'info@cdd.edu.ph\nregistrar@cdd.edu.ph',
                 ),
                 const SizedBox(height: 16),
                 _buildContactItem(
@@ -593,7 +691,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        // Refresh guest status when navigating back
+        await _checkGuestStatus();
+        return true;
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: Padding(
           padding: const EdgeInsets.only(left: 12.0),
@@ -639,13 +743,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             padding: const EdgeInsets.only(left: 1.0, right: 12.0),
             child: IconButton(
               icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UserOrdersScreen(),
-                  ),
-                );
+              onPressed: () async {
+                if (_isGuest) {
+                  final loggedIn = await GuestService.promptLogin(
+                    context, 
+                    'view_orders',
+                    returnRoute: '/home',
+                  );
+                  if (loggedIn) {
+                    _checkGuestStatus();
+                  }
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const UserOrdersScreen(),
+                    ),
+                  );
+                }
               },
             ),
           ),
@@ -981,6 +1096,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
             ),
 
+    ),
     );
   }
 }

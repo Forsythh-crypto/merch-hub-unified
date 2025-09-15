@@ -273,6 +273,34 @@ class AdminService {
     return [];
   }
 
+  // Public listings endpoint for guest users (no authentication required)
+  static Future<List<Listing>> getPublicListings() async {
+    try {
+      final base = AppConfig.api('public/listings').toString();
+      final url = base.contains('?')
+          ? '$base&_t=${DateTime.now().millisecondsSinceEpoch}'
+          : '$base?_t=${DateTime.now().millisecondsSinceEpoch}';
+      final response = await http
+          .get(Uri.parse(url), headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['listings'] != null) {
+          final listings = (data['listings'] as List)
+              .map((listing) => Listing.fromJson(listing))
+              .toList();
+          return listings;
+        } else {
+          return [];
+        }
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+    return [];
+  }
+
   // User Management Methods
   static Future<bool> grantAdminPrivileges(int userId, int departmentId) async {
     try {
