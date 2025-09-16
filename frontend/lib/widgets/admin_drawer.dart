@@ -153,16 +153,28 @@ class AdminDrawer extends StatelessWidget {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
+                    title: const Text(
+                      'Logout',
+                      style: TextStyle(fontFamily: 'Montserrat'),
+                    ),
+                    content: const Text(
+                      'Are you sure you want to logout?',
+                      style: TextStyle(fontFamily: 'Montserrat'),
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontFamily: 'Montserrat'),
+                        ),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Logout'),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(fontFamily: 'Montserrat'),
+                        ),
                       ),
                     ],
                   );
