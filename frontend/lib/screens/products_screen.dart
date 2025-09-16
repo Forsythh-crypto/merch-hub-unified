@@ -165,6 +165,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
         title: const Text('Products Management'),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,

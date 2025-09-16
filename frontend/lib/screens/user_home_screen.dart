@@ -119,7 +119,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
   }
 
   Future<void> _loadListings() async {
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       final isGuest = await GuestService.isGuestMode();
@@ -139,15 +141,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           )
           .toList();
       
-      setState(() {
-        _listings = listings;
-        _officialMerchListings = officialMerch;
-        _departmentListings = departmentListings;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _listings = listings;
+          _officialMerchListings = officialMerch;
+          _departmentListings = departmentListings;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error loading listings: $e');
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

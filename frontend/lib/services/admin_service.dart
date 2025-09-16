@@ -184,7 +184,7 @@ class AdminService {
 
       return response.statusCode == 200;
     } catch (e) {
-      // Handle error silently
+      print('❌ Create Discount Code Exception: $e');
       return false;
     }
   }
@@ -200,7 +200,7 @@ class AdminService {
 
       return response.statusCode == 200;
     } catch (e) {
-      // Handle error silently
+      print('❌ Delete Discount Code Exception: $e');
       return false;
     }
   }
@@ -217,7 +217,7 @@ class AdminService {
 
       return response.statusCode == 200;
     } catch (e) {
-      // Handle error silently
+      print('Error creating department: $e');
       return false;
     }
   }
@@ -392,25 +392,19 @@ class AdminService {
   Future<List<Map<String, dynamic>>> getDiscountCodes() async {
     try {
       final headers = await _getHeaders();
-      print('🔄 Fetching discount codes from API...');
       final response = await http.get(
         AppConfig.api('admin/discount-codes'),
         headers: headers,
       );
 
-      print('📡 API Response Status: ${response.statusCode}');
-      print('📡 API Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final codes = List<Map<String, dynamic>>.from(data['discount_codes'] ?? []);
-        print('✅ Successfully parsed ${codes.length} discount codes');
         return codes;
       }
-      print('❌ API returned status ${response.statusCode}');
       return [];
     } catch (e) {
-      print('❌ Get Discount Codes Exception: $e');
+      print('❌ Get Departments Exception: $e');
       return [];
     }
   }
@@ -429,7 +423,7 @@ class AdminService {
       }
       return [];
     } catch (e) {
-      print('❌ Get Departments Exception: $e');
+      // Handle error silently
       return [];
     }
   }
@@ -445,7 +439,7 @@ class AdminService {
 
       return response.statusCode == 201;
     } catch (e) {
-      print('❌ Create Discount Code Exception: $e');
+      print('Error updating department: $e');
       return false;
     }
   }
@@ -460,7 +454,7 @@ class AdminService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Delete Discount Code Exception: $e');
+      print('Error deleting department: $e');
       return false;
     }
   }
@@ -525,8 +519,8 @@ class AdminService {
 
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
-      print('Error creating department: $e');
-      return false;
+      print('Error creating listing: $e');
+      throw Exception('Failed to create listing: $e');
     }
   }
 
@@ -571,8 +565,8 @@ class AdminService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error updating department: $e');
-      return false;
+      print('Error creating listing with variants: $e');
+      throw Exception('Failed to create listing with variants: $e');
     }
   }
 
@@ -589,7 +583,7 @@ class AdminService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('Error deleting department: $e');
+      // Handle error silently
       return false;
     }
   }
@@ -661,7 +655,7 @@ class AdminService {
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error creating listing: $e');
+      // Handle error silently
       return false;
     }
   }
@@ -733,7 +727,7 @@ class AdminService {
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error creating listing with variants: $e');
+      // Handle error silently
       return false;
     }
   }

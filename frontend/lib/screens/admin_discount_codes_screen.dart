@@ -27,24 +27,30 @@ class _AdminDiscountCodesScreenState extends State<AdminDiscountCodesScreen> {
   Future<void> _loadUserSession() async {
     try {
       final session = await UserSession.fromStorage();
-      setState(() {
-        _userSession = session;
-      });
+      if (mounted) {
+        setState(() {
+          _userSession = session;
+        });
+      }
       await _loadData();
     } catch (e) {
-      setState(() {
-        _error = 'Failed to load user session: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load user session: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _loadData() async {
     try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _error = null;
+        });
+      }
 
       // Load discount codes
       final discountCodes = await _adminService.getDiscountCodes();
@@ -55,16 +61,20 @@ class _AdminDiscountCodesScreenState extends State<AdminDiscountCodesScreen> {
         departments = await _adminService.getDepartments();
       }
 
-      setState(() {
-        _discountCodes = discountCodes;
-        _departments = departments;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _discountCodes = discountCodes;
+          _departments = departments;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to load data: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load data: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -93,6 +103,16 @@ class _AdminDiscountCodesScreenState extends State<AdminDiscountCodesScreen> {
           );
         }
       }
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateStr;
     }
   }
 
@@ -146,14 +166,6 @@ class _AdminDiscountCodesScreenState extends State<AdminDiscountCodesScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Discount Codes',
-          style: TextStyle(fontFamily: 'Montserrat'),
-        ),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
-      ),
       body: _buildMainContent(),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateDiscountCodeDialog,
@@ -261,12 +273,15 @@ class _AdminDiscountCodesScreenState extends State<AdminDiscountCodesScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            discountCode['code'] ?? '',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Montserrat',
+                          Expanded(
+                            child: Text(
+                              discountCode['code'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Montserrat',
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -292,73 +307,164 @@ class _AdminDiscountCodesScreenState extends State<AdminDiscountCodesScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        discountType == 'percentage'
-                            ? '${discountValue}% off'
-                            : '₱${discountValue} off',
+                        () {
+                          // Handle different data types for discount value
+                          double? actualValue;
+                          
+                          if (discountValue is String) {
+                            actualValue = double.tryParse(discountValue);
+                          } else if (discountValue is num) {
+                            actualValue = discountValue.toDouble();
+                          }
+                          
+                          // Show the actual value even if it's 0, but handle null
+                          if (actualValue == null) {
+                            return 'Invalid discount value';
+                          }
+                          
+                          return '${actualValue.toStringAsFixed(actualValue == actualValue.toInt() ? 0 : 1)}% off';
+                        }(),
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.green,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (discountCode['description'] != null)
+                      if (discountCode['description'] != null) ...[
+                        const SizedBox(height: 4),
                         Text(
                           discountCode['description'],
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ],
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => _deleteDiscountCode(discountCode['id']),
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _deleteDiscountCode(discountCode['id']);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 400;
+                
+                if (isMobile) {
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Usage: $usageCount${maxUsage != null ? '/$maxUsage' : ''}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      if (discountCode['valid_from'] != null)
+                      if (discountCode['valid_from'] != null) ...[
                         Text(
-                          'Valid from: ${discountCode['valid_from']}',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          'Valid from: ${_formatDate(discountCode['valid_from'])}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
                         ),
-                      if (discountCode['valid_until'] != null)
+                      ],
+                      if (discountCode['valid_until'] != null) ...[
                         Text(
-                          'Valid until: ${discountCode['valid_until']}',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          'Valid until: ${_formatDate(discountCode['valid_until'])}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      if (discountCode['department'] != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            discountCode['department']['name'] ?? 'Unknown',
+                            style: TextStyle(
+                              color: Colors.blue[800],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                } else {
+                  return Row(
+                    children: [
+                      if (discountCode['valid_from'] != null) ...[
+                        Expanded(
+                          child: Text(
+                            'Valid from: ${_formatDate(discountCode['valid_from'])}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (discountCode['valid_until'] != null) ...[
+                        Expanded(
+                          child: Text(
+                            'Valid until: ${_formatDate(discountCode['valid_until'])}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (discountCode['department'] != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            discountCode['department']['name'] ?? 'Unknown',
+                            style: TextStyle(
+                              color: Colors.blue[800],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
-                  ),
-                ),
-                if (discountCode['department'] != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      discountCode['department']['name'] ?? 'Unknown',
-                      style: TextStyle(
-                        color: Colors.blue[800],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-              ],
+                  );
+                }
+              },
             ),
           ],
         ),
@@ -405,18 +511,23 @@ class _CreateDiscountCodeDialogState extends State<CreateDiscountCodeDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth > 600 ? 500.0 : screenWidth * 0.9;
+    
     return AlertDialog(
       title: const Text(
         'Create Discount Code',
         style: TextStyle(fontFamily: 'Montserrat'),
       ),
+      contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 0),
       content: SizedBox(
-        width: 400,
+        width: dialogWidth,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextFormField(
                   controller: _codeController,
@@ -441,72 +552,90 @@ class _CreateDiscountCodeDialogState extends State<CreateDiscountCodeDialog> {
                   maxLines: 2,
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _discountType,
-                        decoration: const InputDecoration(
-                          labelText: 'Discount Type',
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'percentage',
-                            child: Text('Percentage'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'fixed',
-                            child: Text('Fixed Amount'),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth > 400) {
+                      return Row(
+                        children: [
+
+                          Expanded(
+                            child: TextFormField(
+                              controller: _discountValueController,
+                              decoration: InputDecoration(
+                                labelText: 'Percentage',
+                            suffixText: '%',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                final numValue = double.tryParse(value);
+                                if (numValue == null || numValue <= 0) {
+                                  return 'Invalid value';
+                                }
+                                if (numValue > 100) {
+                                  return 'Max 100%';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                         ],
-                        onChanged: (value) {
-                          setState(() {
-                            _discountType = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _discountValueController,
-                        decoration: InputDecoration(
-                          labelText: _discountType == 'percentage' ? 'Percentage' : 'Amount',
-                          suffixText: _discountType == 'percentage' ? '%' : '₱',
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Required';
-                          }
-                          final numValue = double.tryParse(value);
-                          if (numValue == null || numValue <= 0) {
-                            return 'Invalid value';
-                          }
-                          if (_discountType == 'percentage' && numValue > 100) {
-                            return 'Max 100%';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+                      );
+                    } else {
+                      return Column(
+                        children: [
+                          TextFormField(
+                            controller: _discountValueController,
+                            decoration: InputDecoration(
+                              labelText: 'Percentage',
+                              suffixText: '%',
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Required';
+                              }
+                              final numValue = double.tryParse(value);
+                              if (numValue == null || numValue <= 0) {
+                                return 'Invalid value';
+                              }
+                              if (numValue > 100) {
+                                  return 'Max 100%';
+                                }
+                              return null;
+                            },
+                          ),
+                        ],
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 16),
                 if (widget.userSession.isSuperAdmin) ...[
                   DropdownButtonFormField<int?>(
                     value: _selectedDepartmentId,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Department',
                     ),
                     items: [
                       const DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('All Departments'),
+                        child: Text(
+                          'All Departments',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                       ...widget.departments.map((dept) => DropdownMenuItem<int?>(
                         value: dept['id'],
-                        child: Text(dept['name']),
+                        child: Text(
+                          dept['name'],
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       )),
                     ],
                     onChanged: (value) {
@@ -516,15 +645,28 @@ class _CreateDiscountCodeDialogState extends State<CreateDiscountCodeDialog> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  CheckboxListTile(
-                    title: const Text('UDD Official Merch'),
-                    subtitle: const Text('Allow for official university merchandise'),
-                    value: _isUddOfficial,
-                    onChanged: (value) {
-                      setState(() {
-                        _isUddOfficial = value ?? false;
-                      });
-                    },
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: CheckboxListTile(
+                      title: const Text(
+                        'UDD Official Merch',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      subtitle: const Text(
+                        'Allow for official university merchandise',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      value: _isUddOfficial,
+                      onChanged: (value) {
+                        setState(() {
+                          _isUddOfficial = value ?? false;
+                        });
+                      },
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -546,53 +688,46 @@ class _CreateDiscountCodeDialogState extends State<CreateDiscountCodeDialog> {
                   },
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Valid From'),
-                        subtitle: Text(
-                          _validFrom?.toString().split(' ')[0] ?? 'Not set',
-                        ),
-                        trailing: const Icon(Icons.calendar_today),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: _validFrom ?? DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
-                          );
-                          if (date != null) {
-                            setState(() {
-                              _validFrom = date;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Valid Until'),
-                        subtitle: Text(
-                          _validUntil?.toString().split(' ')[0] ?? 'Not set',
-                        ),
-                        trailing: const Icon(Icons.calendar_today),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: _validUntil ?? DateTime.now().add(const Duration(days: 30)),
-                            firstDate: _validFrom ?? DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
-                          );
-                          if (date != null) {
-                            setState(() {
-                              _validUntil = date;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth > 400) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _buildDateTile(
+                              'Valid From',
+                              _validFrom,
+                              () => _selectValidFromDate(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildDateTile(
+                              'Valid Until',
+                              _validUntil,
+                              () => _selectValidUntilDate(),
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Column(
+                        children: [
+                          _buildDateTile(
+                            'Valid From',
+                            _validFrom,
+                            () => _selectValidFromDate(),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildDateTile(
+                            'Valid Until',
+                            _validUntil,
+                            () => _selectValidUntilDate(),
+                          ),
+                        ],
+                      );
+                    }
+                  },
                 ),
               ],
             ),
@@ -633,6 +768,67 @@ class _CreateDiscountCodeDialogState extends State<CreateDiscountCodeDialog> {
         ),
       ],
     );
+  }
+
+  Widget _buildDateTile(String title, DateTime? date, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text(
+          date?.toString().split(' ')[0] ?? 'Not set',
+          style: TextStyle(
+            fontSize: 12,
+            color: date != null ? Colors.black87 : Colors.grey.shade600,
+          ),
+        ),
+        trailing: Icon(
+          Icons.calendar_today,
+          size: 20,
+          color: Colors.grey.shade600,
+        ),
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+    );
+  }
+
+  Future<void> _selectValidFromDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _validFrom ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) {
+      setState(() {
+        _validFrom = date;
+        // Reset valid until if it's before the new valid from date
+        if (_validUntil != null && _validUntil!.isBefore(date)) {
+          _validUntil = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectValidUntilDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _validUntil ?? DateTime.now().add(const Duration(days: 30)),
+      firstDate: _validFrom ?? DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) {
+      setState(() {
+        _validUntil = date;
+      });
+    }
   }
 
   @override

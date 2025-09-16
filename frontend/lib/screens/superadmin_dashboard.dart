@@ -1648,7 +1648,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         );
       }
     } catch (e) {
-      print('Error in user action: $e');
+      print('Error creating department: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('An error occurred: $e'),
@@ -1821,6 +1821,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           ),
           actions: [
             TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
               onPressed: () {
                 nameController.dispose();
                 descriptionController.dispose();
@@ -1850,7 +1854,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     _loadData();
                   }
                 } catch (e) {
-                  print('Error creating department: $e');
+                  print('Error in user action: $e');
                 }
               },
               child: const Text(
@@ -2054,7 +2058,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   _loadData();
                 }
               } catch (e) {
-                print('Error deleting department: $e');
+                print('Error loading data: $e');
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -2109,7 +2113,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
         isLoading = false;
       } catch (e) {
-        print('Error loading data: $e');
+        print('Error creating product: $e');
         isLoading = false;
       }
     }
@@ -2736,7 +2740,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     }
                   }
                 } catch (e) {
-                  print('Error creating product: $e');
+                  print('Error deleting department: $e');
                 }
               },
               child: const Text('Create'),
@@ -3148,10 +3152,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 await _deleteListing(listing);
@@ -3413,6 +3413,32 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               onTap: () {
                 setState(() {
                   _selectedIndex = 5;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 6 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.local_offer,
+                color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Discount Codes',
+                style: TextStyle(
+                  color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 6 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 6;
                 });
                 Navigator.pop(context);
               },

@@ -105,7 +105,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading listings: $e');
+      // Error loading listings
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
@@ -119,7 +119,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         _categories = categories;
       });
     } catch (e) {
-      print('❌ Error loading categories: $e');
+      // Error loading categories
     }
   }
 
@@ -1010,8 +1010,8 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     final isActive = discountCode['is_active'] == true;
     final usageCount = discountCode['used_count'] ?? 0;
     final maxUsage = discountCode['max_usage'];
-    final discountType = discountCode['discount_type'];
-    final discountValue = discountCode['discount_value'];
+    final discountType = discountCode['type'];
+    final discountValue = discountCode['value'];
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1059,15 +1059,29 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        discountType == 'percentage'
-                            ? '${discountValue}% off'
-                            : '₱${discountValue} off',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.green,
-                          fontWeight: FontWeight.w600,
+                          () {
+                            // Handle different data types for discount value
+                            double? actualValue;
+                            
+                            if (discountValue is String) {
+                              actualValue = double.tryParse(discountValue);
+                            } else if (discountValue is num) {
+                              actualValue = discountValue.toDouble();
+                            }
+                            
+                            // Show the actual value even if it's 0, but handle null
+                            if (actualValue == null) {
+                              return 'Invalid discount value';
+                            }
+                            
+                            return '${actualValue.toStringAsFixed(actualValue == actualValue.toInt() ? 0 : 1)}% off';
+                          }(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
                       if (discountCode['description'] != null) ...[
                         const SizedBox(height: 4),
                         Text(
@@ -1106,15 +1120,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildInfoChip(
-                    'Usage',
-                    maxUsage != null ? '$usageCount/$maxUsage' : '$usageCount',
-                    Icons.people,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (discountCode['valid_from'] != null)
+                if (discountCode['valid_from'] != null) ...[
                   Expanded(
                     child: _buildInfoChip(
                       'Valid From',
@@ -1122,8 +1128,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       Icons.calendar_today,
                     ),
                   ),
-                const SizedBox(width: 8),
-                if (discountCode['valid_until'] != null)
+                ],
+                if (discountCode['valid_from'] != null && discountCode['valid_until'] != null)
+                  const SizedBox(width: 8),
+                if (discountCode['valid_until'] != null) ...[
                   Expanded(
                     child: _buildInfoChip(
                       'Valid Until',
@@ -1131,6 +1139,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       Icons.event,
                     ),
                   ),
+                ],
               ],
             ),
           ],
@@ -1224,16 +1233,14 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         _error = null;
       });
 
-      print('🔄 Loading discount codes...');
       final discountCodes = await AdminService().getDiscountCodes();
-      print('✅ Loaded ${discountCodes.length} discount codes');
       
       setState(() {
         _discountCodes = discountCodes;
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error loading discount codes: $e');
+      // Error loading discount codes
       setState(() {
         _error = 'Failed to load discount codes: $e';
         _isLoading = false;

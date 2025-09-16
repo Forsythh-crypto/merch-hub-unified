@@ -60,7 +60,7 @@ class DiscountCodeController extends Controller
             
             $validated = $request->validate([
                 'code' => 'required|string|max:50|unique:discount_codes,code',
-                'type' => 'required|in:percentage,fixed',
+                'type' => 'required|in:percentage',
                 'value' => 'required|numeric|min:0',
                 'description' => 'nullable|string|max:500',
                 'department_id' => 'nullable|exists:departments,id',
@@ -177,7 +177,7 @@ class DiscountCodeController extends Controller
                     'max:50',
                     Rule::unique('discount_codes')->ignore($discountCode->id)
                 ],
-                'type' => 'required|in:percentage,fixed',
+                'type' => 'required|in:percentage',
                 'value' => 'required|numeric|min:0',
                 'description' => 'nullable|string|max:500',
                 'department_id' => 'nullable|exists:departments,id',

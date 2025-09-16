@@ -112,9 +112,11 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
   }
 
   Future<void> _loadListings() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final isGuest = await GuestService.isGuestMode();
@@ -122,15 +124,19 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
           ? await AdminService.getPublicListings()
           : await AdminService.getApprovedListings();
       
-      setState(() {
-        _listings = listings;
-        _categories = ['All', ...listings.map((l) => l.category?.name ?? 'Unknown').toSet().toList()];
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _listings = listings;
+          _categories = ['All', ...listings.map((l) => l.category?.name ?? 'Unknown').toSet().toList()];
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading listings: $e')),
