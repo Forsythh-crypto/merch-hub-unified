@@ -603,7 +603,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OrderConfirmationScreen(listing: listing),
+            builder: (context) => OrderConfirmationScreen(
+              listing: listing,
+              sourceScreen: 'home', // Indicate this came from home screen
+            ),
           ),
         );
       },

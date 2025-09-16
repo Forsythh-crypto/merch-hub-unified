@@ -437,27 +437,16 @@ class AdminService {
   Future<bool> createDiscountCode(Map<String, dynamic> discountData) async {
     try {
       final headers = await _getHeaders();
-      print('🔄 Creating discount code: ${discountData['code']}');
       final response = await http.post(
         AppConfig.api('admin/discount-codes'),
         headers: headers,
         body: jsonEncode(discountData),
       );
 
-      print('📡 Create Discount Code Response Status: ${response.statusCode}');
-      print('📡 Create Discount Code Response Body: ${response.body}');
-
-      if (response.statusCode == 201) {
-        print('✅ Discount code created successfully');
-        return true;
-      } else {
-        final errorData = jsonDecode(response.body);
-        final errorMessage = errorData['error'] ?? 'Failed to create discount code';
-        throw Exception(errorMessage);
-      }
+      return response.statusCode == 201;
     } catch (e) {
       print('❌ Create Discount Code Exception: $e');
-      throw e;
+      return false;
     }
   }
 

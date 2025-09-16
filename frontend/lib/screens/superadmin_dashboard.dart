@@ -2209,10 +2209,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         (c) => c['id'] == selectedCategoryId,
                         orElse: () => {'name': ''},
                       );
-                      isClothingSelected = (cat['name'] ?? '')
-                          .toString()
-                          .toLowerCase()
-                          .contains('clothing');
+                      // Check for clothing category (case-insensitive)
+                      final categoryName = (cat['name'] ?? '').toString().toLowerCase();
+                      isClothingSelected = categoryName.contains('clothing') || 
+                                         categoryName.contains('shirt') || 
+                                         categoryName.contains('tee') ||
+                                         categoryName.contains('apparel');
                     });
                   },
                 ),
@@ -2752,8 +2754,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     // Check if this is a clothing item with size variants
     final hasSizeVariants =
         listing.sizeVariants != null && listing.sizeVariants!.isNotEmpty;
-    final isClothing =
-        listing.category?.name.toLowerCase().contains('clothing') ?? false;
+    // Check for clothing category (case-insensitive and comprehensive)
+    final categoryName = (listing.category?.name ?? '').toLowerCase();
+    final isClothing = categoryName.contains('clothing') || 
+                      categoryName.contains('shirt') || 
+                      categoryName.contains('tee') ||
+                      categoryName.contains('apparel');
 
     // Per-size stock controllers for clothing
     final Map<String, TextEditingController> sizeQtyControllers = {
@@ -3398,32 +3404,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               onTap: () {
                 setState(() {
                   _selectedIndex = 5;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: _selectedIndex == 6 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ListTile(
-              leading: Icon(
-                Icons.local_offer,
-                color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[600],
-              ),
-              title: Text(
-                'Discount Codes',
-                style: TextStyle(
-                  color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[800],
-                  fontWeight: _selectedIndex == 6 ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 6;
                 });
                 Navigator.pop(context);
               },

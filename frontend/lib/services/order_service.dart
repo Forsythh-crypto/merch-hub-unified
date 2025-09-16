@@ -77,53 +77,6 @@ class OrderService {
     }
   }
 
-  // Validate discount code
-  static Future<Map<String, dynamic>> validateDiscountCode({
-    required String code,
-    required double orderAmount,
-    required int departmentId,
-  }) async {
-    try {
-      final headers = await _getHeaders();
-      final requestBody = {
-        'code': code,
-        'order_amount': orderAmount,
-        'department_id': departmentId,
-      };
-
-      final response = await http.post(
-        AppConfig.api('discount-codes/validate'),
-        headers: headers,
-        body: jsonEncode(requestBody),
-      );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'valid': data['valid'],
-          'discount_amount': data['discount_amount'] ?? 0.0,
-          'final_amount': data['final_amount'] ?? orderAmount,
-          'message': data['message'] ?? 'Discount code applied successfully',
-          'discount_code': data['discount_code'],
-        };
-      } else {
-        return {
-          'success': false,
-          'valid': false,
-          'message': data['message'] ?? 'Invalid discount code',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'valid': false,
-        'message': 'Network error: $e'
-      };
-    }
-  }
-
   // Get user's orders
   static Future<List<Order>> getUserOrders() async {
     try {

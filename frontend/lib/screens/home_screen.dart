@@ -4,6 +4,7 @@ import 'superadmin_dashboard.dart';
 import 'admin_listings_screen.dart';
 import 'user_home_screen.dart';
 import '../services/auth_services.dart';
+import '../services/guest_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -71,8 +72,19 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.of(context).pushReplacementNamed('/admin', arguments: args);
         }
       } else {
+        // Check if user is in guest mode before redirecting to login
+        final isGuest = await GuestService.isGuestMode();
         if (!mounted) return;
-        Navigator.of(context).pushReplacementNamed("/login");
+        
+        if (isGuest) {
+          // Stay on user home screen for guest users
+          setState(() {
+            _userSession = null;
+          });
+        } else {
+          // Redirect to login for non-guest users without authentication
+          Navigator.of(context).pushReplacementNamed("/login");
+        }
       }
     } catch (e) {
       debugPrint("Error checking user role: $e");
@@ -94,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ? SuperAdminDashboard(userSession: _userSession!)
           : _userSession?.isAdmin == true
           ? AdminListingsScreen(userSession: _userSession!)
-          : const UserHomeScreen(),
+          : const UserHomeScreen(isGuest: true), // Pass isGuest parameter
     );
   }
 }

@@ -621,6 +621,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
           MaterialPageRoute(
             builder: (context) => OrderConfirmationScreen(
               listing: listing,
+              sourceScreen: 'user_listings', // Indicate this came from user listings
             ),
           ),
         );

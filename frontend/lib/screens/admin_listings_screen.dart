@@ -1002,8 +1002,8 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     final isActive = discountCode['is_active'] == true;
     final usageCount = discountCode['used_count'] ?? 0;
     final maxUsage = discountCode['max_usage'];
-    final discountType = discountCode['type'];
-    final discountValue = discountCode['value'];
+    final discountType = discountCode['discount_type'];
+    final discountValue = discountCode['discount_value'];
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1052,8 +1052,8 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       const SizedBox(height: 8),
                       Text(
                         discountType == 'percentage'
-                            ? '${discountValue ?? 0}% off'
-                            : '₱${discountValue ?? 0} off',
+                            ? '${discountValue}% off'
+                            : '₱${discountValue} off',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.green,

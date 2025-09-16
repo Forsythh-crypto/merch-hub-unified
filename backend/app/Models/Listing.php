@@ -22,6 +22,40 @@ class Listing extends Model
         'stock_quantity',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($listing) {
+            // Auto-create size variants for clothing items
+            if ($listing->category_id && !$listing->sizeVariants()->exists()) {
+                $category = Category::find($listing->category_id);
+                if ($category) {
+                    $categoryName = strtolower($category->name);
+                    $isClothing = str_contains($categoryName, 'clothing') || 
+                                 str_contains($categoryName, 'shirt') || 
+                                 str_contains($categoryName, 'tee') ||
+                                 str_contains($categoryName, 'apparel');
+                    
+                    if ($isClothing) {
+                        $sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+                        $stockPerSize = max(0, floor($listing->stock_quantity / 6));
+                        $remaining = $listing->stock_quantity - ($stockPerSize * 6);
+                        
+                        foreach ($sizes as $index => $size) {
+                            $stock = $stockPerSize + ($index == 2 ? $remaining : 0); // Add remaining to M size
+                            $listing->sizeVariants()->create([
+                                'size' => $size,
+                                'stock_quantity' => $stock,
+                            ]);
+                        }
+                        \Log::info("Auto-created size variants for clothing item: {$listing->title}");
+                    }
+                }
+            }
+        });
+    }
+
     // Optional: relationships
     public function user()
     {

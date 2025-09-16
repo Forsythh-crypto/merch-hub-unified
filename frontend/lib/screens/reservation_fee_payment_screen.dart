@@ -456,7 +456,10 @@ class _ReservationFeePaymentScreenState
   }
 
   void _uploadLater() {
-    // Go back to the previous screen (user home)
-    Navigator.pop(context);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/home',
+      (route) => false,
+    );
   }
 }

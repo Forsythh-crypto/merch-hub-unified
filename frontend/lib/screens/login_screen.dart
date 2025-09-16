@@ -73,22 +73,27 @@ class _LoginScreenState extends State<LoginScreen> {
         // Navigate based on role or return route
         if (!mounted) return;
 
-        // Always go to home screen first after successful login
-        Navigator.pushReplacementNamed(context, '/home');
-        
-        // If there's a return route, navigate to it after a short delay
+        // If there's a return route, navigate directly to it
         if (widget.returnRoute != null) {
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              Navigator.pushNamed(
-                context,
-                widget.returnRoute!,
-                arguments: widget.returnArguments,
-              );
-            }
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful! Returning to your selected product...'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          
+          // Navigate directly to the return route without going to home first
+          Navigator.pushReplacementNamed(
+            context,
+            widget.returnRoute!,
+            arguments: widget.returnArguments,
+          );
           return;
         }
+        
+        // Otherwise, go to home screen
+        Navigator.pushReplacementNamed(context, '/home');
 
         // For admin/superadmin roles, navigate to their respective dashboards after delay
         if (userSession.isSuperAdmin) {
