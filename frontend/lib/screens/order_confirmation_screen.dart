@@ -98,41 +98,32 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     setState(() => _isValidatingDiscount = true);
 
     try {
-      // Mock discount validation for now
-       await Future.delayed(const Duration(seconds: 1));
-       
-       // Simple mock validation
-       final Map<String, dynamic> result;
-       if (code == 'STUDENT10') {
-         result = {
-           'success': true,
-           'discount': {'discount_percentage': 10.0}
-         };
-       } else if (code == 'WELCOME20') {
-         result = {
-           'success': true,
-           'discount': {'discount_percentage': 20.0}
-         };
-       } else {
-         result = {
-           'success': false,
-           'message': 'Invalid discount code'
-         };
-       }
-      if (result['success']) {
-        final discountData = result['discount'];
-        _discountPercentage = discountData['discount_percentage'];
-        final discountAmount = (_totalAmount * _discountPercentage / 100);
+      // Use actual API call to validate discount code
+      final result = await OrderService.validateDiscountCode(
+        code: code,
+        orderAmount: _totalAmount,
+        departmentId: widget.listing.departmentId,
+      );
+
+      if (result['success'] && result['valid']) {
+         final discountCode = result['discount_code'];
+         final discountAmount = result['discount_amount'] as double;
+         
+         // Calculate discount percentage for display
+         final discountPercentage = discountCode['type'] == 'percentage' 
+             ? double.tryParse(discountCode['value'].toString()) ?? 0.0
+             : (discountAmount / _totalAmount * 100);
 
         setState(() {
           _appliedDiscountCode = code;
           _discountAmount = discountAmount;
+          _discountPercentage = discountPercentage;
         });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Discount applied: ${_discountPercentage.toStringAsFixed(0)}% off'),
+              content: Text(result['message'] ?? 'Discount applied successfully'),
               backgroundColor: Colors.green,
             ),
           );
@@ -141,6 +132,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         setState(() {
           _appliedDiscountCode = null;
           _discountAmount = 0.0;
+          _discountPercentage = 0.0;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -155,6 +147,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       setState(() {
         _appliedDiscountCode = null;
         _discountAmount = 0.0;
+        _discountPercentage = 0.0;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

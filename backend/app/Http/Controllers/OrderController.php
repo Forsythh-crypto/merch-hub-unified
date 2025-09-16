@@ -109,7 +109,7 @@ class OrderController extends Controller
         
         // Increment discount code usage if applied
         if ($discountCodeId) {
-            DiscountCode::where('id', $discountCodeId)->increment('used_count');
+            DiscountCode::where('id', $discountCodeId)->increment('usage_count');
         }
 
         // Update stock quantity - only decrement if stock is available (not for pre-orders)

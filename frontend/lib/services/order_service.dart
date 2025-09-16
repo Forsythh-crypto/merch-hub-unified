@@ -253,6 +253,51 @@ class OrderService {
     }
   }
 
+  // Validate discount code
+  static Future<Map<String, dynamic>> validateDiscountCode({
+    required String code,
+    required double orderAmount,
+    required int departmentId,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        AppConfig.api('discount-codes/validate'),
+        headers: headers,
+        body: jsonEncode({
+          'code': code,
+          'order_amount': orderAmount,
+          'department_id': departmentId,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'valid': data['valid'],
+          'discount_code': data['discount_code'],
+          'discount_amount': double.tryParse(data['discount_amount'].toString()) ?? 0.0,
+          'final_amount': double.tryParse(data['final_amount'].toString()) ?? 0.0,
+          'message': data['message'],
+        };
+      } else {
+        return {
+          'success': false,
+          'valid': false,
+          'message': data['message'] ?? 'Failed to validate discount code',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'valid': false,
+        'message': 'Network error: $e'
+      };
+    }
+  }
+
   // Admin: Confirm reservation fee payment
   static Future<Map<String, dynamic>> confirmReservationFee(int orderId) async {
     try {

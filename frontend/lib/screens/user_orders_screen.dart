@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/order.dart';
+import '../services/guest_service.dart';
 import '../services/order_service.dart';
 import '../config/app_config.dart';
 import 'receipt_upload_screen.dart';
@@ -12,15 +13,40 @@ class UserOrdersScreen extends StatefulWidget {
   State<UserOrdersScreen> createState() => _UserOrdersScreenState();
 }
 
-class _UserOrdersScreenState extends State<UserOrdersScreen> {
+class _UserOrdersScreenState extends State<UserOrdersScreen>
+    with SingleTickerProviderStateMixin {
   List<Order> _orders = [];
   bool _isLoading = true;
   String? _error;
+  late TabController _tabController;
+
+  final List<String> _statusTabs = [
+    'pending',
+    'confirmed', 
+    'ready_for_pickup',
+    'completed',
+    'cancelled'
+  ];
+
+  final List<String> _tabLabels = [
+    'To Prepare',
+    'Confirmed',
+    'Ready',
+    'Completed', 
+    'Cancelled'
+  ];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: _statusTabs.length, vsync: this);
     _loadOrders();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadOrders() async {
@@ -75,6 +101,45 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
       default:
         return 'Unknown';
     }
+  }
+
+  List<Order> _getOrdersByStatus(String status) {
+    return _orders.where((order) => order.status == status).toList();
+  }
+
+  Widget _buildOrdersList(String status) {
+    final filteredOrders = _getOrdersByStatus(status);
+    
+    if (filteredOrders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.shopping_bag_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No ${_getStatusDisplay(status).toLowerCase()} orders',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return RefreshIndicator(
+      onRefresh: _loadOrders,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: filteredOrders.length,
+        itemBuilder: (context, index) {
+          return _buildOrderCard(filteredOrders[index]);
+        },
+      ),
+    );
   }
 
   Widget _buildOrderCard(Order order) {
@@ -326,6 +391,22 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showCancelOrderDialog(order),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancel Order'),
+                ),
+              ),
             ],
             
             // View Receipt Button (when receipt is already uploaded)
@@ -385,6 +466,66 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Function to show cancel order confirmation dialog
+  void _showCancelOrderDialog(Order order) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Order'),
+          content: Text(
+            'Are you sure you want to cancel order #${order.orderNumber}?\n\nThis action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Keep Order'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _cancelOrder(order);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Cancel Order'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to cancel an order
+  Future<void> _cancelOrder(Order order) async {
+    try {
+      await OrderService.cancelOrder(order.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Reload orders to reflect the change
+        _loadOrders();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // Function to show receipt image in a dialog
@@ -477,6 +618,14 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
             onPressed: _loadOrders,
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
+          tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -505,38 +654,9 @@ class _UserOrdersScreenState extends State<UserOrdersScreen> {
                 ],
               ),
             )
-          : _orders.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No orders yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your orders will appear here',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadOrders,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: _orders.length,
-                itemBuilder: (context, index) {
-                  return _buildOrderCard(_orders[index]);
-                },
-              ),
+          : TabBarView(
+              controller: _tabController,
+              children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
             ),
     );
   }

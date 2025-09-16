@@ -492,6 +492,14 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
       case 2:
         return AdminAddListingScreen(
           showAppBar: false,
+          userSession: {
+            'userId': widget.userSession.userId,
+            'name': widget.userSession.name,
+            'email': widget.userSession.email,
+            'role': widget.userSession.role.toString().split('.').last,
+            'departmentId': widget.userSession.departmentId,
+            'departmentName': widget.userSession.departmentName,
+          },
           onListingCreated: () {
             _loadListings();
             setState(() {

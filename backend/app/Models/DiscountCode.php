@@ -181,4 +181,24 @@ class DiscountCode extends Model
         
         return false;
     }
+
+    public function canBeUsedBy(User $user, $departmentId = null): bool
+    {
+        // Check if discount code is valid
+        if (!$this->isValid()) {
+            return false;
+        }
+
+        // Check department restrictions
+        if ($this->department_id !== null && $this->department_id != $departmentId) {
+            return false;
+        }
+
+        // Check usage limit
+        if ($this->usage_limit !== null && $this->usage_count >= $this->usage_limit) {
+            return false;
+        }
+
+        return true;
+    }
 }

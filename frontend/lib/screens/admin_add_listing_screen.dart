@@ -6,8 +6,9 @@ import '../services/admin_service.dart';
 class AdminAddListingScreen extends StatefulWidget {
   final bool showAppBar;
   final VoidCallback? onListingCreated;
+  final Map<String, dynamic>? userSession;
   
-  const AdminAddListingScreen({super.key, this.showAppBar = true, this.onListingCreated});
+  const AdminAddListingScreen({super.key, this.showAppBar = true, this.onListingCreated, this.userSession});
 
   @override
   State<AdminAddListingScreen> createState() => _AdminAddListingScreenState();
@@ -162,7 +163,7 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
 
     try {
       // Get user's department - regular admins can only add to their own department
-      final userDepartment = 1; // Default department for now
+      final userDepartment = widget.userSession?['departmentId'] ?? 1; // Use user's department or default to 1
       
       List<String>? imagePaths;
       if (_selectedImages.isNotEmpty) {

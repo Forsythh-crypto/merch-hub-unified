@@ -111,24 +111,38 @@ class ListingController extends Controller
         }
 
         // Handle size variants if provided
+        $sizeVariantsCreated = false;
         if (isset($validated['size_variants']) && !empty($validated['size_variants'])) {
             \Log::info('Size variants received: ' . $validated['size_variants']);
             $sizeVariants = json_decode($validated['size_variants'], true);
             \Log::info('Decoded size variants: ' . print_r($sizeVariants, true));
             
-            if (is_array($sizeVariants)) {
-                foreach ($sizeVariants as $variant) {
-                    if (isset($variant['size']) && isset($variant['stock_quantity']) && $variant['stock_quantity'] >= 0) {
-                        $listing->sizeVariants()->create([
-                            'size' => $variant['size'],
-                            'stock_quantity' => $variant['stock_quantity'],
-                        ]);
-                        \Log::info("Created size variant: {$variant['size']} with stock {$variant['stock_quantity']}");
+            if (is_array($sizeVariants) && !empty($sizeVariants)) {
+                // Check if listing already has any size variants
+                $existingVariantsCount = $listing->sizeVariants()->count();
+                \Log::info("Existing size variants count for listing {$listing->id}: {$existingVariantsCount}");
+                
+                if ($existingVariantsCount == 0) {
+                    // Only create size variants if none exist
+                    foreach ($sizeVariants as $variant) {
+                        if (isset($variant['size']) && isset($variant['stock_quantity']) && $variant['stock_quantity'] >= 0) {
+                            $listing->sizeVariants()->create([
+                                'size' => $variant['size'],
+                                'stock_quantity' => $variant['stock_quantity'],
+                            ]);
+                            \Log::info("Created size variant: {$variant['size']} with stock {$variant['stock_quantity']}");
+                            $sizeVariantsCreated = true;
+                        }
                     }
+                } else {
+                    \Log::info("Skipping size variant creation - listing already has {$existingVariantsCount} variants");
+                    $sizeVariantsCreated = true; // Mark as created to prevent auto-creation
                 }
             }
-        } else {
-            // Auto-create size variants for clothing items if none provided
+        }
+        
+        // Auto-create size variants for clothing items ONLY if none were provided or created
+        if (!$sizeVariantsCreated) {
             $category = \App\Models\Category::find($validated['category_id']);
             if ($category) {
                 $categoryName = strtolower($category->name);

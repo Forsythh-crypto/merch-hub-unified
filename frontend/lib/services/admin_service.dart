@@ -656,9 +656,12 @@ class AdminService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      print('Create listing response status: ${response.statusCode}');
+      print('Create listing response body: ${response.body}');
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      // Handle error silently
+      print('Error creating listing: $e');
       return false;
     }
   }
@@ -725,9 +728,12 @@ class AdminService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      print('Create listing with variants response status: ${response.statusCode}');
+      print('Create listing with variants response body: ${response.body}');
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      // Handle error silently
+      print('Error creating listing with variants: $e');
       return false;
     }
   }
