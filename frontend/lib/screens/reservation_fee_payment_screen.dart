@@ -37,7 +37,10 @@ class _ReservationFeePaymentScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reservation Fee Payment'),
+        title: const Text(
+          'Reservation Fee Payment',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
       ),
@@ -64,6 +67,7 @@ class _ReservationFeePaymentScreenState
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.green[700],
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                         ),
@@ -85,6 +89,7 @@ class _ReservationFeePaymentScreenState
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.blue[700],
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -94,6 +99,7 @@ class _ReservationFeePaymentScreenState
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.blue[900],
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                         ],
@@ -119,6 +125,7 @@ class _ReservationFeePaymentScreenState
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E3A8A),
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -136,12 +143,18 @@ class _ReservationFeePaymentScreenState
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Product:'),
+                              const Text(
+                                'Product:',
+                                style: TextStyle(fontFamily: 'Montserrat'),
+                              ),
                               Expanded(
                                 child: Text(
                                   widget.order.listing?.title ?? 'Unknown Product',
                                   textAlign: TextAlign.right,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                               ),
                             ],
@@ -150,18 +163,30 @@ class _ReservationFeePaymentScreenState
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Quantity:'),
-                              Text('${widget.order.quantity}'),
+                              const Text(
+                                'Quantity:',
+                                style: TextStyle(fontFamily: 'Montserrat'),
+                              ),
+                              Text(
+                                '${widget.order.quantity}',
+                                style: const TextStyle(fontFamily: 'Montserrat'),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Total Amount:'),
+                              const Text(
+                                'Total Amount:',
+                                style: TextStyle(fontFamily: 'Montserrat'),
+                              ),
                               Text(
                                 '₱${widget.totalAmount.toStringAsFixed(2)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                ),
                               ),
                             ],
                           ),
@@ -171,7 +196,10 @@ class _ReservationFeePaymentScreenState
                             children: [
                               const Text(
                                 'Reservation Fee (35%):',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                ),
                               ),
                               Text(
                                 '₱${_reservationFeeAmount.toStringAsFixed(2)}',
@@ -179,6 +207,7 @@ class _ReservationFeePaymentScreenState
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF1E3A8A),
                                   fontSize: 16,
+                                  fontFamily: 'Montserrat',
                                 ),
                               ),
                             ],
@@ -221,6 +250,7 @@ class _ReservationFeePaymentScreenState
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFF00D4AA),
+                                    fontFamily: 'Montserrat',
                                   ),
                                 ),
                               ),
@@ -262,6 +292,7 @@ class _ReservationFeePaymentScreenState
                                             style: TextStyle(
                                               color: Colors.grey[600],
                                               fontSize: 14,
+                                              fontFamily: 'Montserrat',
                                             ),
                                           ),
                                           Text(
@@ -269,6 +300,7 @@ class _ReservationFeePaymentScreenState
                                             style: TextStyle(
                                               color: Colors.grey[500],
                                               fontSize: 12,
+                                              fontFamily: 'Montserrat',
                                             ),
                                           ),
                                         ],
@@ -283,6 +315,7 @@ class _ReservationFeePaymentScreenState
                                     color: Colors.grey[600],
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
+                                    fontFamily: 'Montserrat',
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -292,6 +325,7 @@ class _ReservationFeePaymentScreenState
                                     color: Color(0xFF00D4AA),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
+                                    fontFamily: 'Montserrat',
                                   ),
                                 ),
                               ],
@@ -316,36 +350,58 @@ class _ReservationFeePaymentScreenState
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
+                                    fontFamily: 'Montserrat',
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 const Text(
                                   '1. Open your GCash app',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                                 const Text(
                                   '2. Tap "Scan QR"',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                                 const Text(
                                   '3. Scan the QR code above',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                                 Text(
                                   '4. Enter the exact amount: ₱${_reservationFeeAmount.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontSize: 12),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                                 const Text(
                                   '5. Complete the payment',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                                 const Text(
                                   '6. Take a screenshot of the receipt',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                                 const Text(
                                   '7. Upload the receipt below',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Montserrat',
+                                  ),
                                 ),
                               ],
                             ),
@@ -377,12 +433,13 @@ class _ReservationFeePaymentScreenState
                     ),
                     icon: const Icon(Icons.upload_file),
                     label: const Text(
-                      'Upload Payment Receipt',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        'Upload Payment Receipt',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
-                    ),
                   ),
                 ),
                 
@@ -402,12 +459,13 @@ class _ReservationFeePaymentScreenState
                     ),
                     icon: const Icon(Icons.schedule),
                     label: const Text(
-                      'Upload Receipt Later',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        'Upload Receipt Later',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
-                    ),
                   ),
                 ),
               ],
@@ -434,6 +492,7 @@ class _ReservationFeePaymentScreenState
                         fontSize: 12,
                         color: Colors.orange[700],
                         fontWeight: FontWeight.w500,
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                   ),

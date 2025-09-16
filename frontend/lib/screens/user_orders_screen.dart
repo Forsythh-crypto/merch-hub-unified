@@ -285,6 +285,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                             color: order.reservationFeePaid 
                                 ? Colors.green[700] 
                                 : Colors.orange[700],
+                            fontFamily: 'Montserrat',
                           ),
                         ),
                       ],
@@ -299,6 +300,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                         color: order.reservationFeePaid 
                             ? Colors.green[600] 
                             : Colors.orange[600],
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                   ],
