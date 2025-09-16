@@ -297,11 +297,34 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                    _checkGuestStatus();
                  }
                } else {
-                 // Clear user session and navigate to welcome
-                 final prefs = await SharedPreferences.getInstance();
-                 await prefs.clear();
-                 if (mounted) {
-                   Navigator.of(context).pushReplacementNamed('/welcome');
+                 // Show logout confirmation dialog
+                 final shouldLogout = await showDialog<bool>(
+                   context: context,
+                   builder: (BuildContext context) {
+                     return AlertDialog(
+                       title: const Text('Logout'),
+                       content: const Text('Are you sure you want to logout?'),
+                       actions: [
+                         TextButton(
+                           onPressed: () => Navigator.of(context).pop(false),
+                           child: const Text('Cancel'),
+                         ),
+                         TextButton(
+                           onPressed: () => Navigator.of(context).pop(true),
+                           child: const Text('Logout'),
+                         ),
+                       ],
+                     );
+                   },
+                 );
+                 
+                 if (shouldLogout == true) {
+                   // Clear user session and navigate to welcome
+                   final prefs = await SharedPreferences.getInstance();
+                   await prefs.clear();
+                   if (mounted) {
+                     Navigator.of(context).pushReplacementNamed('/welcome');
+                   }
                  }
                }
              },

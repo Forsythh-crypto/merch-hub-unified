@@ -168,10 +168,32 @@ class _SuperAdminNavigationMenuState extends State<SuperAdminNavigationMenu> {
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton.icon(
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('auth_token');
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              
+              if (shouldLogout == true) {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('auth_token');
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
               }
             },
             icon: const Icon(Icons.logout, color: Colors.white),
