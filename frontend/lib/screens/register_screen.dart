@@ -29,6 +29,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String? _selectedDepartment;
   String _selectedRole = 'student';
+  
+  // Password validation trackers
+  bool _hasMinLength = false;
+  bool _hasUppercase = false;
+  bool _hasLowercase = false;
+  bool _hasDigit = false;
+  bool _hasSpecialChar = false;
 
   final List<Map<String, dynamic>> _departments = [
     {
@@ -72,6 +79,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'logo': 'assets/logos/sihm.png',
     },
   ];
+
+  // Helper method to build password requirement row
+  Widget _buildRequirementRow(String text, bool isMet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.circle_outlined,
+            color: isMet ? Colors.green : Colors.grey,
+            size: 14,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: isMet ? Colors.green : Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -318,15 +349,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   },
                                 ),
                               ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _hasMinLength = value.length >= 8;
+                                  _hasUppercase = value.contains(RegExp(r'[A-Z]'));
+                                  _hasLowercase = value.contains(RegExp(r'[a-z]'));
+                                  _hasDigit = value.contains(RegExp(r'[0-9]'));
+                                  _hasSpecialChar = value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+                                });
+                              },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter a password';
                                 }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
+                                if (value.length < 8) {
+                                  return 'Password must be at least 8 characters';
+                                }
+                                if (!value.contains(RegExp(r'[A-Z]'))) {
+                                  return 'Password must contain at least one uppercase letter';
+                                }
+                                if (!value.contains(RegExp(r'[a-z]'))) {
+                                  return 'Password must contain at least one lowercase letter';
+                                }
+                                if (!value.contains(RegExp(r'[0-9]'))) {
+                                  return 'Password must contain at least one number';
+                                }
+                                if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                                  return 'Password must contain at least one special character';
                                 }
                                 return null;
                               },
+                            ),
+                            const SizedBox(height: 8),
+                            
+                            // Password requirements indicators
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Password requirements:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  _buildRequirementRow('At least 8 characters', _hasMinLength),
+                                  _buildRequirementRow('At least one uppercase letter', _hasUppercase),
+                                  _buildRequirementRow('At least one lowercase letter', _hasLowercase),
+                                  _buildRequirementRow('At least one number', _hasDigit),
+                                  _buildRequirementRow('At least one special character', _hasSpecialChar),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 16),
 
