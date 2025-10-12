@@ -481,5 +481,42 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Rate an order
+     */
+    public function rateOrder(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+            
+            // Find the order and ensure it belongs to the user
+            $order = Order::where('user_id', $user->id)
+                         ->where('id', $id)
+                         ->where('status', 'completed')
+                         ->firstOrFail();
+
+            $validated = $request->validate([
+                'rating' => 'required|integer|min:1|max:5',
+                'review' => 'nullable|string|max:500',
+            ]);
+
+            // Update order with rating and review
+            $order->update([
+                'rating' => $validated['rating'],
+                'review' => $validated['review'] ?? null,
+            ]);
+
+            return response()->json([
+                'message' => 'Rating submitted successfully',
+                'order' => $order->load(['listing', 'department']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Order rating error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error submitting rating: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 }

@@ -19,6 +19,8 @@ class Order {
   final String paymentMethod;
   final bool emailSent;
   final String? email;
+  final int? rating; // 1-5 stars
+  final String? review; // User review text
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -45,6 +47,8 @@ class Order {
     required this.paymentMethod,
     required this.emailSent,
     this.email,
+    this.rating,
+    this.review,
     required this.createdAt,
     required this.updatedAt,
     this.listing,
@@ -75,6 +79,8 @@ class Order {
       paymentMethod: json['payment_method'],
       emailSent: json['email_sent'] ?? false,
       email: json['email'],
+      rating: json['rating'],
+      review: json['review'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       listing: json['listing'] != null
@@ -106,6 +112,8 @@ class Order {
       'payment_method': paymentMethod,
       'email_sent': emailSent,
       'email': email,
+      'rating': rating,
+      'review': review,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

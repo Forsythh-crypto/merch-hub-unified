@@ -154,61 +154,22 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          NotificationBadge(
-            key: _notificationBadgeKey,
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
-              // Refresh notification count when returning
-              (_notificationBadgeKey.currentState as dynamic)?.refreshCount();
-            },
-            child: const Icon(Icons.notifications),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text(
-                    'Logout',
-                    style: TextStyle(fontFamily: 'Montserrat'),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: NotificationBadge(
+              key: _notificationBadgeKey,
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
                   ),
-                  content: const Text(
-                    'Are you sure you want to logout?',
-                    style: TextStyle(fontFamily: 'Montserrat'),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(fontFamily: 'Montserrat'),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text(
-                        'Logout',
-                        style: TextStyle(fontFamily: 'Montserrat'),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              if (shouldLogout == true && context.mounted) {
-                await AuthService.logout();
-                if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              }
-            },
-            tooltip: 'Logout',
+                );
+                // Refresh notification count when returning
+                (_notificationBadgeKey.currentState as dynamic)?.refreshCount();
+              },
+              child: const Icon(Icons.notifications),
+            ),
           ),
         ],
       ),

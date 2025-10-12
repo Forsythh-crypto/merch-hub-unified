@@ -325,4 +325,26 @@ class OrderService {
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
+
+  // Rate an order
+  static Future<void> rateOrder(int orderId, int rating, String review) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        AppConfig.api('orders/$orderId/rate'),
+        headers: headers,
+        body: jsonEncode({
+          'rating': rating,
+          'review': review,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final data = jsonDecode(response.body);
+        throw Exception(data['message'] ?? 'Failed to submit rating');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }

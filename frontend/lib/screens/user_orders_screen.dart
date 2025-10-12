@@ -417,6 +417,84 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
               ),
             ],
             
+            // Rating Section for Completed Orders
+            if (order.status == 'completed') ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Rate this order:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (order.rating != null) ...[
+                       // Show existing rating
+                       Row(
+                         children: [
+                           ...List.generate(5, (index) => Icon(
+                             index < order.rating! ? Icons.star : Icons.star_border,
+                             color: Colors.amber,
+                             size: 20,
+                           )),
+                           const SizedBox(width: 8),
+                           Text(
+                             '${order.rating}/5',
+                             style: const TextStyle(
+                               fontWeight: FontWeight.w500,
+                               fontSize: 14,
+                             ),
+                           ),
+                         ],
+                       ),
+                       if (order.review != null && order.review!.isNotEmpty) ...[
+                         const SizedBox(height: 8),
+                         Text(
+                           'Your review: ${order.review}',
+                           style: TextStyle(
+                             fontSize: 12,
+                             color: Colors.grey[600],
+                             fontStyle: FontStyle.italic,
+                           ),
+                         ),
+                       ],
+                     ] else ...[
+                      // Show rating input
+                      Row(
+                        children: List.generate(5, (index) => GestureDetector(
+                          onTap: () => _rateOrder(order, index + 1),
+                          child: Icon(
+                            Icons.star_border,
+                            color: Colors.amber,
+                            size: 24,
+                          ),
+                        )),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Tap stars to rate',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+            
             // View Receipt Button (when receipt is already uploaded)
             if (order.status == 'pending' && !order.reservationFeePaid && order.paymentReceiptPath != null) ...[              
               const SizedBox(height: 12),
@@ -529,6 +607,87 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to cancel order: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Function to rate an order
+  void _rateOrder(Order order, int rating) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String reviewText = '';
+        return AlertDialog(
+          title: Text('Rate Order #${order.orderNumber}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) => Icon(
+                  index < rating ? Icons.star : Icons.star_border,
+                  color: Colors.amber,
+                  size: 30,
+                )),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Write a review (optional)',
+                  border: OutlineInputBorder(),
+                  hintText: 'Share your experience...',
+                ),
+                maxLines: 3,
+                onChanged: (value) => reviewText = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _submitRating(order, rating, reviewText);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Submit Rating'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to submit rating
+  Future<void> _submitRating(Order order, int rating, String review) async {
+    try {
+      await OrderService.rateOrder(order.id, rating, review);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rating submitted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Reload orders to reflect the change
+        _loadOrders();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit rating: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

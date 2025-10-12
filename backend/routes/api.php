@@ -121,6 +121,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{id}/upload-receipt', [OrderController::class, 'uploadReceipt']);
+    Route::post('/orders/{id}/rate', [OrderController::class, 'rateOrder']);
     
     // Discount code validation route
     Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate']);
@@ -153,6 +154,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/listings/{listing}', [ListingController::class, 'update']);
         Route::put('/admin/listings/{listing}/size-variants', [ListingController::class, 'updateSizeVariants']);
         Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
+        
+        // Allow admins to approve listings from their department
+        Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
         
         // Discount code routes for admins (department-restricted)
         Route::get('/admin/discount-codes', [DiscountCodeController::class, 'index']);
@@ -212,7 +216,6 @@ Route::middleware('auth:sanctum')->group(function () {
         });
         Route::get('/admin/all-listings', [ListingController::class, 'superAdminIndex']);
         Route::put('/admin/listings/{listing}/update-stock', [ListingController::class, 'updateStock']);
-        Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
         
         // Additional discount code routes for superadmins (all departments)
         Route::get('/admin/discount-codes/all', [DiscountCodeController::class, 'superAdminIndex']);

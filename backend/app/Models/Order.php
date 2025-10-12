@@ -28,6 +28,8 @@ class Order extends Model
         'status', // pending, confirmed, ready_for_pickup, completed, cancelled
         'pickup_date',
         'notes',
+        'rating',
+        'review',
         'payment_method',
         'email_sent',
     ];

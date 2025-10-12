@@ -15,15 +15,40 @@ class AdminOrdersScreen extends StatefulWidget {
   State<AdminOrdersScreen> createState() => _AdminOrdersScreenState();
 }
 
-class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
+class _AdminOrdersScreenState extends State<AdminOrdersScreen>
+    with SingleTickerProviderStateMixin {
   List<Order> _orders = [];
   bool _isLoading = true;
   String? _error;
+  late TabController _tabController;
+
+  final List<String> _statusTabs = [
+    'pending',
+    'confirmed', 
+    'ready_for_pickup',
+    'completed',
+    'cancelled'
+  ];
+
+  final List<String> _tabLabels = [
+    'To Prepare',
+    'Confirmed',
+    'Ready',
+    'Completed', 
+    'Cancelled'
+  ];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: _statusTabs.length, vsync: this);
     _loadOrders();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadOrders() async {
@@ -66,11 +91,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   String _getStatusDisplay(String status) {
     switch (status) {
       case 'pending':
-        return 'Pending';
+        return 'To be prepared';
       case 'confirmed':
         return 'Confirmed';
       case 'ready_for_pickup':
-        return 'Ready for Pickup';
+        return 'Ready for pickup';
       case 'completed':
         return 'Completed';
       case 'cancelled':
@@ -78,6 +103,45 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       default:
         return 'Unknown';
     }
+  }
+
+  List<Order> _getOrdersByStatus(String status) {
+    return _orders.where((order) => order.status == status).toList();
+  }
+
+  Widget _buildOrdersList(String status) {
+    final filteredOrders = _getOrdersByStatus(status);
+    
+    if (filteredOrders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.shopping_bag_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No ${_getStatusDisplay(status).toLowerCase()} orders',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return RefreshIndicator(
+      onRefresh: _loadOrders,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: filteredOrders.length,
+        itemBuilder: (context, index) {
+          return _buildOrderCard(filteredOrders[index]);
+        },
+      ),
+    );
   }
 
   Future<void> _updateOrderStatus(Order order, String newStatus) async {
@@ -597,153 +661,96 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     return Scaffold(
       appBar: widget.showAppBar
           ? AppBar(
-              title: const Text('Manage Orders'),
-              backgroundColor: Colors.blue,
+              backgroundColor: const Color(0xFF1E3A8A),
               foregroundColor: Colors.white,
+              elevation: 0,
+              title: const Text(
+                'Order Management',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               actions: [
-                IconButton(icon: const Icon(Icons.refresh), onPressed: _loadOrders),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadOrders,
+                ),
               ],
+              bottom: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                labelStyle: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
+              ),
             )
-          : null,
-      body: SafeArea(
-        child: RefreshIndicator(
-        onRefresh: _loadOrders,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          : AppBar(
+              backgroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              title: const Text(
+                'Order Management',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadOrders,
+                ),
+              ],
+              bottom: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                labelStyle: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
+              ),
+            ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Order Management',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading orders',
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                   ),
-                  ElevatedButton.icon(
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
                     onPressed: _loadOrders,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
+                    child: const Text('Try Again'),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              
-              // Stats Section
-               if (!_isLoading && _error == null) ...[
-                 Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildStatCard(
-                        'Total Orders',
-                        _orders.length.toString(),
-                        Icons.shopping_cart,
-                        Colors.blue,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildStatCard(
-                        'Pending',
-                        _orders.where((o) => o.status == 'pending').length.toString(),
-                        Icons.pending_actions,
-                        Colors.orange,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildStatCard(
-                        'Completed',
-                        _orders.where((o) => o.status == 'completed').length.toString(),
-                        Icons.check_circle,
-                        Colors.green,
-                      ),
-                    ],
-                  ),
-                ),
-                 const SizedBox(height: 24),
-               ],
-              
-              // Content Section
-              _isLoading
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(50),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : _error != null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Error loading orders',
-                            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _error!,
-                            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadOrders,
-                            child: const Text('Try Again'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _orders.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.shopping_bag_outlined,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No orders found',
-                            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Orders will appear here when customers place them',
-                            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      children: _orders.map((order) => _buildOrderCard(order)).toList(),
-                    ),
-            ],
-          ),
-         ),
-       ),
-     ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
+            ),
    );
   }
 

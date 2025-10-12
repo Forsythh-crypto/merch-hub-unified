@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/listing.dart';
 import '../services/order_service.dart';
 import '../services/guest_service.dart';
+import '../services/auth_services.dart';
 import '../config/app_config.dart';
 import 'reservation_fee_payment_screen.dart';
 import '../widgets/login_prompt_dialog.dart';
@@ -24,7 +25,6 @@ class OrderConfirmationScreen extends StatefulWidget {
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController(text: '1');
-  final _emailController = TextEditingController();
   final _notesController = TextEditingController();
   final _discountCodeController = TextEditingController();
 
@@ -37,12 +37,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   double _discountAmount = 0.0;
   bool _isValidatingDiscount = false;
   double _discountPercentage = 0.0;
+  String? _userEmail;
 
   @override
   void initState() {
     super.initState();
     _initializeSizeData();
     _checkGuestStatus();
+    _getUserEmail();
   }
 
   @override
@@ -50,6 +52,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     super.didChangeDependencies();
     // Refresh guest status when returning from login
     _checkGuestStatus();
+    _getUserEmail();
   }
 
   Future<void> _checkGuestStatus() async {
@@ -58,6 +61,17 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       setState(() {
         _isGuestMode = isGuest;
       });
+    }
+  }
+
+  Future<void> _getUserEmail() async {
+    if (!_isGuestMode) {
+      final userData = await AuthService.getCurrentUser();
+      if (userData != null) {
+        setState(() {
+          _userEmail = userData['email'];
+        });
+      }
     }
   }
 
@@ -373,7 +387,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       final result = await OrderService.createOrder(
         listingId: widget.listing.id,
         quantity: int.parse(_quantityController.text),
-        email: _emailController.text.trim(),
+        email: _userEmail ?? '',
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
@@ -421,7 +435,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   @override
   void dispose() {
     _quantityController.dispose();
-    _emailController.dispose();
     _notesController.dispose();
     _discountCodeController.dispose();
     super.dispose();
@@ -439,21 +452,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          // Navigate back based on source screen
-          if (widget.sourceScreen == 'user_listings') {
-            // If came from user listings, just pop back to preserve navigation stack
-            Navigator.pop(context);
-          } else {
-            // Default: Navigate back to home screen while preserving authentication state
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/home',
-              (route) => false,
-            );
-          }
+          // Always pop back to previous screen to maintain proper navigation stack
+          Navigator.pop(context);
         }
       },
       child: Scaffold(
@@ -868,25 +871,42 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Email Input
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email Address *',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.email),
+                        // Email Display (Read-only)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey[50],
                           ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email address';
-                            }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(value)) {
-                              return 'Please enter a valid email address';
-                            }
-                            return null;
-                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.email, color: Colors.grey),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Email Address',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      _userEmail ?? 'Not available',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 16),
