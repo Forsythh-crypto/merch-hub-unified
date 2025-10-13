@@ -254,7 +254,7 @@ class OrderController extends Controller
         $order = $query->findOrFail($id);
 
         $oldStatus = $order->status;
-        $order->update($validated);
+        // $order->update($validated);
 
         // Send email notifications for status changes
         if ($validated['status'] === 'ready_for_pickup' && $oldStatus !== 'ready_for_pickup') {
