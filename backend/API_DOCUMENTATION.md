@@ -117,13 +117,13 @@ Create new listing (students can create listings)
 ### GET /api/admin/listings
 Get all listings for admin review (admin sees only their department, superadmin sees all)
 
-### PUT /api/admin/listings/{listing}/approve
-Approve a listing (admin can only approve from their department)
-
 ### DELETE /api/admin/listings/{listing}
 Delete a listing (admin can only delete from their department)
 
 ## Super Admin Only Routes (role: superadmin)
+
+### PUT /api/admin/listings/{listing}/approve
+Approve a listing (Super Admin only - can approve from any department)
 
 ### User Management
 - `GET /api/admin/users` - Get all users

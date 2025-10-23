@@ -867,4 +867,64 @@ class AdminService {
       return false;
     }
   }
+
+  // Sales Report
+  static Future<Map<String, dynamic>?> getSalesReport({
+    String? department,
+    String? dateRange,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      
+      // Build query parameters
+      Map<String, String> queryParams = {};
+      
+      if (department != null && department != 'all') {
+        queryParams['department'] = department;
+      }
+      
+      if (dateRange != null) {
+        queryParams['dateRange'] = dateRange; // Changed from date_range to dateRange
+      }
+      
+      if (startDate != null) {
+        queryParams['startDate'] = startDate.toIso8601String().split('T')[0]; // Changed from start_date to startDate
+      }
+      
+      if (endDate != null) {
+        queryParams['endDate'] = endDate.toIso8601String().split('T')[0]; // Changed from end_date to endDate
+      }
+      
+      // Build URL with query parameters
+      String url = 'admin/sales-report';
+      if (queryParams.isNotEmpty) {
+        String queryString = queryParams.entries
+            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+            .join('&');
+        url += '?$queryString';
+      }
+
+      print('Sales Report API URL: ${AppConfig.api(url)}'); // Debug log
+      
+      final response = await http.get(
+        AppConfig.api(url),
+        headers: headers,
+      );
+
+      print('Sales Report Response Status: ${response.statusCode}'); // Debug log
+      print('Sales Report Response Body: ${response.body}'); // Debug log
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Sales Report API Error: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Sales Report Exception: $e');
+      return null;
+    }
+  }
 }

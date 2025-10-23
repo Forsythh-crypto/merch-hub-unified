@@ -865,7 +865,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             return null;
                           },
                           onChanged: (value) {
-                            setState(() {}); // Rebuild to update total
+                            _calculateTotal(); // Recalculate total when quantity changes
                           },
                         ),
 

@@ -199,7 +199,7 @@ class UserController extends Controller
                 'isStudent' => $user->isStudent(),
                 'canManageUsers' => $user->isSuperAdmin(),
                 'canManageDepartments' => $user->isSuperAdmin(),
-                'canApproveListings' => $user->isAdmin() || $user->isSuperAdmin(),
+                'canApproveListings' => $user->isSuperAdmin(),
                 'canCreateListings' => true, // All authenticated users can create listings
                 'managedDepartmentId' => $user->isAdmin() ? $user->department_id : null,
                 'managedDepartmentName' => $user->isAdmin() ? $user->department?->name : null,

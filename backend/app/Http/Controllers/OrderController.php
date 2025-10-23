@@ -254,7 +254,7 @@ class OrderController extends Controller
         $order = $query->findOrFail($id);
 
         $oldStatus = $order->status;
-        // $order->update($validated);
+        $order->update($validated);
 
         // Send email notifications for status changes
         if ($validated['status'] === 'ready_for_pickup' && $oldStatus !== 'ready_for_pickup') {
@@ -514,6 +514,99 @@ class OrderController extends Controller
             Log::error('Order rating error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Error submitting rating: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get sales report data
+     */
+    public function getSalesReport(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            // Only allow superadmin to access sales report
+            if ($user->role !== 'superadmin') {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            $department = $request->query('department');
+            $dateRange = $request->query('dateRange');
+            $startDate = $request->query('startDate');
+            $endDate = $request->query('endDate');
+
+            // Build the query
+            $query = Order::with(['listing', 'department'])
+                ->where('status', 'completed');
+
+            // Filter by department if specified
+            if ($department && $department !== 'all') {
+                $query->where('department_id', $department);
+            }
+
+            // Apply date filters
+            if ($dateRange === 'weekly') {
+                $query->where('created_at', '>=', now()->subWeek());
+            } elseif ($dateRange === 'monthly') {
+                $query->where('created_at', '>=', now()->subMonth());
+            } elseif ($dateRange === 'custom' && $startDate && $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+            // If dateRange is 'all' or null, don't apply any date filter
+
+            $orders = $query->get();
+
+            // Calculate summary statistics
+            $totalSales = $orders->sum('total_amount');
+            $totalOrders = $orders->count();
+            $averageOrder = $totalOrders > 0 ? $totalSales / $totalOrders : 0;
+
+            // Group by department for department breakdown
+            $departmentBreakdown = $orders->groupBy('department_id')->map(function ($departmentOrders) {
+                return [
+                    'department_name' => $departmentOrders->first()->department->name ?? 'Unknown',
+                    'total_sales' => $departmentOrders->sum('total_amount'),
+                    'total_orders' => $departmentOrders->count(),
+                    'average_order' => $departmentOrders->count() > 0 ? $departmentOrders->sum('total_amount') / $departmentOrders->count() : 0,
+                ];
+            })->values();
+
+            // Group by date for trend analysis
+            $dailySales = $orders->groupBy(function ($order) {
+                return $order->created_at->format('Y-m-d');
+            })->map(function ($dayOrders, $date) {
+                return [
+                    'date' => $date,
+                    'total_sales' => $dayOrders->sum('total_amount'),
+                    'total_orders' => $dayOrders->count(),
+                ];
+            })->values();
+
+            return response()->json([
+                'summary' => [
+                    'total_sales' => $totalSales,
+                    'total_orders' => $totalOrders,
+                    'average_order' => round($averageOrder, 2),
+                ],
+                'department_breakdown' => $departmentBreakdown,
+                'daily_sales' => $dailySales,
+                'orders' => $orders->map(function ($order) {
+                    return [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'total_amount' => $order->total_amount,
+                        'quantity' => $order->quantity,
+                        'created_at' => $order->created_at,
+                        'department' => $order->department->name ?? 'Unknown',
+                        'listing_title' => $order->listing->title ?? 'Unknown',
+                    ];
+                }),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Sales report error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error generating sales report: ' . $e->getMessage()
             ], 500);
         }
     }

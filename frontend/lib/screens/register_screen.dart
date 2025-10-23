@@ -225,66 +225,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                    const SizedBox(height: 20),
-                    // Header
-                    Center(
-                      child: Column(
-                        children: [
-                          Container(
-                            height: 220,
-                            width: 450,
-                            child: Image.asset(
-                              'assets/logos/uddess_black.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Text(
-                                  'UDD ESSENTIALS',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    fontFamily: 'Montserrat',
-                                  ),
-                                );
-                              },
+                      const SizedBox(height: 20),
+                      
+                      // Header
+                      Container(
+                        height: 220,
+                        width: 450,
+                        child: Image.asset(
+                          'assets/logos/uddess_black.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Text(
+                              'UDD ESSENTIALS',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: 'Montserrat',
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      
+                      // Form Section
+                      Transform.translate(
+                        offset: const Offset(0, -45),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Create Account',
+                              style: AuthStyles.headingStyle,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Wrapped text and form with Transform.translate
-                    Transform.translate(
-                       offset: const Offset(0, -45),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'Create Account',
-                            style: AuthStyles.headingStyle,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Join the UDD community',
-                            style: AuthStyles.subheadingStyle,
-                          ),
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Join the UDD community',
+                              style: AuthStyles.subheadingStyle,
+                            ),
+                            const SizedBox(height: 24),
 
-                          // Registration Form
-                          Center(
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 400),
-                      padding: const EdgeInsets.all(24.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
+                            // Registration Form
+                            Container(
+                              constraints: const BoxConstraints(maxWidth: 400),
+                              padding: const EdgeInsets.all(24.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.95),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -313,7 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               keyboardType: TextInputType.emailAddress,
                               style: AuthStyles.inputTextStyle,
                               decoration: AuthStyles.getInputDecoration(
-                                labelText: 'Email',
+                                labelText: 'Email (must end with @cdd.edu.ph)',
                                 prefixIcon: Icons.email_outlined,
                               ),
                               validator: (value) {
@@ -322,6 +316,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 }
                                 if (!value.contains('@')) {
                                   return 'Please enter a valid email';
+                                }
+                                if (!value.endsWith('@cdd.edu.ph')) {
+                                  return 'Email must end with @cdd.edu.ph';
                                 }
                                 return null;
                               },
@@ -509,8 +506,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pop(context);
-                                  },
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginScreen(
+                          returnRoute: widget.returnRoute,
+                          returnArguments: widget.returnArguments,
+                        ),
+                      ),
+                    );
+                  },
                                   child: Text(
                                     'Login',
                                     style: AuthStyles.buttonTextStyle.copyWith(
@@ -523,11 +528,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                        ],
-                      ),
-                    ),
                     ],
                   ),
                 ),
@@ -547,7 +551,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Icons.arrow_back,
                     color: Colors.white,
                   ),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginScreen(
+                        returnRoute: widget.returnRoute,
+                        returnArguments: widget.returnArguments,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

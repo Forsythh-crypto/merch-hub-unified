@@ -8,6 +8,7 @@ class AuthStyles {
     required String labelText,
     required IconData prefixIcon,
     Widget? suffixIcon,
+    String? helperText,
   }) {
     return InputDecoration(
       labelText: labelText,

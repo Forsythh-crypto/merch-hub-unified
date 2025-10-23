@@ -652,9 +652,7 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
             Row(
               children: [
                 if (listing.status == 'pending' &&
-                    (widget.userSession.role == UserRole.superAdmin || 
-                     (widget.userSession.role == UserRole.admin && 
-                      listing.departmentId == widget.userSession.departmentId)))
+                    widget.userSession.role == UserRole.superAdmin)
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _approveListing(listing),
@@ -756,12 +754,11 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   }
 
   Future<void> _approveListing(Listing listing) async {
-    // Check if user can approve this listing
-    if (widget.userSession.role == UserRole.admin && 
-        listing.departmentId != widget.userSession.departmentId) {
+    // Only Super Admin can approve listings
+    if (widget.userSession.role != UserRole.superAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You can only approve listings from your department'),
+          content: Text('Only Super Admin can approve listings'),
           backgroundColor: Colors.red,
         ),
       );

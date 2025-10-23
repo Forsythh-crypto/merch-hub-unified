@@ -155,9 +155,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/listings/{listing}/size-variants', [ListingController::class, 'updateSizeVariants']);
         Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
         
-        // Allow admins to approve listings from their department
-        Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
-        
         // Discount code routes for admins (department-restricted)
         Route::get('/admin/discount-codes', [DiscountCodeController::class, 'index']);
         Route::post('/admin/discount-codes', [DiscountCodeController::class, 'store']);
@@ -168,6 +165,8 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Super Admin only routes
     Route::middleware('role:superadmin')->group(function () {
+        // Super Admin can approve listings from any department
+        Route::put('/admin/listings/{listing}/approve', [ListingController::class, 'approve']);
         Route::get('/admin/users', [UserController::class, 'index']);
         Route::post('/admin/users', [UserController::class, 'store']);
         Route::put('/admin/users/{user}', [UserController::class, 'update']);
@@ -180,6 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/departments', [DepartmentController::class, 'store']);
         Route::put('/admin/departments/{department}', [DepartmentController::class, 'update']);
         Route::delete('/admin/departments/{department}', [DepartmentController::class, 'destroy']);
+        Route::get('/admin/sales-report', [OrderController::class, 'getSalesReport']);
         Route::get('/admin/dashboard-stats', function () {
             try {
                 return response()->json([

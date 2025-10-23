@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_role.dart';
@@ -73,10 +75,67 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   // Department management variables
   List<Map<String, dynamic>> _departments = [];
 
+  // Sales report variables
+  String? _selectedDepartment = 'all';
+  String? _selectedDateRange = 'all'; // Changed default from 'monthly' to 'all'
+  DateTime? _startDate;
+  DateTime? _endDate;
+  bool _isLoadingSalesReport = false;
+  Map<String, dynamic>? _salesReportData;
+  Timer? _salesReportRefreshTimer;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    // Load sales report data after a short delay to ensure proper initialization
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _loadSalesReport();
+    });
+    
+    // Start periodic refresh timer for sales report (refresh every 30 seconds)
+    _startSalesReportAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _salesReportRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startSalesReportAutoRefresh() {
+    _salesReportRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted && _selectedIndex == 3) { // Only refresh if on sales report tab
+        _checkForSalesReportRefreshFlag();
+        _loadSalesReport();
+      }
+    });
+  }
+
+  Future<void> _checkForSalesReportRefreshFlag() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final needsRefresh = prefs.getBool('sales_report_needs_refresh') ?? false;
+      
+      if (needsRefresh) {
+        // Clear the flag and refresh immediately
+        await prefs.setBool('sales_report_needs_refresh', false);
+        _loadSalesReport();
+      }
+    } catch (e) {
+      print('Error checking sales report refresh flag: $e');
+    }
+  }
+
+  void _stopSalesReportAutoRefresh() {
+    _salesReportRefreshTimer?.cancel();
+    _salesReportRefreshTimer = null;
+  }
+
+  void refreshSalesReportNow() {
+    if (mounted) {
+      _loadSalesReport();
+    }
   }
 
   Future<void> _loadData() async {
@@ -3177,9 +3236,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       case 4:
         return 'Products';
       case 5:
-        return 'Analytics';
+        return 'Settings';
       case 6:
         return 'Discount Codes';
+      case 7:
+        return 'Sales Report';
       default:
         return 'UDD SuperAdmin Dashboard';
     }
@@ -3323,6 +3384,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 setState(() {
                   _selectedIndex = 3;
                 });
+                // Check for sales report refresh when switching to sales report tab
+                _checkForSalesReportRefreshFlag();
                 Navigator.pop(context);
               },
             ),
@@ -3405,6 +3468,32 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               },
             ),
           ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: _selectedIndex == 7 ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.analytics,
+                color: _selectedIndex == 7 ? const Color(0xFF1E3A8A) : Colors.grey[600],
+              ),
+              title: Text(
+                'Sales Report',
+                style: TextStyle(
+                  color: _selectedIndex == 7 ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  fontWeight: _selectedIndex == 7 ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 7;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
@@ -3470,6 +3559,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         return _buildSettingsTab();
       case 6:
         return _buildDiscountCodesTab();
+      case 7:
+        return _buildSalesReportTab();
       default:
         return _buildDashboardTab();
     }
@@ -3477,5 +3568,856 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
   Widget _buildDiscountCodesTab() {
     return const AdminDiscountCodesScreen();
+  }
+
+  Widget _buildSalesReportTab() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Sales Report',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  refreshSalesReportNow();
+                },
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Refresh'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          // Filters Row
+          Row(
+            children: [
+              // Department Filter
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Department',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedDepartment,
+                          isExpanded: true,
+                          hint: const Text('Select Department'),
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'all',
+                              child: Text('All Departments'),
+                            ),
+                            ..._departments.map((dept) => DropdownMenuItem(
+                              value: dept['id'].toString(),
+                              child: Text(dept['name']),
+                            )),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedDepartment = value;
+                            });
+                            _loadSalesReport();
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Date Range Filter
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Date Range',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedDateRange,
+                          isExpanded: true,
+                          hint: const Text('Select Date Range'),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'all',
+                              child: Text('All Time'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'weekly',
+                              child: Text('This Week'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'monthly',
+                              child: Text('This Month'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'custom',
+                              child: Text('Custom Range'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedDateRange = value;
+                              if (value != 'custom') {
+                                _startDate = null;
+                                _endDate = null;
+                              }
+                            });
+                            _loadSalesReport();
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+            ],
+          ),
+          
+          // Custom Date Range - Separate row to prevent overflow
+          if (_selectedDateRange == 'custom') ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Start Date',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _startDate ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setState(() {
+                              _startDate = date;
+                            });
+                            _loadSalesReport();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _startDate != null
+                                      ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                                      : 'Select Start Date',
+                                  style: TextStyle(
+                                    color: _startDate != null ? Colors.black : Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'End Date',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _endDate ?? DateTime.now(),
+                            firstDate: _startDate ?? DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setState(() {
+                              _endDate = date;
+                            });
+                            _loadSalesReport();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _endDate != null
+                                      ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                                      : 'Select End Date',
+                                  style: TextStyle(
+                                    color: _endDate != null ? Colors.black : Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 32),
+          
+          // Sales Report Content
+          Expanded(
+            child: _buildSalesReportContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesReportContent() {
+    if (_isLoadingSalesReport) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF1E3A8A),
+        ),
+      );
+    }
+
+    if (_salesReportData == null) {
+      return const Center(
+        child: Text(
+          'No sales data available',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey,
+            fontFamily: 'Montserrat',
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Summary Cards - Responsive layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 600) {
+                // Desktop/Tablet layout - horizontal cards
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Total Sales',
+                        '₱${_salesReportData!['summary']?['total_sales']?.toStringAsFixed(2) ?? '0.00'}',
+                        Icons.attach_money,
+                        const Color(0xFF059669),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Total Orders',
+                        '${_salesReportData!['summary']?['total_orders'] ?? 0}',
+                        Icons.shopping_cart,
+                        const Color(0xFF3B82F6),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Average Order',
+                        '₱${_salesReportData!['summary']?['average_order']?.toStringAsFixed(2) ?? '0.00'}',
+                        Icons.trending_up,
+                        const Color(0xFFF59E0B),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Mobile layout - vertical cards
+                return Column(
+                  children: [
+                    _buildSummaryCard(
+                      'Total Sales',
+                      '₱${_salesReportData!['summary']?['total_sales']?.toStringAsFixed(2) ?? '0.00'}',
+                      Icons.attach_money,
+                      const Color(0xFF059669),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSummaryCard(
+                      'Total Orders',
+                      '${_salesReportData!['summary']?['total_orders'] ?? 0}',
+                      Icons.shopping_cart,
+                      const Color(0xFF3B82F6),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSummaryCard(
+                      'Average Order',
+                      '₱${_salesReportData!['summary']?['average_order']?.toStringAsFixed(2) ?? '0.00'}',
+                      Icons.trending_up,
+                      const Color(0xFFF59E0B),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 24),
+          
+          // Charts section - Responsive layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Container(
+                width: double.infinity,
+                constraints: BoxConstraints(
+                  minHeight: 300,
+                  maxHeight: constraints.maxWidth > 600 ? 500 : 800,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Sales Overview',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: constraints.maxWidth > 600
+                            ? Row(
+                                children: [
+                                  // Bar Chart
+                                  Expanded(
+                                    flex: 2,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Sales by Department',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF374151),
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Expanded(
+                                          child: _buildSalesBarChart(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Pie Chart
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Order Distribution',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF374151),
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Expanded(
+                                          child: _buildOrdersPieChart(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                children: [
+                                  // Bar Chart - Mobile
+                                  Expanded(
+                                    flex: 3,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Sales by Department',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF374151),
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Expanded(
+                                          child: _buildSalesBarChart(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Pie Chart - Mobile
+                                  Expanded(
+                                    flex: 2,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Order Distribution',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF374151),
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Expanded(
+                                          child: _buildOrdersPieChart(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loadSalesReport() async {
+    print('🔄 Loading sales report with dateRange: $_selectedDateRange, department: $_selectedDepartment');
+    
+    setState(() {
+      _isLoadingSalesReport = true;
+    });
+
+    try {
+      final data = await AdminService.getSalesReport(
+        department: _selectedDepartment == 'all' ? null : _selectedDepartment,
+        dateRange: _selectedDateRange,
+        startDate: _startDate,
+        endDate: _endDate,
+      );
+
+      print('📊 Sales report data received: $data');
+
+      setState(() {
+        _salesReportData = data;
+        _isLoadingSalesReport = false;
+      });
+    } catch (e) {
+      print('❌ Error loading sales report: $e');
+      setState(() {
+        _isLoadingSalesReport = false;
+      });
+    }
+  }
+
+  Widget _buildSalesBarChart() {
+    if (_salesReportData == null || _salesReportData!['department_breakdown'] == null) {
+      return const Center(
+        child: Text(
+          'No department data available',
+          style: TextStyle(
+            color: Colors.grey,
+            fontFamily: 'Montserrat',
+          ),
+        ),
+      );
+    }
+
+    List<dynamic> departments = _salesReportData!['department_breakdown'];
+    List<BarChartGroupData> barGroups = [];
+    
+    for (int i = 0; i < departments.length; i++) {
+      var dept = departments[i];
+      double sales = (dept['total_sales'] ?? 0).toDouble();
+      
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: sales,
+              color: _getChartColor(i),
+              width: 20,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: _getMaxSales(departments) * 1.2,
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              String deptName = departments[groupIndex]['department_name'] ?? 'Unknown';
+              return BarTooltipItem(
+                '$deptName\n₱${rod.toY.toStringAsFixed(2)}',
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Montserrat',
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                if (value.toInt() < departments.length) {
+                  String deptName = departments[value.toInt()]['department_name'] ?? '';
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      deptName.length > 8 ? '${deptName.substring(0, 8)}...' : deptName,
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 60,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                return Text(
+                  '₱${value.toInt()}',
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 12,
+                    fontFamily: 'Montserrat',
+                  ),
+                );
+              },
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: barGroups,
+      ),
+    );
+  }
+
+  Widget _buildOrdersPieChart() {
+    if (_salesReportData == null || _salesReportData!['department_breakdown'] == null) {
+      return const Center(
+        child: Text(
+          'No order data available',
+          style: TextStyle(
+            color: Colors.grey,
+            fontFamily: 'Montserrat',
+          ),
+        ),
+      );
+    }
+
+    List<dynamic> departments = _salesReportData!['department_breakdown'];
+    List<PieChartSectionData> sections = [];
+    
+    int totalOrders = departments.fold(0, (sum, dept) => sum + (dept['total_orders'] ?? 0) as int);
+    
+    if (totalOrders == 0) {
+      return const Center(
+        child: Text(
+          'No orders data available',
+          style: TextStyle(
+            color: Colors.grey,
+            fontFamily: 'Montserrat',
+          ),
+        ),
+      );
+    }
+
+    for (int i = 0; i < departments.length; i++) {
+      var dept = departments[i];
+      int orders = dept['total_orders'] ?? 0;
+      double percentage = (orders / totalOrders) * 100;
+      
+      if (orders > 0) {
+        sections.add(
+          PieChartSectionData(
+            color: _getChartColor(i),
+            value: percentage,
+            title: '${percentage.toStringAsFixed(1)}%',
+            radius: 60,
+            titleStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        );
+      }
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: PieChart(
+            PieChartData(
+              sections: sections,
+              centerSpaceRadius: 40,
+              sectionsSpace: 2,
+              pieTouchData: PieTouchData(
+                touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                  // Handle touch events if needed
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Legend
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: departments.asMap().entries.map((entry) {
+            int index = entry.key;
+            var dept = entry.value;
+            int orders = dept['total_orders'] ?? 0;
+            
+            if (orders > 0) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: _getChartColor(index),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    dept['department_name'] ?? 'Unknown',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF6B7280),
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Color _getChartColor(int index) {
+    List<Color> colors = [
+      const Color(0xFF3B82F6), // Blue
+      const Color(0xFF10B981), // Green
+      const Color(0xFFF59E0B), // Yellow
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF8B5CF6), // Purple
+      const Color(0xFF06B6D4), // Cyan
+      const Color(0xFFF97316), // Orange
+      const Color(0xFFEC4899), // Pink
+    ];
+    return colors[index % colors.length];
+  }
+
+  double _getMaxSales(List<dynamic> departments) {
+    double max = 0;
+    for (var dept in departments) {
+      double sales = (dept['total_sales'] ?? 0).toDouble();
+      if (sales > max) max = sales;
+    }
+    return max > 0 ? max : 100; // Minimum scale of 100
   }
 }

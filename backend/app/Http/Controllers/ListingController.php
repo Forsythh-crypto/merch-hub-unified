@@ -203,7 +203,7 @@ class ListingController extends Controller
     }
 
     /**
-     * Approve a listing
+     * Approve a listing (Super Admin only)
      */
     public function approve(Request $request, Listing $listing)
     {
@@ -219,9 +219,9 @@ class ListingController extends Controller
             'status' => $listing->status,
         ]));
 
-        // Check if user can manage this listing's department
-        if (!$user->canManageDepartment($listing->department_id)) {
-            return response()->json(['message' => 'Cannot approve listings from this department'], 403);
+        // Only Super Admin can approve listings
+        if (!$user->isSuperAdmin()) {
+            return response()->json(['message' => 'Only Super Admin can approve listings'], 403);
         }
 
         $listing->update(['status' => 'approved']);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/order.dart';
 import '../models/user_role.dart';
 import '../services/order_service.dart';
@@ -21,6 +22,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
   bool _isLoading = true;
   String? _error;
   late TabController _tabController;
+  
+  // Per-order loading states
+  Set<int> _updatingStatusOrderIds = {};
+  Set<int> _confirmingReservationOrderIds = {};
 
   final List<String> _statusTabs = [
     'pending',
@@ -106,7 +111,12 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
   }
 
   List<Order> _getOrdersByStatus(String status) {
-    return _orders.where((order) => order.status == status).toList();
+    final filteredOrders = _orders.where((order) => order.status == status).toList();
+    
+    // Sort by creation date (newest first)
+    filteredOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    
+    return filteredOrders;
   }
 
   Widget _buildOrdersList(String status) {
@@ -145,6 +155,13 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
   }
 
   Future<void> _updateOrderStatus(Order order, String newStatus) async {
+    // Prevent multiple updates for the same order
+    if (_updatingStatusOrderIds.contains(order.id)) return;
+    
+    setState(() {
+      _updatingStatusOrderIds.add(order.id);
+    });
+
     try {
       final result = await OrderService.updateOrderStatus(
         orderId: order.id,
@@ -159,6 +176,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
           ),
         );
         _loadOrders(); // Reload orders
+        
+        // Trigger sales report refresh if order is completed
+        if (newStatus.toLowerCase() == 'completed') {
+          _notifySalesReportRefresh();
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -174,10 +196,28 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      setState(() {
+        _updatingStatusOrderIds.remove(order.id);
+      });
     }
   }
 
+  void _notifySalesReportRefresh() {
+    // Store a flag in SharedPreferences to indicate sales report needs refresh
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('sales_report_needs_refresh', true);
+    });
+  }
+
   Future<void> _confirmReservationFee(Order order) async {
+    // Prevent multiple confirmations for the same order
+    if (_confirmingReservationOrderIds.contains(order.id)) return;
+    
+    setState(() {
+      _confirmingReservationOrderIds.add(order.id);
+    });
+
     try {
       final result = await OrderService.confirmReservationFee(order.id);
 
@@ -204,6 +244,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      setState(() {
+        _confirmingReservationOrderIds.remove(order.id);
+      });
     }
   }
 
@@ -354,7 +398,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
-                      onPressed: () => _showStatusUpdateDialog(order),
+                      onPressed: _updatingStatusOrderIds.contains(order.id) 
+                          ? null 
+                          : () => _showStatusUpdateDialog(order),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
@@ -364,13 +410,22 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                         ),
                         minimumSize: const Size(0, 30),
                       ),
-                      child: const Text(
-                        'Update Status',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 12,
-                        ),
-                      ),
+                      child: _updatingStatusOrderIds.contains(order.id)
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Update Status',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 12,
+                              ),
+                            ),
                     ),
                   ],
                 ),
@@ -492,7 +547,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _confirmReservationFee(order),
+                              onPressed: _confirmingReservationOrderIds.contains(order.id)
+                                  ? null
+                                  : () => _confirmReservationFee(order),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00D4AA),
                                 foregroundColor: Colors.white,
@@ -500,8 +557,21 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              icon: const Icon(Icons.check_circle),
-                              label: const Text('Confirm Payment'),
+                              icon: _confirmingReservationOrderIds.contains(order.id)
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_circle),
+                              label: Text(
+                                _confirmingReservationOrderIds.contains(order.id)
+                                    ? 'Confirming...'
+                                    : 'Confirm Payment',
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
