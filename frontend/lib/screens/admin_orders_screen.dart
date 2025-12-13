@@ -761,6 +761,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
               ),
             )
           : AppBar(
+              automaticallyImplyLeading: false,
               backgroundColor: const Color(0xFF1E3A8A),
               foregroundColor: Colors.white,
               elevation: 0,

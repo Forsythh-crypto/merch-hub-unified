@@ -3272,6 +3272,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Montserrat',
                   ),
                 ),
                 Text(
@@ -3279,6 +3280,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,
+                    fontFamily: 'Montserrat',
                   ),
                 ),
               ],
@@ -3300,6 +3302,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 0 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 0 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3326,6 +3329,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 1 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3352,6 +3356,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 2 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 2 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3378,6 +3383,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 3 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 3 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3406,6 +3412,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 4 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 4 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3432,6 +3439,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 5 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 5 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3458,6 +3466,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 6 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 6 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3484,6 +3493,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   color: _selectedIndex == 7 ? const Color(0xFF1E3A8A) : Colors.grey[800],
                   fontWeight: _selectedIndex == 7 ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Montserrat',
                 ),
               ),
               onTap: () {
@@ -3497,7 +3507,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
+            title: const Text(
+              'Logout',
+              style: TextStyle(fontFamily: 'Montserrat'),
+            ),
             onTap: () async {
               Navigator.pop(context);
               final shouldLogout = await showDialog<bool>(
@@ -3585,6 +3598,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E3A8A),
+                  fontFamily: 'Montserrat',
                 ),
               ),
               ElevatedButton.icon(
@@ -3621,6 +3635,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey,
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -3638,11 +3653,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           items: [
                             const DropdownMenuItem(
                               value: 'all',
-                              child: Text('All Departments'),
+                              child: Text(
+                                'All Departments',
+                                style: TextStyle(fontFamily: 'Montserrat'),
+                              ),
                             ),
                             ..._departments.map((dept) => DropdownMenuItem(
                               value: dept['id'].toString(),
-                              child: Text(dept['name']),
+                              child: Text(
+                                dept['name'],
+                                style: const TextStyle(fontFamily: 'Montserrat'),
+                              ),
                             )),
                           ],
                           onChanged: (value) {
@@ -3671,6 +3692,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey,
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -3688,19 +3710,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           items: const [
                             DropdownMenuItem(
                               value: 'all',
-                              child: Text('All Time'),
+                              child: Text('All Time', style: TextStyle(fontFamily: 'Montserrat')),
                             ),
                             DropdownMenuItem(
                               value: 'weekly',
-                              child: Text('This Week'),
+                              child: Text('This Week', style: TextStyle(fontFamily: 'Montserrat')),
                             ),
                             DropdownMenuItem(
                               value: 'monthly',
-                              child: Text('This Month'),
+                              child: Text('This Month', style: TextStyle(fontFamily: 'Montserrat')),
                             ),
                             DropdownMenuItem(
                               value: 'custom',
-                              child: Text('Custom Range'),
+                              child: Text('Custom Range', style: TextStyle(fontFamily: 'Montserrat')),
                             ),
                           ],
                           onChanged: (value) {
@@ -3739,6 +3761,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -3774,6 +3797,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                       : 'Select Start Date',
                                   style: TextStyle(
                                     color: _startDate != null ? Colors.black : Colors.grey,
+                                    fontFamily: 'Montserrat',
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -3796,6 +3820,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -3831,6 +3856,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                       : 'Select End Date',
                                   style: TextStyle(
                                     color: _endDate != null ? Colors.black : Colors.grey,
+                                    fontFamily: 'Montserrat',
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
