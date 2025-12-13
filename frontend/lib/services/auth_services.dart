@@ -88,4 +88,57 @@ class AuthService {
       // Handle error silently
     }
   }
+  // Verify email
+  static Future<bool> verifyEmail(String email, String code) async {
+    try {
+      final response = await http.post(
+        AppConfig.api('verify-email'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'code': code,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        final userData = data['user'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        await prefs.setString('user_data', jsonEncode(userData));
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Verify email error: $e');
+      return false;
+    }
+  }
+
+  // Resend verification code
+  static Future<bool> resendCode(String email) async {
+    try {
+      final response = await http.post(
+        AppConfig.api('resend-verification'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Resend code error: $e');
+      return false;
+    }
+  }
 }

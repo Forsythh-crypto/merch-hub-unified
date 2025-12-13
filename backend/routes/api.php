@@ -22,7 +22,7 @@ Route::get('/test-email', function () {
     try {
         \Illuminate\Support\Facades\Mail::raw('Test email from Laravel', function ($message) {
             $message->to('test@example.com')
-                    ->subject('Test Email');
+                ->subject('Test Email');
         });
         return response()->json(['message' => 'Email sent successfully']);
     } catch (\Exception $e) {
@@ -34,14 +34,14 @@ Route::get('/test-email', function () {
 Route::get('/test-pickup-email/{orderId}', function ($orderId) {
     try {
         $order = \App\Models\Order::with(['user', 'listing', 'department'])->findOrFail($orderId);
-        
+
         if (!$order->user) {
             return response()->json(['error' => 'Order has no user associated'], 400);
         }
-        
+
         \Illuminate\Support\Facades\Log::info('Testing pickup email for order: ' . $order->order_number);
         \Illuminate\Support\Facades\Log::info('User email: ' . $order->user->email);
-        
+
         // Test the actual pickup ready email template
         $data = [
             'order' => $order,
@@ -49,14 +49,14 @@ Route::get('/test-pickup-email/{orderId}', function ($orderId) {
             'listing' => $order->listing,
             'department' => $order->department,
         ];
-        
+
         \Illuminate\Support\Facades\Log::info('Email data: ' . json_encode($data));
-        
+
         \Illuminate\Support\Facades\Mail::send('emails.pickup-ready', $data, function ($message) use ($order) {
             $message->to($order->user->email)
-                    ->subject('Your Order is Ready for Pickup - ' . $order->order_number);
+                ->subject('Your Order is Ready for Pickup - ' . $order->order_number);
         });
-        
+
         return response()->json(['message' => 'Pickup ready email sent successfully']);
     } catch (\Exception $e) {
         \Illuminate\Support\Facades\Log::error('Email test failed: ' . $e->getMessage());
@@ -97,8 +97,10 @@ Route::get('/files/{path}', function ($path) {
     return response()->file($fullPath);
 })->where('path', '.*');
 
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/resend-verification', [AuthController::class, 'resendVerificationCode']);
 
 // Simple order creation without authentication (for testing)
 Route::post('/simple-orders', [OrderController::class, 'simpleStore']);
@@ -110,11 +112,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/permissions', [UserController::class, 'permissions']);
     Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/categories', [CategoryController::class, 'index']);
-    
+
     // User routes (for all authenticated users)
     Route::get('/listings', [ListingController::class, 'index']);
     Route::get('/user/listings', [ListingController::class, 'userListings']);
-    
+
     // Order routes (for all authenticated users)
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders', [OrderController::class, 'index']);
@@ -122,11 +124,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{id}/upload-receipt', [OrderController::class, 'uploadReceipt']);
     Route::post('/orders/{id}/rate', [OrderController::class, 'rateOrder']);
-    
+
     // Discount code validation route
     Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate']);
     Route::post('/discount-codes/calculate', [DiscountCodeController::class, 'calculate']);
-    
+
     // Notification routes (for all authenticated users)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
@@ -134,27 +136,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsReadSingle']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     Route::delete('/notifications', [NotificationController::class, 'clearAll']);
-    
+
     // Student routes
     Route::middleware('role:student')->group(function () {
         Route::post('/listings', [ListingController::class, 'store']);
     });
-    
+
     // Admin routes (can manage their department)
     Route::middleware('role:admin,superadmin')->group(function () {
         Route::get('/admin/listings', [ListingController::class, 'adminIndex']);
         Route::post('/listings', [ListingController::class, 'store']);  // Allow admins to create listings
-        
+
         // Admin order routes
         Route::get('/admin/orders', [OrderController::class, 'adminIndex']);
         Route::put('/admin/orders/{id}/status', [OrderController::class, 'updateStatus']);
         Route::post('/admin/orders/{id}/confirm-reservation-fee', [OrderController::class, 'confirmReservationFee']);
-        
+
         // Allow admins to update their own listings (but not status)
         Route::put('/admin/listings/{listing}', [ListingController::class, 'update']);
         Route::put('/admin/listings/{listing}/size-variants', [ListingController::class, 'updateSizeVariants']);
         Route::delete('/admin/listings/{listing}', [ListingController::class, 'destroy']);
-        
+
         // Discount code routes for admins (department-restricted)
         Route::get('/admin/discount-codes', [DiscountCodeController::class, 'index']);
         Route::post('/admin/discount-codes', [DiscountCodeController::class, 'store']);
@@ -162,7 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/discount-codes/{discountCode}', [DiscountCodeController::class, 'destroy']);
         Route::get('/admin/discount-codes/stats', [DiscountCodeController::class, 'stats']);
     });
-    
+
     // Super Admin only routes
     Route::middleware('role:superadmin')->group(function () {
         // Super Admin can approve listings from any department
@@ -216,11 +218,11 @@ Route::middleware('auth:sanctum')->group(function () {
         });
         Route::get('/admin/all-listings', [ListingController::class, 'superAdminIndex']);
         Route::put('/admin/listings/{listing}/update-stock', [ListingController::class, 'updateStock']);
-        
+
         // Additional discount code routes for superadmins (all departments)
         Route::get('/admin/discount-codes/all', [DiscountCodeController::class, 'superAdminIndex']);
     });
-    
+
     // Department-specific routes (admin can only access their own department)
     Route::middleware('department.access')->group(function () {
         Route::get('/departments/{department_id}/listings', [ListingController::class, 'departmentListings']);

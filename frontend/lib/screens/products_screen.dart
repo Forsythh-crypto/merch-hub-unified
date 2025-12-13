@@ -104,8 +104,11 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error loading listings: $e'),
+          content: Text('Error loading listings: $e', style: const TextStyle(fontFamily: 'Montserrat')),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -162,15 +165,24 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products Management'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Products Management',
+          style: TextStyle(
+            color: Colors.black,
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFF9FAFB),
+        elevation: 0,
+        foregroundColor: Colors.black,
         automaticallyImplyLeading: false,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.black,
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(text: 'Manage Listings'),
             Tab(text: 'Add Listing'),
@@ -194,20 +206,43 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
         children: [
           // Search and Filter Section
           Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.grey[50],
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  spreadRadius: 1,
+                  blurRadius: 10,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
             child: Column(
               children: [
                 // Search Bar
                 TextField(
                   controller: _searchController,
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                   decoration: InputDecoration(
                     hintText: 'Search products...',
-                    prefixIcon: const Icon(Icons.search),
+                    hintStyle: const TextStyle(fontFamily: 'Montserrat'),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -216,7 +251,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                     _applyFilters();
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 // Filter Row
                 Row(
                   children: [
@@ -226,10 +261,17 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                         value: _selectedStatusFilter,
                         decoration: InputDecoration(
                           labelText: 'Status',
+                          filled: true,
+                          fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                         items: const [
                           DropdownMenuItem(value: 'all', child: Text('All Status')),
@@ -245,17 +287,24 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                         },
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     // Category Filter
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _selectedCategoryFilter,
                         decoration: InputDecoration(
                           labelText: 'Category',
+                          filled: true,
+                          fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                         items: _buildCategoryFilterItems(),
                         onChanged: (value) {
@@ -289,15 +338,10 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                           ],
                         ),
                       )
-                    : GridView.builder(
+                    : ListView.separated(
                         padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 1,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.7,
-                        ),
                         itemCount: _filteredListings.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final listing = _filteredListings[index];
                           return _buildProductCard(listing);
@@ -311,9 +355,11 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
 
   Widget _buildProductCard(Listing listing) {
     return Card(
-      elevation: 3,
-      color: Colors.white.withOpacity(0.9),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      shadowColor: Colors.black.withOpacity(0.1),
+      margin: const EdgeInsets.only(bottom: 16),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Stack(
         children: [
           Padding(
@@ -359,23 +405,25 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                        listing.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                            listing.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              fontFamily: 'Montserrat',
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                        '₱${listing.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Color(0xFF1E3A8A),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
+                            '₱${listing.price.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Color(0xFF1E3A8A),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
                       const SizedBox(height: 8),
                           
                           // Department and Category
@@ -404,44 +452,96 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                       
                       const SizedBox(height: 8),
                       
-                      // Actions
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          // Delete Button
-                          InkWell(
-                            onTap: () => _showDeleteConfirmation(listing),
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.delete,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Delete',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 11,
+                          // Approve Button (Only for Pending)
+                          if (listing.status.toLowerCase() == 'pending')
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final success = await AdminService.approveListing(listing.id);
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                        'Listing approved successfully',
+                                        style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+                                      ),
+                                      backgroundColor: Colors.green,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                      elevation: 4,
                                     ),
-                                  ),
-                                ],
+                                  );
+                                  _loadListings();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                        'Failed to approve listing',
+                                        style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+                                      ),
+                                      backgroundColor: Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                      elevation: 4,
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.check_circle, size: 14),
+                              label: const Text(
+                                'Approve',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                minimumSize: const Size(0, 32),
+                                elevation: 0,
                               ),
                             ),
+
+                          // Delete Button
+                          OutlinedButton.icon(
+                            onPressed: () => _showDeleteConfirmation(listing),
+                            icon: const Icon(Icons.delete_outline, size: 14),
+                            label: const Text(
+                              'Delete',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              side: const BorderSide(color: Colors.red, width: 1),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              minimumSize: const Size(0, 32),
+                            ),
                           ),
-                          const SizedBox(width: 10),
                           
                           // Edit Button
                           ElevatedButton.icon(
@@ -460,15 +560,24 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                             icon: const Icon(Icons.edit, size: 14),
                             label: const Text(
                               'Edit',
-                              style: TextStyle(fontSize: 11),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Montserrat',
+                              ),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1E3A8A),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              minimumSize: const Size(0, 32),
+                              elevation: 0,
                             ),
                           ),
                         ],
@@ -554,16 +663,22 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
       await AdminService.deleteListing(listingId);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Product deleted successfully'),
+          content: Text('Product deleted successfully', style: TextStyle(fontFamily: 'Montserrat')),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          margin: EdgeInsets.all(16),
         ),
       );
       _loadListings(); // Refresh the list
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error deleting product: $e'),
+          content: Text('Error deleting product: $e', style: const TextStyle(fontFamily: 'Montserrat')),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -747,8 +862,11 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Product created successfully'),
+          content: Text('Product created successfully', style: TextStyle(fontFamily: 'Montserrat')),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          margin: EdgeInsets.all(16),
         ),
       );
       
@@ -760,8 +878,11 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error creating product: $e'),
+          content: Text('Error creating product: $e', style: const TextStyle(fontFamily: 'Montserrat')),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -805,24 +926,39 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setInnerState) {
         return SingleChildScrollView(
-      padding: const EdgeInsets.all(0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Add New Product',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          
-          // Product Images
-          const Text('Product Images', style: TextStyle(fontWeight: FontWeight.bold)),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Add New Product',
+                style: TextStyle(
+                  fontSize: 20, 
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Product Images
+              const Text(
+                'Product Images', 
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
           const SizedBox(height: 6),
           Container(
-            height: 110,
+            height: 140,
+            width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFEEF2FF), // Light indigo tint
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFE0E7FF),
+                width: 1.5,
+              ),
             ),
             child: selectedImages.isEmpty
                 ? Center(
@@ -938,24 +1074,54 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
           // Product Details Form
           TextField(
             controller: titleController,
-                  onChanged: (value) {
-                    setInnerState(() {});
-                  },
-            decoration: const InputDecoration(
+            onChanged: (value) {
+              setInnerState(() {});
+            },
+            style: const TextStyle(fontFamily: 'Montserrat'),
+            decoration: InputDecoration(
               labelText: 'Product Title',
-              border: OutlineInputBorder(),
+              labelStyle: const TextStyle(fontFamily: 'Montserrat'),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+              ),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: descriptionController,
-                  onChanged: (value) {
-                    setInnerState(() {});
-                  },
-            maxLines: 3,
-            decoration: const InputDecoration(
+            onChanged: (value) {
+              setInnerState(() {});
+            },
+            style: const TextStyle(fontFamily: 'Montserrat'),
+            maxLines: 4,
+            decoration: InputDecoration(
               labelText: 'Description',
-              border: OutlineInputBorder(),
+              labelStyle: const TextStyle(fontFamily: 'Montserrat'),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -968,10 +1134,26 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                     setInnerState(() {});
                   },
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  style: const TextStyle(fontFamily: 'Montserrat'),
+                  decoration: InputDecoration(
                     labelText: 'Price',
+                    labelStyle: const TextStyle(fontFamily: 'Montserrat'),
                     prefixText: '₱',
-                    border: OutlineInputBorder(),
+                    prefixStyle: const TextStyle(fontFamily: 'Montserrat'),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                    ),
                   ),
                 ),
               ),
@@ -985,9 +1167,24 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                       setInnerState(() {});
                     },
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    style: const TextStyle(fontFamily: 'Montserrat'),
+                    decoration: InputDecoration(
                       labelText: 'Stock',
-                      border: OutlineInputBorder(),
+                      labelStyle: const TextStyle(fontFamily: 'Montserrat'),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                      ),
                     ),
                   ),
                 ),
@@ -999,15 +1196,26 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
           Column(
             children: [
               DropdownButtonFormField<int>(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Category',
-                  border: OutlineInputBorder(),
+                  labelStyle: const TextStyle(fontFamily: 'Montserrat'),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
+                style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                 value: selectedCategoryId,
                 items: categories.map((category) {
                   return DropdownMenuItem<int>(
                     value: category['id'],
-                    child: Text(category['name']),
+                    child: Text(category['name'], style: const TextStyle(fontFamily: 'Montserrat')),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -1023,12 +1231,23 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                   });
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Department',
-                  border: OutlineInputBorder(),
+                  labelStyle: const TextStyle(fontFamily: 'Montserrat'),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
+                style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                 value: selectedDepartmentId,
                 isExpanded: true,
                 items: departments.map((department) {
@@ -1037,6 +1256,7 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
                     child: Text(
                       department['name'],
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontFamily: 'Montserrat'),
                     ),
                   );
                 }).toList(),
@@ -1173,9 +1393,18 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
           
           // Status Dropdown
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Status',
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
             ),
             value: selectedStatus,
             items: const [
@@ -1194,15 +1423,28 @@ class _ProductsScreenState extends State<ProductsScreen> with SingleTickerProvid
           // Submit Button
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _submitForm(setInnerState),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E3A8A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              child: ElevatedButton(
+                onPressed: () => _submitForm(setInnerState),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 4,
+                  shadowColor: const Color(0xFF1E3A8A).withOpacity(0.4),
+                ),
+                child: const Text(
+                  'Create Product',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
               ),
-              child: const Text('Create Product'),
-            ),
           ),
         ],
       ),

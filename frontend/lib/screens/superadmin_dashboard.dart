@@ -206,12 +206,18 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E3A8A),
-        title: Text(
-          _getCurrentTitle(),
-          style: const TextStyle(color: Colors.white),
+        backgroundColor: const Color(0xFFF9FAFB),
+        elevation: 0,
+        toolbarHeight: 120,
+        centerTitle: true,
+        title: Transform.scale(
+          scale: 1.5,
+          child: Image.asset(
+            'assets/logos/uddess.png',
+            height: 100,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -733,13 +739,13 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               children: [
                 const Text(
                   'Departments',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showAddDepartmentDialog(),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Department'),
+                  label: const Text('Add Department', style: TextStyle(fontFamily: 'Montserrat')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A8A),
                     foregroundColor: Colors.white,
@@ -759,12 +765,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     SizedBox(height: 16),
                     Text(
                       'No departments found',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Montserrat'),
                     ),
                     SizedBox(height: 8),
                     Text(
                       'Click "Add Department" to create one',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'Montserrat'),
                     ),
                   ],
                 ),
@@ -805,19 +811,21 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                       department['name'][0].toUpperCase(),
                                       style: const TextStyle(
                                         color: Colors.white,
+                                        fontFamily: 'Montserrat',
                                       ),
                                     );
                                   },
                                 )
                               : Text(
                                   department['name'][0].toUpperCase(),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: Colors.white, fontFamily: 'Montserrat'),
                                 ),
                         ),
                       ),
-                      title: Text(department['name']),
+                      title: Text(department['name'], style: const TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
                       subtitle: Text(
                         department['description'] ?? 'No description',
+                        style: const TextStyle(fontFamily: 'Montserrat'),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -1147,7 +1155,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           children: [
             const Text(
               'System Settings',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Montserrat',
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -1724,7 +1736,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Add Department'),
+          title: const Text('Add Department', style: TextStyle(fontFamily: 'Montserrat')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1733,16 +1745,20 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: 'Department Name',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
@@ -1757,7 +1773,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     children: [
                       const Text(
                         'Department Logo (Optional)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                       ),
                       const SizedBox(height: 8),
                       if (selectedLogo != null)
@@ -1842,7 +1858,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
             ),
             TextButton(
               onPressed: () {
@@ -1850,7 +1866,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 descriptionController.dispose();
                 Navigator.pop(context);
               },
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1899,7 +1915,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Edit Department'),
+          title: const Text('Edit Department', style: TextStyle(fontFamily: 'Montserrat')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1908,16 +1924,20 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: 'Department Name',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: descriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description (Optional)',
+                    labelStyle: TextStyle(fontFamily: 'Montserrat'),
                     border: OutlineInputBorder(),
                   ),
+                  style: const TextStyle(fontFamily: 'Montserrat'),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
@@ -1932,7 +1952,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     children: [
                       const Text(
                         'Department Logo (Optional)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                       ),
                       const SizedBox(height: 8),
                       if (selectedLogo != null)
@@ -2015,7 +2035,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 descriptionController.dispose();
                 Navigator.pop(context);
               },
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -2043,7 +2063,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   print('Error updating department: $e');
                 }
               },
-              child: const Text('Update'),
+              child: const Text('Update', style: TextStyle(fontFamily: 'Montserrat')),
             ),
           ],
         ),
@@ -2055,14 +2075,15 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Department'),
+        title: const Text('Delete Department', style: TextStyle(fontFamily: 'Montserrat')),
         content: Text(
           'Are you sure you want to delete "${department['name']}"? This action cannot be undone.',
+          style: const TextStyle(fontFamily: 'Montserrat'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2082,7 +2103,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white, fontFamily: 'Montserrat')),
           ),
         ],
       ),
@@ -3223,28 +3244,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   // Drawer Navigation Methods
-  String _getCurrentTitle() {
-    switch (_selectedIndex) {
-      case 0:
-        return 'Dashboard';
-      case 1:
-        return 'Orders';
-      case 2:
-        return 'Users';
-      case 3:
-        return 'Departments';
-      case 4:
-        return 'Products';
-      case 5:
-        return 'Settings';
-      case 6:
-        return 'Discount Codes';
-      case 7:
-        return 'Sales Report';
-      default:
-        return 'UDD SuperAdmin Dashboard';
-    }
-  }
+
 
   Widget _buildDrawer() {
     return Drawer(
@@ -3597,7 +3597,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: Colors.black,
                   fontFamily: 'Montserrat',
                 ),
               ),
@@ -3608,7 +3608,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Refresh'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A8A),
+                  backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(

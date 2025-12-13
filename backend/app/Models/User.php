@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'role',
         'department_id',
+        'verification_code',
     ];
 
     /**
@@ -90,11 +91,11 @@ class User extends Authenticatable
         if ($this->isSuperAdmin()) {
             return true;
         }
-        
+
         if ($this->isAdmin() && $this->department_id == $deptId) {
             return true;
         }
-        
+
         return false;
     }
 

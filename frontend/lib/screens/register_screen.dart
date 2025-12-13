@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../styles/auth_styles.dart';
 import 'login_screen.dart';
+import 'verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? returnRoute;
@@ -157,18 +158,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Registration successful! Please login.'),
+              content: Text('Registration successful! Please verify your email.'),
               backgroundColor: Colors.green,
             ),
           );
           
-          // Navigate to login screen with return route info
+          // Navigate to verification screen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => LoginScreen(
-                returnRoute: widget.returnRoute,
-                returnArguments: widget.returnArguments,
+              builder: (context) => VerificationScreen(
+                email: _emailController.text,
               ),
             ),
           );

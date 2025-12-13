@@ -731,8 +731,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
     return Scaffold(
       appBar: widget.showAppBar
           ? AppBar(
-              backgroundColor: const Color(0xFF1E3A8A),
-              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFFF9FAFB),
+              foregroundColor: Colors.black,
               elevation: 0,
               title: const Text(
                 'Order Management',
@@ -750,9 +750,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
               bottom: TabBar(
                 controller: _tabController,
                 isScrollable: true,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.white,
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Colors.black,
                 labelStyle: const TextStyle(
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w600,
@@ -762,8 +762,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
             )
           : AppBar(
               automaticallyImplyLeading: false,
-              backgroundColor: const Color(0xFF1E3A8A),
-              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFFF9FAFB),
+              foregroundColor: Colors.black,
               elevation: 0,
               title: const Text(
                 'Order Management',
@@ -781,9 +781,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
               bottom: TabBar(
                 controller: _tabController,
                 isScrollable: true,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.white,
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Colors.black,
                 labelStyle: const TextStyle(
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w600,
