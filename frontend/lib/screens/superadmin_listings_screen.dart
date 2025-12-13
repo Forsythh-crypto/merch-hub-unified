@@ -383,29 +383,50 @@ class _SuperAdminListingsScreenState extends State<SuperAdminListingsScreen> {
 
       if (success) {
         print('✅ Listing deleted successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
             content: Text('Product "${listing.title}" deleted successfully'),
-            backgroundColor: Colors.green,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         // Refresh the data to show updated list
         _loadListings();
       } else {
         print('❌ Failed to delete listing');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete product'),
-            backgroundColor: Colors.red,
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to delete product'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
     } catch (e) {
       print('❌ Error deleting listing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error deleting product: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }

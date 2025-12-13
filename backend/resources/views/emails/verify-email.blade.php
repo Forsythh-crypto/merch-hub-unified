@@ -20,7 +20,7 @@
 
         <p>If you did not create an account, no further action is required.</p>
 
-        <p>Regards,<br>Merch Hub Unified Team</p>
+        <p>Regards,<br>UDD Essentials Team</p>
     </div>
 </body>
 

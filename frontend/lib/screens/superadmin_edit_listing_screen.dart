@@ -134,10 +134,17 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
         _isLoadingData = false;
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error loading data: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -807,8 +814,18 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                         });
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error picking images: $e')),
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Error'),
+                          content: Text('Error picking images: $e'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
                       );
                     }
                   },
@@ -838,8 +855,18 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                         });
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error taking photo: $e')),
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Error'),
+                          content: Text('Error taking photo: $e'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
                       );
                     }
                   },
@@ -861,10 +888,17 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
 
   Future<void> _updateListing() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a product title'),
-          backgroundColor: Colors.red,
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Please enter a product title'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
       return;
@@ -908,10 +942,17 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Listing updated successfully'),
-          backgroundColor: Colors.green,
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Listing updated successfully'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
 
@@ -919,10 +960,17 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
       Navigator.of(context).pop();
     } catch (e) {
       print('Error updating listing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error updating listing: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     } finally {

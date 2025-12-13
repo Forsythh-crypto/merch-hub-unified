@@ -11,6 +11,7 @@ import '../config/app_config.dart';
 import 'user_orders_screen.dart';
 import 'order_confirmation_screen.dart';
 import 'notifications_screen.dart';
+import 'edit_profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final bool isGuest;
@@ -72,6 +73,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
     },
   ];
 
+  Map<String, dynamic>? _userData;
+
   @override
   void initState() {
     super.initState();
@@ -111,9 +114,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
   
   Future<void> _checkGuestStatus() async {
     final isGuest = await GuestService.isGuestMode();
+    Map<String, dynamic>? userData;
+    
+    if (!isGuest) {
+      userData = await AuthService.getCurrentUser();
+    }
+
     if (mounted) {
       setState(() {
         _isGuest = isGuest;
+        _userData = userData;
       });
     }
   }
@@ -173,48 +183,84 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                 ],
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Image.asset(
-                  'assets/logos/uddess_black.png',
-                  height: 60,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Text(
-                      'UDD ESSENTIALS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        fontFamily: 'Montserrat',
+            child: _isGuest
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Image.asset(
+                        'assets/logos/uddess_black.png',
+                        height: 60,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Text(
+                            'UDD ESSENTIALS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              fontFamily: 'Montserrat',
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _isGuest 
-                    ? 'Browsing as Guest'
-                    : 'Your One-Stop Shop for UDD Merchandise',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Browsing as Guest',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Login to access all features',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white,
+                        child: Text(
+                          _userData?['name']?[0]?.toUpperCase() ?? 'U',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _userData?['name'] ?? 'User',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        _userData?['email'] ?? '',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 14,
+                          fontFamily: 'Montserrat',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ),
-                if (_isGuest)
-                  const SizedBox(height: 4),
-                if (_isGuest)
-                  const Text(
-                    'Login to access all features',
-                    style: TextStyle(
-                      color: Colors.white60,
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-              ],
-            ),
           ),
           ListTile(
             leading: const Icon(Icons.home, color: Color(0xFF1E3A8A)),
@@ -279,6 +325,29 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
             },
           ),
           const Divider(),
+          if (!_isGuest)
+            ListTile(
+              leading: const Icon(Icons.person_outline, color: Color(0xFF1E3A8A)),
+              title: const Text('Edit Profile'),
+              onTap: () async {
+                Navigator.pop(context);
+                final userData = await AuthService.getCurrentUser();
+                if (userData != null && mounted) {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditProfileScreen(
+                        userData: userData,
+                      ),
+                    ),
+                  );
+                  
+                  if (result == true && mounted) {
+                    _checkGuestStatus();
+                  }
+                }
+              },
+            ),
           ListTile(
             leading: Icon(
               _isGuest ? Icons.login : Icons.logout,

@@ -138,8 +138,18 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
         });
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading listings: $e')),
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Error loading listings: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
     }
@@ -961,10 +971,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: ElevatedButton(
           onPressed: () {
             // Handle order logic here
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+            // Handle order logic here
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Success'),
                 content: Text('Added ${_quantity}x ${widget.listing.title} to cart'),
-                backgroundColor: Colors.green,
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
             );
           },

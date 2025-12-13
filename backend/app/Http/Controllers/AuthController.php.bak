@@ -147,30 +147,4 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
         return response()->json(['message' => 'Logged out']);
     }
-
-    public function updateProfile(Request $request)
-    {
-        $user = Auth::user();
-
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'password' => 'sometimes|nullable|string|min:6|confirmed',
-        ]);
-
-        if ($request->has('name')) {
-            $user->name = $validated['name'];
-        }
-
-        if ($request->has('password') && !empty($validated['password'])) {
-            $user->password = Hash::make($validated['password']);
-        }
-
-        $user->save();
-        $user->load('department');
-
-        return response()->json([
-            'message' => 'Profile updated successfully',
-            'user' => $user->getSessionData(),
-        ]);
-    }
 }

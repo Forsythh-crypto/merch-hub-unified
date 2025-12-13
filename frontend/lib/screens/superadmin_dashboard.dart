@@ -16,6 +16,7 @@ import 'notifications_screen.dart';
 import 'superadmin_edit_listing_screen.dart';
 import 'products_screen.dart';
 import 'admin_discount_codes_screen.dart';
+import 'edit_profile_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   final UserSession userSession;
@@ -178,19 +179,29 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     } catch (e) {
       print('❌ Error loading dashboard data: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
             content: Text('Error loading dashboard: ${e.toString().contains('authentication') ? 'Authentication failed. Please login again.' : 'Failed to load data'}'),
-            backgroundColor: Colors.red,
-            action: e.toString().contains('authentication') ? SnackBarAction(
-              label: 'Login',
-              textColor: Colors.white,
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-            ) : null,
+            actions: [
+              if (e.toString().contains('authentication'))
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: const Text('Login'),
+                ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
+      }
       }
     } finally {
       if (mounted) {
@@ -1176,10 +1187,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     'Base URL',
                     AppConfig.baseUrl,
                     (value) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Success'),
                           content: Text('Base URL updated to: $value'),
-                          backgroundColor: Colors.green,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('OK'),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -1358,10 +1376,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Success'),
                   content: Text('$title ${value ? 'enabled' : 'disabled'}'),
-                  backgroundColor: Colors.green,
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
                 ),
               );
             },
@@ -1436,19 +1461,33 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
   // Action methods
   void _performBackup() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Backup completed successfully'),
-        backgroundColor: Colors.green,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Success'),
+        content: const Text('Backup completed successfully'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
 
   void _clearCache() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cache cleared successfully'),
-        backgroundColor: Colors.green,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Success'),
+        content: const Text('Cache cleared successfully'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
@@ -1662,29 +1701,50 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
       if (success) {
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
             content: Text(message),
-            backgroundColor: Colors.green,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         // Refresh data to show updated user roles
         _loadData();
       } else {
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
             content: Text(message),
-            backgroundColor: Colors.red,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
     } catch (e) {
       print('Error creating department: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('An error occurred: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -2674,39 +2734,51 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Product title is required',
-                        style: TextStyle(fontFamily: 'Montserrat'),
-                      ),
-                      backgroundColor: Colors.red,
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat')),
+                      content: const Text('Product title is required', style: TextStyle(fontFamily: 'Montserrat')),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
+                        ),
+                      ],
                     ),
                   );
                   return;
                 }
 
                 if (selectedCategoryId == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please select a category',
-                        style: TextStyle(fontFamily: 'Montserrat'),
-                      ),
-                      backgroundColor: Colors.red,
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat')),
+                      content: const Text('Please select a category', style: TextStyle(fontFamily: 'Montserrat')),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
+                        ),
+                      ],
                     ),
                   );
                   return;
                 }
 
                 if (selectedDepartmentId == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please select a department',
-                        style: TextStyle(fontFamily: 'Montserrat'),
-                      ),
-                      backgroundColor: Colors.red,
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat')),
+                      content: const Text('Please select a department', style: TextStyle(fontFamily: 'Montserrat')),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
+                        ),
+                      ],
                     ),
                   );
                   return;
@@ -3035,10 +3107,17 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Product title is required'),
-                      backgroundColor: Colors.red,
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Error'),
+                      content: const Text('Product title is required'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK'),
+                        ),
+                      ],
                     ),
                   );
                   return;
@@ -3103,29 +3182,50 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
                     // Close dialog first, then show success message
                     if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Product updated successfully'),
-                          backgroundColor: Colors.green,
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Success'),
+                          content: const Text('Product updated successfully'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('OK'),
+                            ),
+                          ],
                         ),
                       );
+                      Navigator.pop(context);
                     }
                   } else {
                     // Show error without closing dialog
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to update product'),
-                        backgroundColor: Colors.red,
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Error'),
+                        content: const Text('Failed to update product'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('OK'),
+                          ),
+                        ],
                       ),
                     );
                   }
                 } catch (e) {
                   print('Error updating product: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to update product'),
-                      backgroundColor: Colors.red,
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Error'),
+                      content: const Text('Failed to update product'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK'),
+                        ),
+                      ],
                     ),
                   );
                 }
@@ -3147,29 +3247,50 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
       if (success) {
         print('✅ Listing approved successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
             content: Text('Listing "${listing.title}" approved successfully'),
-            backgroundColor: Colors.green,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         // Refresh the data to show updated status
         _loadData();
       } else {
         print('❌ Failed to approve listing');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to approve listing'),
-            backgroundColor: Colors.red,
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to approve listing'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
     } catch (e) {
       print('❌ Error approving listing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error approving listing: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -3215,29 +3336,50 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
       if (success) {
         print('✅ Listing deleted successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
             content: Text('Product "${listing.title}" deleted successfully'),
-            backgroundColor: Colors.green,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         // Refresh the data to show updated list
         _loadData();
       } else {
         print('❌ Failed to delete listing');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete product'),
-            backgroundColor: Colors.red,
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to delete product'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
     } catch (e) {
       print('❌ Error deleting listing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error deleting product: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -3504,6 +3646,60 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               },
             ),
           ),
+          
+          // Edit Profile
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.person_outline,
+                color: Colors.grey[600],
+              ),
+              title: Text(
+                'Edit Profile',
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(
+                      userData: {
+                        'name': widget.userSession.name,
+                        'email': widget.userSession.email,
+                      },
+                    ),
+                  ),
+                );
+
+                if (result == true && mounted) {
+                  final updatedUserData = await AuthService.getCurrentUser();
+                  if (updatedUserData != null) {
+                     final args = {
+                        'userId': updatedUserData['id']?.toString() ?? '',
+                        'name': updatedUserData['name'] ?? '',
+                        'email': updatedUserData['email'] ?? '',
+                        'role': updatedUserData['role'] ?? '',
+                        'departmentId': updatedUserData['department_id'] is int ? updatedUserData['department_id'] : null,
+                        'departmentName': updatedUserData['department_name'] ?? '',
+                     };
+                     
+                     Navigator.pushReplacementNamed(context, '/superadmin', arguments: args);
+                  }
+                }
+              },
+            ),
+          ),
+          
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),

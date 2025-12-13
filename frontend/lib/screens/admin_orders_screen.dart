@@ -169,10 +169,17 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
       );
 
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
             content: Text(result['message']),
-            backgroundColor: Colors.green,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         _loadOrders(); // Reload orders
@@ -182,18 +189,32 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
           _notifySalesReportRefresh();
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
             content: Text(result['message']),
-            backgroundColor: Colors.red,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error updating order: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     } finally {
@@ -222,26 +243,47 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
       final result = await OrderService.confirmReservationFee(order.id);
 
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
             content: Text(result['message']),
-            backgroundColor: Colors.green,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         _loadOrders(); // Reload orders
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
             content: Text(result['message']),
-            backgroundColor: Colors.red,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Error confirming reservation fee: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     } finally {
@@ -727,19 +769,74 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
   }
 
   @override
+  PreferredSizeWidget _buildTabBar() {
+    return TabBar(
+      controller: _tabController,
+      isScrollable: true,
+      labelColor: Colors.black,
+      unselectedLabelColor: Colors.grey,
+      indicatorColor: Colors.black,
+      labelStyle: const TextStyle(
+        fontFamily: 'Montserrat',
+        fontWeight: FontWeight.w600,
+      ),
+      tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bodyContent = _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _error != null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading orders',
+                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadOrders,
+                      child: const Text('Try Again'),
+                    ),
+                  ],
+                ),
+              )
+            : TabBarView(
+                controller: _tabController,
+                children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
+              );
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: widget.showAppBar
           ? AppBar(
               backgroundColor: const Color(0xFFF9FAFB),
-              foregroundColor: Colors.black,
               elevation: 0,
-              title: const Text(
-                'Order Management',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w600,
+              toolbarHeight: 120,
+              centerTitle: true,
+              title: Transform.scale(
+                scale: 1.5,
+                child: Image.asset(
+                  'assets/logos/uddess.png',
+                  height: 100,
                 ),
+              ),
+              iconTheme: const IconThemeData(color: Colors.black),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.of(context).pop(),
               ),
               actions: [
                 IconButton(
@@ -747,82 +844,22 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                   onPressed: _loadOrders,
                 ),
               ],
-              bottom: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                labelColor: Colors.black,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.black,
-                labelStyle: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
-              ),
+              bottom: _buildTabBar(),
             )
-          : AppBar(
-              automaticallyImplyLeading: false,
-              backgroundColor: const Color(0xFFF9FAFB),
-              foregroundColor: Colors.black,
-              elevation: 0,
-              title: const Text(
-                'Order Management',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w600,
+          : null,
+      body: widget.showAppBar
+          ? bodyContent
+          : Column(
+              children: [
+                Container(
+                  color: const Color(0xFFF9FAFB),
+                  width: double.infinity,
+                  child: _buildTabBar(),
                 ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadOrders,
-                ),
+                Expanded(child: bodyContent),
               ],
-              bottom: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                labelColor: Colors.black,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.black,
-                labelStyle: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
-              ),
             ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading orders',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadOrders,
-                    child: const Text('Try Again'),
-                  ),
-                ],
-              ),
-            )
-          : TabBarView(
-              controller: _tabController,
-              children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
-            ),
-   );
+    );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {

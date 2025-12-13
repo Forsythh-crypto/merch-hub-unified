@@ -111,6 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [UserController::class, 'show']);
     Route::get('/user/permissions', [UserController::class, 'permissions']);
     Route::post('/logout', [UserController::class, 'logout']);
+    Route::post('/update-profile', [AuthController::class, 'updateProfile']);
     Route::get('/categories', [CategoryController::class, 'index']);
 
     // User routes (for all authenticated users)

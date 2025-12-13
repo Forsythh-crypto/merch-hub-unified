@@ -18,6 +18,7 @@ import 'notifications_screen.dart';
 import 'edit_listing_screen.dart';
 import 'admin_add_listing_screen.dart';
 import 'admin_discount_codes_screen.dart';
+import 'edit_profile_screen.dart';
 
 class AdminListingsScreen extends StatefulWidget {
   final UserSession userSession;
@@ -222,10 +223,17 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
             content: Text('Error loading dashboard stats: $e'),
-            backgroundColor: Colors.red,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
@@ -240,16 +248,18 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(
-          _getAdminTitle(widget.userSession.departmentName),
-          style: const TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.w600,
+        backgroundColor: const Color(0xFFF9FAFB),
+        elevation: 0,
+        toolbarHeight: 120,
+        centerTitle: true,
+        title: Transform.scale(
+          scale: 1.5,
+          child: Image.asset(
+            'assets/logos/uddess.png',
+            height: 100,
           ),
         ),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -463,13 +473,79 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       _loadDiscountCodes();
                     },
                   ),
-                ),
+                  ),
               ],
             ),
           ),
+                
+                // Edit Profile
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.person_outline,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                    title: const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfileScreen(
+                            userData: {
+                              'name': widget.userSession.name,
+                              'email': widget.userSession.email,
+                            },
+                          ),
+                        ),
+                      );
 
-          // Logout
-          const Divider(),
+                      if (result == true && mounted) {
+                        // For AdminScreen, the user session is passed in via constructor.
+                        // We need to fetch fresh data and update the local state or trigger a parent rebuild.
+                        // Since this is a StatefulWidget, we should probably reload the user data here 
+                        // but AdminListingsScreen functionality relies on widget.userSession. 
+                        // A better approach for now might be to navigate to the splash screen or reload the app, 
+                        // OR (better) fetch the updated user and create a new session object.
+                        
+                        final updatedUserData = await AuthService.getCurrentUser();
+                        if (updatedUserData != null) {
+                           // This is tricky because userSession is final in the widget.
+                           // Ideally, we would reload the whole screen.
+                           // For now, let's just trigger a reload of the main home screen logic by pushing
+                           // replacement to the root wrapper or just popping everything.
+                           // Actually, let's just accept that we might need to reload the whole app context.
+                           // But to be user friendly, let's try to update locally if we can.
+                           
+                           // Since we can't easily mutate the widget.userSession, 
+                           // let's navigate to the admin route again with the new arguments.
+                           
+                           final args = {
+                              'userId': updatedUserData['id']?.toString() ?? '',
+                              'name': updatedUserData['name'] ?? '',
+                              'email': updatedUserData['email'] ?? '',
+                              'role': updatedUserData['role'] ?? '',
+                              'departmentId': updatedUserData['department_id'] is int ? updatedUserData['department_id'] : null,
+                              'departmentName': updatedUserData['department_name'] ?? '',
+                           };
+                           
+                           Navigator.pushReplacementNamed(context, '/admin', arguments: args);
+                        }
+                      }
+                    },
+                  ),
+                ),
+
+                // Logout
+                const Divider(),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             child: ListTile(
@@ -904,10 +980,17 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
 
     
     if (userRole != UserRole.superAdmin && listing.department?.name != userDepartmentName) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permission Denied'),
           content: Text('You can only edit listings from your own department. User: "$userDepartmentName", Listing: "${listing.department?.name}"'),
-          backgroundColor: Colors.orange,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
       return;
@@ -936,10 +1019,17 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   Future<void> _approveListing(Listing listing) async {
     // Only Super Admin can approve listings
     if (widget.userSession.role != UserRole.superAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Only Super Admin can approve listings'),
-          backgroundColor: Colors.red,
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permission Denied'),
+          content: const Text('Only Super Admin can approve listings'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
       return;
@@ -947,18 +1037,32 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     
     try {
       await AdminService.approveListing(listing.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Listing approved successfully'),
-          backgroundColor: Colors.green,
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Listing approved successfully'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
       _loadListings();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
           content: Text('Failed to approve listing: $e'),
-          backgroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -999,18 +1103,32 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
     if (shouldDelete == true) {
       try {
         await AdminService.deleteListing(listing.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Listing deleted successfully'),
-            backgroundColor: Colors.green,
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
+            content: const Text('Listing deleted successfully'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         _loadListings();
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
             content: Text('Failed to delete listing: $e'),
-            backgroundColor: Colors.red,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
@@ -1392,14 +1510,34 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         await AdminService().createDiscountCode(result);
         await _loadDiscountCodes();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Discount code created successfully')),
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Success'),
+              content: const Text('Discount code created successfully'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to create discount code: $e')),
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Error'),
+              content: Text('Failed to create discount code: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         }
       }
@@ -1455,14 +1593,34 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         await AdminService().deleteDiscountCode(id);
         await _loadDiscountCodes();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Discount code deleted successfully')),
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Success'),
+              content: const Text('Discount code deleted successfully'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete discount code: $e')),
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Error'),
+              content: Text('Failed to delete discount code: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         }
       }

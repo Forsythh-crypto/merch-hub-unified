@@ -141,4 +141,44 @@ class AuthService {
       return false;
     }
   }
+
+  // Update profile
+  static Future<bool> updateProfile({String? name, String? password}) async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final Map<String, dynamic> body = {};
+      if (name != null) body['name'] = name;
+      if (password != null) {
+        body['password'] = password;
+        body['password_confirmation'] = password;
+      }
+
+      final response = await http.post(
+        AppConfig.api('update-profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final userData = data['user'];
+        
+        // Update stored user data
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(userData));
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Update profile error: $e');
+      return false;
+    }
+  }
 }
