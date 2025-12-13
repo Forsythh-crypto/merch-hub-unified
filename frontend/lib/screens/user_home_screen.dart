@@ -71,7 +71,35 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
       'logo': 'assets/logos/sihm.png',
       'color': const Color(0xFFDC2626), // Red
     },
+    {
+      'name': 'Official UDD Merch',
+      'logo': 'assets/logos/udd_merch.png',
+      'color': const Color(0xFF1F2937), // Dark Gray
+    },
   ];
+
+  String _getDepartmentLogo(Map<String, dynamic>? userData) {
+    if (userData == null) return 'assets/logos/uddess.png';
+    
+    // Try to get department name from different possible structures
+    String? departmentName;
+    if (userData['departmentName'] != null) {
+       departmentName = userData['departmentName'];
+    } else if (userData['department'] is Map) {
+      departmentName = userData['department']['name'];
+    } else if (userData['department_name'] is String) {
+      departmentName = userData['department_name'];
+    }
+    
+    if (departmentName == null) return 'assets/logos/uddess.png';
+
+    final department = _departments.firstWhere(
+      (dept) => dept['name'] == departmentName,
+      orElse: () => {'logo': 'assets/logos/uddess.png'},
+    );
+    
+    return department['logo'];
+  }
 
   Map<String, dynamic>? _userData;
 
@@ -225,15 +253,39 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          _userData?['name']?[0]?.toUpperCase() ?? 'U',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3A8A),
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.white,
+                          child: ClipOval(
+                            child: Image.asset(
+                              _getDepartmentLogo(_userData),
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Text(
+                                  _userData?['name']?[0]?.toUpperCase() ?? 'U',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),

@@ -34,10 +34,35 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     if (success) {
       if (mounted) {
-        // Navigate to home screen and remove all previous routes
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-          (route) => false,
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text(
+              "You're all set!",
+              style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              'Your email has been verified successfully. You can now start browsing.',
+              style: TextStyle(fontFamily: 'Montserrat'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close dialog
+                  // Navigate to home screen and remove all previous routes
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    (route) => false,
+                  );
+                },
+                child: const Text(
+                  'Start Browsing',
+                  style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
         );
       }
     } else {

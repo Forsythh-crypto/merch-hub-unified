@@ -665,6 +665,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                           ],
                                         ),
                                       ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Delete User'),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   )
                                 else if (user.role == UserRole.admin)
@@ -699,6 +712,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                           ],
                                         ),
                                       ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Delete User'),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   )
                                 else if (user.role == UserRole.superAdmin)
@@ -717,6 +743,19 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                             ),
                                             SizedBox(width: 8),
                                             Text('Revoke SuperAdmin'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Delete User'),
                                           ],
                                         ),
                                       ),
@@ -1653,8 +1692,61 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     );
   }
 
+  Future<void> _deleteUser(UserSession user) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete User'),
+        content: Text(
+          'Are you sure you want to delete ${user.name}? This action cannot be undone.'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
+
+    final success = await AdminService.deleteUser(int.parse(user.userId));
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User ${user.name} deleted successfully')),
+        );
+        _loadData(); // Refresh list
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete user')),
+        );
+      }
+    }
+  }
+
   // User Management Actions
   Future<void> _handleUserAction(UserSession user, String action) async {
+    if (action == 'delete') {
+      await _deleteUser(user);
+      return;
+    }
+
     try {
       bool success = false;
       String message = '';

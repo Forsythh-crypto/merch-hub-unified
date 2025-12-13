@@ -38,50 +38,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _hasDigit = false;
   bool _hasSpecialChar = false;
 
-  final List<Map<String, dynamic>> _departments = [
-    {
-      'id': 1,
-      'name': 'School of Information Technology Education',
-      'logo': 'assets/logos/site.png',
-    },
-    {
-      'id': 2,
-      'name': 'School of Business and Accountancy',
-      'logo': 'assets/logos/sba.png',
-    },
-    {
-      'id': 3,
-      'name': 'School of Criminology',
-      'logo': 'assets/logos/soc.png',
-    },
-    {
-      'id': 4,
-      'name': 'School of Engineering',
-      'logo': 'assets/logos/soe.png',
-    },
-    {
-      'id': 5,
-      'name': 'School of Teacher Education',
-      'logo': 'assets/logos/ste.png',
-    },
-    {
-      'id': 6,
-      'name': 'School of Humanities',
-      'logo': 'assets/logos/soh.png',
-    },
-    {
-      'id': 7,
-      'name': 'School of Health Sciences',
-      'logo': 'assets/logos/sohs.png',
-    },
-    {
-      'id': 8,
-      'name': 'School of International Hospitality Management',
-      'logo': 'assets/logos/sihm.png',
-    },
-  ];
+  List<Map<String, dynamic>> _departments = [];
+  bool _isLoadingDepartments = true;
 
-  // Helper method to build password requirement row
+  @override
+  void initState() {
+    super.initState();
+    _fetchDepartments();
+  }
+
+  Future<void> _fetchDepartments() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/departments'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _departments = data.map((item) => {
+              'id': item['id'],
+              'name': item['name'],
+            }).toList();
+            _isLoadingDepartments = false;
+          });
+        }
+      } else {
+        throw Exception('Failed to load departments');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingDepartments = false;
+          // Fallback to hardcoded list if API fails, but warn about potential mismatch
+          _departments = [
+             {
+              'id': 1,
+              'name': 'School of Business and Accountancy',
+            },
+            {
+              'id': 2,
+              'name': 'School of Information Technology Education', 
+            },
+            // Add others as minimal fallback or show error
+          ];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading departments: $e')),
+        );
+      }
+    }
+  }
+   // Helper method to build password requirement row
   Widget _buildRequirementRow(String text, bool isMet) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -335,7 +345,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               keyboardType: TextInputType.emailAddress,
                               style: AuthStyles.inputTextStyle,
                               decoration: AuthStyles.getInputDecoration(
-                                labelText: 'Email (must end with @cdd.edu.ph)',
+                                labelText: 'School Email (@cdd.edu.ph)',
                                 prefixIcon: Icons.email_outlined,
                               ),
                               validator: (value) {
@@ -345,6 +355,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 if (!value.contains('@')) {
                                   return 'Please enter a valid email';
                                 }
+                                // Restore @cdd.edu.ph requirement
                                 if (!value.endsWith('@cdd.edu.ph')) {
                                   return 'Email must end with @cdd.edu.ph';
                                 }
@@ -470,38 +481,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             const SizedBox(height: 16),
 
                             // Department Dropdown
-                            SizedBox(
-                              width: double.infinity,
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedDepartment,
-                                decoration: AuthStyles.getInputDecoration(
-                                  labelText: 'Department',
-                                  prefixIcon: Icons.school_outlined,
-                                ),
-                                isExpanded: true,
-                                items: _departments.map((dept) {
-                                  return DropdownMenuItem<String>(
-                                    value: dept['name'],
-                                    child: Text(
-                                      dept['name'],
-                                      style: const TextStyle(fontSize: 14),
-                                      overflow: TextOverflow.ellipsis,
+                            _isLoadingDepartments
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 24.0),
+                                      child: CircularProgressIndicator(),
                                     ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedDepartment = value;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please select a department';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
+                                  )
+                                : SizedBox(
+                                    width: double.infinity,
+                                    child: DropdownButtonFormField<String>(
+                                      value: _selectedDepartment,
+                                      decoration: AuthStyles.getInputDecoration(
+                                        labelText: 'Department',
+                                        prefixIcon: Icons.school_outlined,
+                                      ),
+                                      isExpanded: true,
+                                      items: _departments.map((dept) {
+                                        return DropdownMenuItem<String>(
+                                          value: dept['name'],
+                                          child: Text(
+                                            dept['name'],
+                                            style: const TextStyle(fontSize: 14),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedDepartment = value;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a department';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
                             const SizedBox(height: 24),
 
                             // Register Button

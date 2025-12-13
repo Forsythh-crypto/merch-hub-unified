@@ -388,6 +388,23 @@ class AdminService {
     }
   }
 
+  static Future<bool> deleteUser(int userId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        AppConfig.api('admin/users/$userId'),
+        headers: headers,
+      );
+
+      print('Delete user response: ${response.statusCode}');
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print('❌ Delete User Exception: $e');
+      return false;
+    }
+  }
+
   // Discount Code Management
   Future<List<Map<String, dynamic>>> getDiscountCodes() async {
     try {

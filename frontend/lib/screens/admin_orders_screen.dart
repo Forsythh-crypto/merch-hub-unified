@@ -768,6 +768,34 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
     );
   }
 
+  // Department logo mapping
+  String _getDepartmentLogo(String? departmentName) {
+    if (departmentName == null) return 'assets/logos/udd_merch.png'; // Default to UDD Merch or generic
+    
+    switch (departmentName.toLowerCase()) {
+      case 'school of information technology education':
+        return 'assets/logos/site.png';
+      case 'school of business and accountancy':
+        return 'assets/logos/sba.png';
+      case 'school of criminology':
+        return 'assets/logos/soc.png';
+      case 'school of engineering':
+        return 'assets/logos/soe.png';
+      case 'school of teacher education':
+        return 'assets/logos/ste.png';
+      case 'school of humanities':
+        return 'assets/logos/soh.png';
+      case 'school of health sciences':
+        return 'assets/logos/sohs.png';
+      case 'school of international hospitality management':
+        return 'assets/logos/sihm.png';
+      case 'official udd merch':
+        return 'assets/logos/udd_merch.png';
+      default:
+        return 'assets/logos/uddess.png'; // Fallback to main logo
+    }
+  }
+
   @override
   PreferredSizeWidget _buildTabBar() {
     return TabBar(
