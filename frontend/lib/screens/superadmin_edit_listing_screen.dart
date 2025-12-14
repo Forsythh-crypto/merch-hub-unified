@@ -166,10 +166,18 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Listing'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
+        title: Transform.scale(
+          scale: 1.5,
+          child: Image.asset(
+            'assets/logos/uddess.png',
+            height: 100,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black, // Makes back button black
         elevation: 0,
+        toolbarHeight: 100,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -280,6 +288,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                           )
                         : DropdownButtonFormField<int>(
                             value: selectedDepartmentId,
+                            isExpanded: true, // Fix for overflow
                             decoration: const InputDecoration(
                               labelText: 'Department',
                               border: OutlineInputBorder(),

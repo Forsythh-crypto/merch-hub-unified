@@ -29,14 +29,14 @@ class ListingController extends Controller
 
         // Handle multiple image uploads
         $imagePaths = [];
-        
+
         // Handle images array (if sent as array)
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $imagePaths[] = $image->store('listings', 'public');
             }
         }
-        
+
         // Handle individual image fields (image, image_1, image_2, etc.)
         foreach ($request->allFiles() as $key => $file) {
             if (preg_match('/^image(_\d+)?$/', $key)) {
@@ -49,16 +49,16 @@ class ListingController extends Controller
                 }
             }
         }
-        
+
         // Keep the first image as the main image_path for backward compatibility
         $imagePath = !empty($imagePaths) ? $imagePaths[0] : null;
-        
+
         // Store all images in the images column as JSON
         $imagesJson = !empty($imagePaths) ? json_encode($imagePaths) : null;
 
         // Determine department_id based on user role and input
         $departmentId = $user->department_id; // Default to user's department
-        
+
         // If superadmin and department_id is provided, use it
         if ($user->isSuperAdmin() && isset($validated['department_id'])) {
             $departmentId = $validated['department_id'];
@@ -116,12 +116,12 @@ class ListingController extends Controller
             \Log::info('Size variants received: ' . $validated['size_variants']);
             $sizeVariants = json_decode($validated['size_variants'], true);
             \Log::info('Decoded size variants: ' . print_r($sizeVariants, true));
-            
+
             if (is_array($sizeVariants) && !empty($sizeVariants)) {
                 // Check if listing already has any size variants
                 $existingVariantsCount = $listing->sizeVariants()->count();
                 \Log::info("Existing size variants count for listing {$listing->id}: {$existingVariantsCount}");
-                
+
                 if ($existingVariantsCount == 0) {
                     // Only create size variants if none exist
                     foreach ($sizeVariants as $variant) {
@@ -140,22 +140,22 @@ class ListingController extends Controller
                 }
             }
         }
-        
+
         // Auto-create size variants for clothing items ONLY if none were provided or created
         if (!$sizeVariantsCreated) {
             $category = \App\Models\Category::find($validated['category_id']);
             if ($category) {
                 $categoryName = strtolower($category->name);
-                $isClothing = str_contains($categoryName, 'clothing') || 
-                             str_contains($categoryName, 'shirt') || 
-                             str_contains($categoryName, 'tee') ||
-                             str_contains($categoryName, 'apparel');
-                
+                $isClothing = str_contains($categoryName, 'clothing') ||
+                    str_contains($categoryName, 'shirt') ||
+                    str_contains($categoryName, 'tee') ||
+                    str_contains($categoryName, 'apparel');
+
                 if ($isClothing) {
                     $sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
                     $stockPerSize = max(0, floor(($validated['stock_quantity'] ?? 1) / 6));
                     $remaining = ($validated['stock_quantity'] ?? 1) - ($stockPerSize * 6);
-                    
+
                     foreach ($sizes as $index => $size) {
                         $stock = $stockPerSize + ($index == 2 ? $remaining : 0); // Add remaining to M size
                         $listing->sizeVariants()->create([
@@ -177,9 +177,9 @@ class ListingController extends Controller
     public function index(Request $request)
     {
         $listings = Listing::with(['category', 'user', 'department', 'sizeVariants', 'images'])
-                          ->where('status', 'approved')
-                          ->latest()
-                          ->get();
+            ->where('status', 'approved')
+            ->latest()
+            ->get();
 
         return response()->json(['listings' => $listings]);
     }
@@ -264,9 +264,9 @@ class ListingController extends Controller
     public function departmentListings(Request $request, int $departmentId)
     {
         $listings = Listing::with(['category', 'user', 'department', 'sizeVariants', 'images'])
-                          ->where('department_id', $departmentId)
-                          ->latest()
-                          ->get();
+            ->where('department_id', $departmentId)
+            ->latest()
+            ->get();
 
         return response()->json(['listings' => $listings]);
     }
@@ -277,8 +277,8 @@ class ListingController extends Controller
     public function superAdminIndex(Request $request)
     {
         $listings = Listing::with(['category', 'user', 'department', 'sizeVariants', 'images'])
-                          ->latest()
-                          ->get();
+            ->latest()
+            ->get();
 
         return response()->json(['listings' => $listings]);
     }
@@ -348,19 +348,19 @@ class ListingController extends Controller
 
         // Handle new image uploads
         $uploadedFiles = [];
-        
+
         // Handle single image (legacy support)
         if ($request->hasFile('image')) {
             $uploadedFiles[] = $request->file('image');
         }
-        
+
         // Handle multiple images
         foreach ($request->allFiles() as $key => $file) {
             if (preg_match('/^image_\d+$/', $key) && $file) {
                 $uploadedFiles[] = $file;
             }
         }
-        
+
         // Store new images
         foreach ($uploadedFiles as $file) {
             $imagePath = $file->store('listings', 'public');
@@ -414,12 +414,17 @@ class ListingController extends Controller
         $listing->sizeVariants()->delete();
 
         // Create new size variants
+        $totalStock = 0;
         foreach ($validated['size_variants'] as $variant) {
             $listing->sizeVariants()->create([
                 'size' => $variant['size'],
                 'stock_quantity' => $variant['stock_quantity'],
             ]);
+            $totalStock += $variant['stock_quantity'];
         }
+
+        // Update the main listing stock quantity to match total of variants
+        $listing->update(['stock_quantity' => $totalStock]);
 
         return response()->json([
             'listing' => $listing->load(['category', 'user', 'department', 'sizeVariants']),
@@ -433,12 +438,13 @@ class ListingController extends Controller
     public function userListings(Request $request)
     {
         $user = $request->user();
-        
+
         $listings = Listing::with(['category', 'user', 'department', 'sizeVariants', 'images'])
-                          ->where('user_id', $user->id)
-                          ->latest()
-                          ->get();
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
 
         return response()->json(['listings' => $listings]);
     }
+
 }

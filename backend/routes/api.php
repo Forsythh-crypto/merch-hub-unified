@@ -206,7 +206,15 @@ Route::middleware('auth:sanctum')->group(function () {
                             'cancelled' => \App\Models\Order::where('status', 'cancelled')->count(),
                         ],
                         'departments' => \App\Models\Department::count(),
-                        'totalStockValue' => \App\Models\Listing::where('status', 'approved')->sum(\DB::raw('price * stock_quantity')),
+                        'totalStockValue' => \App\Models\Listing::where('status', 'approved')
+                            ->with('sizeVariants')
+                            ->get()
+                            ->sum(function ($listing) {
+                                if ($listing->sizeVariants->isNotEmpty()) {
+                                    return $listing->sizeVariants->sum('stock_quantity') * $listing->price;
+                                }
+                                return $listing->stock_quantity * $listing->price;
+                            }),
                     ]
                 ]);
             } catch (\Exception $e) {

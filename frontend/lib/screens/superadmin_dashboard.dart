@@ -16,6 +16,8 @@ import 'notifications_screen.dart';
 import 'superadmin_edit_listing_screen.dart';
 import 'products_screen.dart';
 import 'admin_discount_codes_screen.dart';
+import 'admin_discount_codes_screen.dart';
+import 'edit_profile_screen.dart';
 import 'edit_profile_screen.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
@@ -83,7 +85,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   DateTime? _endDate;
   bool _isLoadingSalesReport = false;
   Map<String, dynamic>? _salesReportData;
+
   Timer? _salesReportRefreshTimer;
+  Timer? _dashboardRefreshTimer;
 
   @override
   void initState() {
@@ -94,14 +98,24 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       _loadSalesReport();
     });
     
-    // Start periodic refresh timer for sales report (refresh every 30 seconds)
+    // Start periodic refresh timers (every 30 seconds)
     _startSalesReportAutoRefresh();
+    _startDashboardAutoRefresh();
   }
 
   @override
   void dispose() {
     _salesReportRefreshTimer?.cancel();
+    _dashboardRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  void _startDashboardAutoRefresh() {
+    _dashboardRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _loadData(silent: true);
+      }
+    });
   }
 
   void _startSalesReportAutoRefresh() {
@@ -139,10 +153,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     }
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool silent = false}) async {
     if (_isLoading) return;
 
-    setState(() => _isLoading = true);
+    if (!silent) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       // Load dashboard stats
@@ -219,10 +235,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF9FAFB),
         elevation: 0,
-        toolbarHeight: 120,
+        toolbarHeight: 140,
         centerTitle: true,
         title: Transform.scale(
-          scale: 1.5,
+          scale: 1.8,
           child: Image.asset(
             'assets/logos/uddess.png',
             height: 100,
@@ -332,7 +348,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -342,142 +358,142 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 fontFamily: 'Montserrat',
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Color(0xFF1F2937),
               ),
             ),
             const SizedBox(height: 24),
 
             // Filter Section
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Filters',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Filters',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                      if (_selectedDepartmentFilter != null || _selectedRoleFilter != null || _searchQuery.isNotEmpty)
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedDepartmentFilter = null;
+                              _selectedRoleFilter = null;
+                              _searchQuery = '';
+                            });
+                          },
+                          icon: const Icon(Icons.clear_all, size: 18),
+                          label: const Text('Clear All'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red[400],
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
                   // Search Bar
                   TextField(
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
+                    onChanged: (value) => setState(() => _searchQuery = value),
                     decoration: InputDecoration(
-                      hintText: 'Search by name or email...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  _searchQuery = '';
-                                });
-                              },
-                            )
-                          : null,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                      hintText: 'Search users...',
+                      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  Column(
+                  Row(
                     children: [
-                      // Department Filter
-                      DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        value: _selectedDepartmentFilter ?? 'All',
-                        decoration: const InputDecoration(
-                          labelText: 'Department',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 8,
-                          ),
-                        ),
-                        items: _availableDepartments.map((dept) {
-                          return DropdownMenuItem(
-                            value: dept,
-                            child: Text(
-                              dept,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          value: _selectedDepartmentFilter,
+                          hint: const Text('Department'),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedDepartmentFilter = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Role Filter
-                      DropdownButtonFormField<String>(
-                        value: _selectedRoleFilter ?? 'All',
-                        decoration: const InputDecoration(
-                          labelText: 'Role',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           ),
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('All')),
+                            ..._availableDepartments.map((dept) => DropdownMenuItem(
+                              value: dept,
+                              child: Text(dept, overflow: TextOverflow.ellipsis),
+                            )),
+                          ],
+                          onChanged: (value) => setState(() => _selectedDepartmentFilter = value),
                         ),
-                        items: _availableRoles.map((role) {
-                          return DropdownMenuItem(
-                            value: role,
-                            child: Text(role),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedRoleFilter = value;
-                          });
-                        },
                       ),
-                      const SizedBox(width: 16),
-                      // Clear Filters Button
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _selectedDepartmentFilter = null;
-                            _selectedRoleFilter = null;
-                            _searchQuery = '';
-                          });
-                        },
-                        icon: const Icon(Icons.clear),
-                        label: const Text('Clear'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey,
-                          foregroundColor: Colors.white,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedRoleFilter,
+                          hint: const Text('Role'),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('All')),
+                            ..._availableRoles.where((r) => r != 'All').map((role) => DropdownMenuItem(
+                              value: role,
+                              child: Text(role),
+                            )),
+                          ],
+                          onChanged: (value) => setState(() => _selectedRoleFilter = value),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
-                    'Showing ${_filteredUsers.length} of ${_users.length} users',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    'Showing ${_filteredUsers.length} users',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -487,293 +503,236 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else if (_filteredUsers.isEmpty)
-              Center(
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.people, size: 64, color: Colors.grey),
+                    Icon(Icons.person_off_outlined, size: 60, color: Colors.grey[300]),
                     const SizedBox(height: 16),
                     Text(
-                      _users.isEmpty
-                          ? 'No users found'
-                          : 'No users match the selected filters',
-                      style: const TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    if (_users.isNotEmpty && _filteredUsers.isEmpty)
-                      const SizedBox(height: 8),
-                    if (_users.isNotEmpty && _filteredUsers.isEmpty)
-                      Text(
-                        'Try adjusting your filters',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      'No users found',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Try adjusting your search or filters',
+                      style: TextStyle(color: Colors.grey[500]),
+                    ),
                   ],
                 ),
               )
             else
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _filteredUsers.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final user = _filteredUsers[index];
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    crossAxisSpacing: 0,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.6,
-                  ),
-                  itemCount: _filteredUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = _filteredUsers[index];
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: const Color(0xFF1E3A8A),
-                                  child: Text(
-                                    user.name[0].toUpperCase(),
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        user.name,
-                                        style: const TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                      Text(
-                                        user.email,
-                                        style: TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            const SizedBox(height: 12),
-                            if (user.departmentName != null &&
-                                user.departmentName!.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  user.departmentName!,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[700],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
                               ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getRoleColor(user.role),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _getRoleString(user.role).toUpperCase(),
-                                    style: const TextStyle(
-                                      fontFamily: 'Montserrat',
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        
+                        // Content
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      user.name,
+                                      style: const TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Color(0xFF1F2937),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                ),
-                                const Spacer(),
-                                if (user.role == UserRole.student)
+                                  // Menu Actions
+                                  if (user.role != UserRole.superAdmin || _users.where((u) => u.role == UserRole.superAdmin).length > 1)
                                   PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, size: 20),
-                                    onSelected: (value) =>
-                                        _handleUserAction(user, value),
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'grant_admin',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.admin_panel_settings,
-                                              color: Colors.blue,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Grant Admin'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'grant_superadmin',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.admin_panel_settings,
-                                              color: Colors.purple,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Grant SuperAdmin'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Delete User'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                else if (user.role == UserRole.admin)
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, size: 20),
-                                    onSelected: (value) =>
-                                        _handleUserAction(user, value),
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'grant_superadmin',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.admin_panel_settings,
-                                              color: Colors.purple,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Grant SuperAdmin'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'revoke_admin',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.remove_moderator,
-                                              color: Colors.orange,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Revoke Admin'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Delete User'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                else if (user.role == UserRole.superAdmin)
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, size: 20),
-                                    onSelected: (value) =>
-                                        _handleUserAction(user, value),
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'revoke_superadmin',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.remove_moderator,
-                                              color: Colors.red,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Revoke SuperAdmin'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Delete User'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: Icon(Icons.more_horiz, color: Colors.grey[400]),
+                                    onSelected: (value) => _handleUserAction(user, value),
+                                    itemBuilder: (context) => _buildUserActionMenu(user),
                                   ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email,
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 13,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  // Role Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _getRoleColor(user.role).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: _getRoleColor(user.role).withOpacity(0.2)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          user.role == UserRole.superAdmin ? Icons.shield :
+                                          user.role == UserRole.admin ? Icons.admin_panel_settings : Icons.school,
+                                          size: 14,
+                                          color: _getRoleColor(user.role),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _getRoleString(user.role),
+                                          style: TextStyle(
+                                            color: _getRoleColor(user.role),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Department Badge
+                                  if (user.departmentName != null && user.departmentName!.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: Colors.grey[300]!),
+                                      ),
+                                      child: Text(
+                                        user.departmentName!,
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
           ],
         ),
       ),
     );
+  }
+
+  List<PopupMenuItem<String>> _buildUserActionMenu(UserSession user) {
+    List<PopupMenuItem<String>> items = [];
+
+    if (user.role == UserRole.student) {
+      items.add(const PopupMenuItem(
+        value: 'grant_admin',
+        child: Row(children: [Icon(Icons.admin_panel_settings, color: Colors.blue, size: 20), SizedBox(width: 12), Text('Promote to Admin')]),
+      ));
+      items.add(const PopupMenuItem(
+        value: 'grant_superadmin',
+        child: Row(children: [Icon(Icons.shield, color: Colors.purple, size: 20), SizedBox(width: 12), Text('Promote to Super Admin')]),
+      ));
+    } else if (user.role == UserRole.admin) {
+      items.add(const PopupMenuItem(
+        value: 'grant_superadmin',
+        child: Row(children: [Icon(Icons.shield, color: Colors.purple, size: 20), SizedBox(width: 12), Text('Promote to Super Admin')]),
+      ));
+      items.add(const PopupMenuItem(
+        value: 'revoke_admin',
+        child: Row(children: [Icon(Icons.remove_moderator, color: Colors.orange, size: 20), SizedBox(width: 12), Text('Demote to Student')]),
+      ));
+    } else if (user.role == UserRole.superAdmin) {
+      items.add(const PopupMenuItem(
+        value: 'revoke_superadmin',
+        child: Row(children: [Icon(Icons.remove_moderator, color: Colors.orange, size: 20), SizedBox(width: 12), Text('Demote to Admin')]),
+      ));
+    }
+
+    items.add(const PopupMenuItem(
+      value: 'delete',
+      child: Row(children: [Icon(Icons.delete_outline, color: Colors.red, size: 20), SizedBox(width: 12), Text('Delete User', style: TextStyle(color: Colors.red))]),
+    ));
+
+    return items;
   }
 
   // Departments Tab
@@ -843,6 +802,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   itemCount: _departments.length,
                   itemBuilder: (context, index) {
                     final department = _departments[index];
+                    final deptUsers = _users.where((u) => u.departmentName == department['name']);
+                    final adminCount = deptUsers.where((u) => _getRoleString(u.role) == 'admin').length;
+                    final studentCount = deptUsers.where((u) => _getRoleString(u.role) == 'student').length;
+
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: const Color(0xFF1E3A8A),
@@ -873,9 +836,69 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         ),
                       ),
                       title: Text(department['name'], style: const TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
-                      subtitle: Text(
-                        department['description'] ?? 'No description',
-                        style: const TextStyle(fontFamily: 'Montserrat'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            department['description'] ?? 'No description',
+                            style: const TextStyle(fontFamily: 'Montserrat'),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.blue[200]!),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.admin_panel_settings, size: 14, color: Colors.blue[800]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Admins: $adminCount',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.blue[800],
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.green[200]!),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person, size: 14, color: Colors.green[800]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Users: $studentCount',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.green[800],
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

@@ -203,7 +203,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
             decoration: const BoxDecoration(
-              color: Color(0xFF1E3A8A),
+              color: Colors.white,
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -211,27 +211,26 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
             ),
             child: Column(
               children: [
-                // Header Row with Back Button and Logo
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'UDD Essentials',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Montserrat',
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Transform.scale(
+                            scale: 2.5,
+                            child: Image.asset(
+                              'assets/logos/uddess.png',
+                              height: 80,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 48), // Balance for back button
+                    ],
+                  ),
                 const SizedBox(height: 16),
                 // Search Bar with Filter Icon
                 Row(
@@ -251,7 +250,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Colors.grey[100],
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 12,
@@ -271,7 +270,7 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Colors.grey[100],
                             borderRadius: BorderRadius.circular(25),
                           ),
                           child: IconButton(

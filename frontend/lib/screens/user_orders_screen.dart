@@ -129,7 +129,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
             const SizedBox(height: 16),
             Text(
               'No ${_getStatusDisplay(status).toLowerCase()} orders',
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 18, color: Colors.grey[600], fontFamily: 'Montserrat'),
             ),
           ],
         ),
@@ -222,12 +222,12 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                             : order.listing?.size != null
                                 ? 'Quantity: ${order.quantity} (Size: ${order.listing!.size})'
                                 : 'Quantity: ${order.quantity}',
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
                       ),
                       if (order.email != null && order.email!.isNotEmpty)
                         Text(
                           'Email: ${order.email}',
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
                         ),
                     ],
                   ),
@@ -246,7 +246,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                     ),
                     Text(
                       order.department?.name ?? 'Department',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Montserrat'),
                     ),
                   ],
                 ),
@@ -324,14 +324,14 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                 ),
                 child: Text(
                   'Notes: ${order.notes}',
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: 12, fontFamily: 'Montserrat'),
                 ),
               ),
             ],
             const SizedBox(height: 8),
             Text(
               'Ordered on ${_formatDate(order.createdAt)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500], fontFamily: 'Montserrat'),
             ),
             if (order.status == 'ready_for_pickup' &&
                 order.pickupDate != null) ...[
@@ -342,6 +342,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                   fontSize: 12,
                   color: Colors.green[700],
                   fontWeight: FontWeight.w500,
+                  fontFamily: 'Montserrat',
                 ),
               ),
             ],
@@ -372,7 +373,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                         ),
                       ),
                       icon: const Icon(Icons.qr_code),
-                      label: const Text('View QR Code'),
+                      label: const Text('View QR Code', style: TextStyle(fontFamily: 'Montserrat')),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -394,7 +395,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                         ),
                       ),
                       icon: const Icon(Icons.upload_file),
-                      label: const Text('Upload Receipt'),
+                      label: const Text('Upload Receipt', style: TextStyle(fontFamily: 'Montserrat')),
                     ),
                   ),
                 ],
@@ -412,7 +413,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                     ),
                   ),
                   icon: const Icon(Icons.cancel),
-                  label: const Text('Cancel Order'),
+                  label: const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
                 ),
               ),
             ],
@@ -454,6 +455,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                              style: const TextStyle(
                                fontWeight: FontWeight.w500,
                                fontSize: 14,
+                               fontFamily: 'Montserrat',
                              ),
                            ),
                          ],
@@ -466,6 +468,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                              fontSize: 12,
                              color: Colors.grey[600],
                              fontStyle: FontStyle.italic,
+                             fontFamily: 'Montserrat',
                            ),
                          ),
                        ],
@@ -487,6 +490,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                     ],
@@ -521,7 +525,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                         ),
                       ),
                       icon: const Icon(Icons.qr_code),
-                      label: const Text('View QR Code'),
+                      label: const Text('View QR Code', style: TextStyle(fontFamily: 'Montserrat')),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -538,7 +542,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                         ),
                       ),
                       icon: const Icon(Icons.image),
-                      label: const Text('View Receipt'),
+                      label: const Text('View Receipt', style: TextStyle(fontFamily: 'Montserrat')),
                     ),
                   ),
                 ],
@@ -560,14 +564,15 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Cancel Order'),
+          title: const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
           content: Text(
             'Are you sure you want to cancel order #${order.orderNumber}?\n\nThis action cannot be undone.',
+            style: const TextStyle(fontFamily: 'Montserrat'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Keep Order'),
+              child: const Text('Keep Order', style: TextStyle(fontFamily: 'Montserrat')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -578,7 +583,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Cancel Order'),
+              child: const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
             ),
           ],
         );
@@ -797,28 +802,32 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
-        title: const Text(
-          'My Orders',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.w600,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: Transform.scale(
+          scale: 1.5,
+          child: Image.asset(
+            'assets/logos/uddess.png',
+            height: 100,
+            fit: BoxFit.contain,
           ),
         ),
+        centerTitle: true,
+        toolbarHeight: 100,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: _loadOrders,
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
+          labelColor: const Color(0xFF1E3A8A),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF1E3A8A),
           tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
         ),
       ),

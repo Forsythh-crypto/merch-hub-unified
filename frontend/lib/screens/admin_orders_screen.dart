@@ -367,332 +367,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
     );
   }
 
-  Widget _buildOrderCard(Order order) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order.listing?.title ?? 'Product',
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Order #${order.orderNumber}',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (order.user != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Customer: ${order.user!.name} (${order.user!.email})',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(order.status),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _getStatusDisplay(order.status),
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _updatingStatusOrderIds.contains(order.id) 
-                          ? null 
-                          : () => _showStatusUpdateDialog(order),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        minimumSize: const Size(0, 30),
-                      ),
-                      child: _updatingStatusOrderIds.contains(order.id)
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Update Status',
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                fontSize: 12,
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Quantity: ${order.quantity}',
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 14,
-                        ),
-                      ),
-                      if (order.size != null)
-                        Text(
-                          'Size: ${order.size}',
-                          style: const TextStyle(
-                            fontFamily: 'Montserrat',
-                            fontSize: 14,
-                          ),
-                        ),
-                      Text(
-                        'Department: ${order.department?.name ?? 'Unknown'}',
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                        '₱${order.totalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    Text(
-                      'Ordered: ${_formatDate(order.createdAt)}',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // Reservation Fee Information
-            if (order.status == 'pending') ...[  
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: order.reservationFeePaid 
-                      ? Colors.green[50] 
-                      : Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: order.reservationFeePaid 
-                        ? Colors.green[200]! 
-                        : Colors.orange[200]!,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          order.reservationFeePaid 
-                              ? Icons.check_circle 
-                              : Icons.payment,
-                          color: order.reservationFeePaid 
-                              ? Colors.green[700] 
-                              : Colors.orange[700],
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Reservation Fee (35%): ₱${order.calculatedReservationFeeAmount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: order.reservationFeePaid 
-                                ? Colors.green[700] 
-                                : Colors.orange[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      order.reservationFeePaid 
-                          ? 'Payment received - Order confirmed'
-                          : 'Payment pending - Receipt uploaded: ${order.paymentReceiptPath != null ? "Yes" : "No"}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: order.reservationFeePaid 
-                            ? Colors.green[600] 
-                            : Colors.orange[600],
-                      ),
-                    ),
-                    if (!order.reservationFeePaid && order.paymentReceiptPath != null) ...[  
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _confirmingReservationOrderIds.contains(order.id)
-                                  ? null
-                                  : () => _confirmReservationFee(order),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00D4AA),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              icon: _confirmingReservationOrderIds.contains(order.id)
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : const Icon(Icons.check_circle),
-                              label: Text(
-                                _confirmingReservationOrderIds.contains(order.id)
-                                    ? 'Confirming...'
-                                    : 'Confirm Payment',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            onPressed: () => _showReceiptImage(context, order.paymentReceiptPath!),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            icon: const Icon(Icons.image),
-                            label: const Text('View Receipt'),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (order.reservationFeePaid && order.paymentReceiptPath != null) ...[  
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _showReceiptImage(context, order.paymentReceiptPath!),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          icon: const Icon(Icons.image),
-                          label: const Text('View Receipt'),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
 
-            if (order.notes != null && order.notes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Notes: ${order.notes}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-            if (order.status == 'ready_for_pickup' &&
-                order.pickupDate != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green[100],
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Pickup by: ${_formatDate(order.pickupDate!)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
@@ -801,19 +476,34 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
     return TabBar(
       controller: _tabController,
       isScrollable: true,
-      labelColor: Colors.black,
-      unselectedLabelColor: Colors.grey,
-      indicatorColor: Colors.black,
+      labelColor: const Color(0xFF1E3A8A), // Enhanced color
+      unselectedLabelColor: Colors.grey[600],
+      indicatorColor: const Color(0xFF1E3A8A),
+      indicatorWeight: 3,
+      indicatorSize: TabBarIndicatorSize.label,
       labelStyle: const TextStyle(
         fontFamily: 'Montserrat',
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
+        fontSize: 15,
       ),
-      tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
+      unselectedLabelStyle: const TextStyle(
+        fontFamily: 'Montserrat',
+        fontWeight: FontWeight.w500,
+        fontSize: 15,
+      ),
+      tabs: _tabLabels.map((label) => Tab(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(label),
+        ),
+      )).toList(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Redesigned body content
     final bodyContent = _isLoading
         ? const Center(child: CircularProgressIndicator())
         : _error != null
@@ -821,55 +511,75 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                    Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                     const SizedBox(height: 16),
                     Text(
-                      'Error loading orders',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      'Oops! Something went wrong',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _error!,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
                       onPressed: _loadOrders,
-                      child: const Text('Try Again'),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ],
                 ),
               )
-            : TabBarView(
-                controller: _tabController,
-                children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
+            : Container(
+                color: Colors.grey[50], // Light background
+                child: TabBarView(
+                  controller: _tabController,
+                  children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
+                ),
               );
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: widget.showAppBar
           ? AppBar(
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: Colors.white,
               elevation: 0,
               toolbarHeight: 120,
               centerTitle: true,
-              title: Transform.scale(
-                scale: 1.5,
-                child: Image.asset(
-                  'assets/logos/uddess.png',
-                  height: 100,
-                ),
+              title: Image.asset(
+                'assets/logos/uddess.png',
+                height: 100,
               ),
-              iconTheme: const IconThemeData(color: Colors.black),
+              iconTheme: const IconThemeData(color: Colors.black87),
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadOrders,
+                Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh, color: Color(0xFF1E3A8A)),
+                    onPressed: _loadOrders,
+                    tooltip: 'Refresh Orders',
+                  ),
                 ),
               ],
               bottom: _buildTabBar(),
@@ -878,9 +588,26 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
       body: widget.showAppBar
           ? bodyContent
           : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  color: const Color(0xFFF9FAFB),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: const Text(
+                    'Orders Management',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+                  ),
                   width: double.infinity,
                   child: _buildTabBar(),
                 ),
@@ -890,42 +617,439 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildOrderCard(Order order) {
+    final statusColor = _getStatusColor(order.status);
+    
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Colored Status Strip
+              Container(
+                width: 6,
+                color: statusColor,
+              ),
+              
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header: Order ID and Status
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.receipt_long, size: 20, color: Color(0xFF1E3A8A)),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Order #${order.orderNumber}',
+                                        style: const TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1F2937),
+                                        ),
+                                      ),
+                                      Text(
+                                        _formatDate(order.createdAt),
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: statusColor.withOpacity(0.2)),
+                            ),
+                            child: Text(
+                              _getStatusDisplay(order.status).toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                color: statusColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const Divider(height: 24, thickness: 1, color: Color(0xFFF3F4F6)),
+                      
+                      // Product Details
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Product Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  order.listing?.title ?? 'Product Unavailable',
+                                  style: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF374151),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 12,
+                                  children: [
+                                    if (order.size != null)
+                                      _buildDetailBadge(Icons.straighten, 'Size: ${order.size}'),
+                                    _buildDetailBadge(Icons.layers, 'Qty: ${order.quantity}'),
+                                  ],
+                                ),
+                                if (order.department != null) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.business, size: 14, color: Colors.grey[400]),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          order.department!.name,
+                                          style: TextStyle(
+                                            fontFamily: 'Montserrat',
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          
+                          // Price
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'Total Amount',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                '₱${order.totalAmount.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      // Customer Info
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50], // Very light background
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[100]!),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.grey[300],
+                              child: Text(
+                                order.user?.name.isNotEmpty == true ? order.user!.name[0].toUpperCase() : '?',
+                                style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    order.user?.name ?? 'Unknown User',
+                                    style: const TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Color(0xFF4B5563),
+                                    ),
+                                  ),
+                                  Text(
+                                    order.user?.email ?? 'No email',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Reservation Fee Section
+                      if (order.status == 'pending') ...[
+                        const SizedBox(height: 16),
+                        _buildReservationFeeSection(order),
+                      ],
+
+                      // Special Notes or Pickup Date
+                      if (order.notes != null && order.notes!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.yellow[200]!),
+                          ),
+                          child: Text(
+                            'Note: ${order.notes}',
+                            style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                          ),
+                        ),
+                      ],
+                      if (order.status == 'ready_for_pickup' && order.pickupDate != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.green[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.event, size: 16, color: Colors.green[700]),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Pickup: ${_formatDate(order.pickupDate!)}',
+                                style: TextStyle(fontSize: 13, color: Colors.green[800], fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // Action Button
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _updatingStatusOrderIds.contains(order.id) 
+                              ? null 
+                              : () => _showStatusUpdateDialog(order),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E3A8A), // Dark Blue
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: _updatingStatusOrderIds.contains(order.id)
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  'Update Status',
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailBadge(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.grey[600]),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReservationFeeSection(Order order) {
+    final isPaid = order.reservationFeePaid;
+    final color = isPaid ? Colors.green : Colors.orange;
+    final bgColor = isPaid ? Colors.green[50]! : Colors.orange[50]!;
+    final borderColor = isPaid ? Colors.green[200]! : Colors.orange[200]!;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(
+                isPaid ? Icons.check_circle : Icons.pending,
+                color: color[700],
+                size: 18,
+              ),
               const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Reservation Fee (35%)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color[800],
+                    fontSize: 13,
+                  ),
+                ),
+              ),
               Text(
-                title,
+                '₱${order.calculatedReservationFeeAmount.toStringAsFixed(2)}',
                 style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  fontWeight: FontWeight.bold,
+                  color: color[800],
+                  fontSize: 13,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
+          
+          if (!isPaid && order.paymentReceiptPath != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _confirmingReservationOrderIds.contains(order.id)
+                        ? null
+                        : () => _confirmReservationFee(order),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.green[700],
+                      elevation: 0,
+                      side: BorderSide(color: Colors.green[300]!),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: _confirmingReservationOrderIds.contains(order.id)
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Confirm Payment', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => _showReceiptImage(context, order.paymentReceiptPath!),
+                  icon: const Icon(Icons.receipt),
+                  color: Colors.blue[700],
+                  tooltip: 'View Receipt',
+                ),
+              ],
             ),
-          ),
+          ] else if (isPaid) ...[
+             const SizedBox(height: 8),
+             Text(
+               'Payment Verified',
+               style: TextStyle(color: Colors.green[700], fontSize: 12, fontStyle: FontStyle.italic),
+             ),
+          ],
         ],
       ),
     );

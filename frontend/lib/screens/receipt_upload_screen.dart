@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import 'user_home_screen.dart';
 
 class ReceiptUploadScreen extends StatefulWidget {
   final Order order;
@@ -149,8 +150,11 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop(); // Close dialog
-                      // Go back to the previous screen (user orders or payment screen)
-                      Navigator.pop(context);
+                      // Navigate to home screen and remove all previous routes
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+                        (route) => false,
+                      );
                     },
                     child: const Text('OK'),
                   ),
@@ -203,7 +207,10 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upload Payment Receipt'),
+        title: const Text(
+          'Upload Payment Receipt',
+          style: TextStyle(fontFamily: 'Montserrat'),
+        ),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
       ),
@@ -225,6 +232,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E3A8A),
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -243,23 +251,34 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.blue[700],
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Product: ${widget.order.listing?.title ?? 'Unknown Product'}',
-                            style: const TextStyle(fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Montserrat',
+                            ),
                           ),
                           const SizedBox(height: 4),
-                          Text('Quantity: ${widget.order.quantity}'),
+                          Text(
+                            'Quantity: ${widget.order.quantity}',
+                            style: const TextStyle(fontFamily: 'Montserrat'),
+                          ),
                           const SizedBox(height: 4),
-                          Text('Total Amount: ₱${widget.order.totalAmount.toStringAsFixed(2)}'),
+                          Text(
+                            'Total Amount: ₱${widget.order.totalAmount.toStringAsFixed(2)}',
+                            style: const TextStyle(fontFamily: 'Montserrat'),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Reservation Fee: ₱${_reservationFeeAmount.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1E3A8A),
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                         ],
@@ -285,6 +304,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E3A8A),
+                        fontFamily: 'Montserrat',
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -318,6 +338,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                                 fontSize: 16,
                                 color: Colors.grey[600],
                                 fontWeight: FontWeight.w500,
+                                fontFamily: 'Montserrat',
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -326,6 +347,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[500],
+                                fontFamily: 'Montserrat',
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -358,7 +380,10 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _isUploading ? null : _pickImage,
                             icon: const Icon(Icons.photo_library),
-                            label: const Text('Gallery'),
+                            label: const Text(
+                              'Gallery',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -369,7 +394,10 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _isUploading ? null : _takePhoto,
                             icon: const Icon(Icons.camera_alt),
-                            label: const Text('Camera'),
+                            label: const Text(
+                              'Camera',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -409,6 +437,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                         ),
@@ -442,6 +471,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.blue[700],
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                     ],
@@ -449,19 +479,19 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '• Make sure the receipt shows the exact amount: ₱${_reservationFeeAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: 12, fontFamily: 'Montserrat'),
                   ),
                   const Text(
                     '• Ensure the receipt is clear and readable',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, fontFamily: 'Montserrat'),
                   ),
                   const Text(
                     '• Include the transaction reference number if visible',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, fontFamily: 'Montserrat'),
                   ),
                   const Text(
                     '• Upload only GCash payment receipts',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, fontFamily: 'Montserrat'),
                   ),
                 ],
               ),
@@ -481,6 +511,7 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Montserrat',
                   ),
                 ),
                 style: OutlinedButton.styleFrom(

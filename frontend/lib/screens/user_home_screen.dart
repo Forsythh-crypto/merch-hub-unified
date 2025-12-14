@@ -156,6 +156,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
     }
   }
 
+  String _formatPrice(double price) {
+    return price.toStringAsFixed(2).replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},');
+  }
+
   Future<void> _loadListings() async {
     if (mounted) {
       setState(() => _isLoading = true);
@@ -237,6 +243,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -246,6 +253,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                           color: Colors.white60,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
+                          fontFamily: 'Montserrat',
                         ),
                       ),
                     ],
@@ -316,14 +324,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           ),
           ListTile(
             leading: const Icon(Icons.home, color: Color(0xFF1E3A8A)),
-            title: const Text('Home'),
+            title: const Text('Home', style: TextStyle(fontFamily: 'Montserrat')),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           ListTile(
             leading: const Icon(Icons.search, color: Color(0xFF1E3A8A)),
-            title: const Text('Browse Products'),
+            title: const Text('Browse Products', style: TextStyle(fontFamily: 'Montserrat')),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/user-listings');
@@ -332,7 +340,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           if (!_isGuest)
             ListTile(
               leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E3A8A)),
-              title: const Text('My Orders'),
+              title: const Text('My Orders', style: TextStyle(fontFamily: 'Montserrat')),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -346,7 +354,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           if (_isGuest)
             ListTile(
               leading: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
-              title: const Text('My Orders', style: TextStyle(color: Colors.grey)),
+              title: const Text('My Orders', style: TextStyle(color: Colors.grey, fontFamily: 'Montserrat')),
               onTap: () async {
                 Navigator.pop(context);
                 final loggedIn = await GuestService.promptLogin(
@@ -362,7 +370,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           const Divider(),
           ListTile(
             leading: const Icon(Icons.info_outline, color: Color(0xFF1E3A8A)),
-            title: const Text('About Us'),
+            title: const Text('About Us', style: TextStyle(fontFamily: 'Montserrat')),
             onTap: () {
               Navigator.pop(context);
               _showAboutUsDialog();
@@ -370,7 +378,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           ),
           ListTile(
             leading: const Icon(Icons.contact_support, color: Color(0xFF1E3A8A)),
-            title: const Text('Contact Us'),
+            title: const Text('Contact Us', style: TextStyle(fontFamily: 'Montserrat')),
             onTap: () {
               Navigator.pop(context);
               _showContactUsDialog();
@@ -380,7 +388,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           if (!_isGuest)
             ListTile(
               leading: const Icon(Icons.person_outline, color: Color(0xFF1E3A8A)),
-              title: const Text('Edit Profile'),
+              title: const Text('Edit Profile', style: TextStyle(fontFamily: 'Montserrat')),
               onTap: () async {
                 Navigator.pop(context);
                 final userData = await AuthService.getCurrentUser();
@@ -409,6 +417,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
               _isGuest ? 'Login' : 'Logout',
               style: TextStyle(
                 color: _isGuest ? Color(0xFF1E3A8A) : Colors.red,
+                fontFamily: 'Montserrat',
               ),
             ),
             onTap: () async {
@@ -815,7 +824,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center, // Center column items
                   children: [
                     Text(
                       listing.title,
@@ -826,6 +835,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center, // Center text
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -833,16 +843,18 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center, // Center text
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₱${listing.price.toStringAsFixed(2)}',
+                      '₱${_formatPrice(listing.price)}',
                       style: const TextStyle(
-                        color: Color(0xFF1E3A8A),
+                        color: Colors.black, // Changed to black
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         fontFamily: 'Montserrat',
                       ),
+                      textAlign: TextAlign.center, // Center text
                     ),
                   ],
                 ),
@@ -1040,36 +1052,38 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'OFFICIAL UDD MERCH',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Montserrat',
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/user-listings',
-                                      arguments: 'Official UDD Merch',
-                                    );
-                                  },
-                                  child: const Text(
-                                    'View All',
+                            Center(
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'OFFICIAL UDD MERCH',
                                     style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
                                       fontFamily: 'Montserrat',
-                                      color: Color(0xFF1E3A8A),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/user-listings',
+                                        arguments: 'Official UDD Merch',
+                                      );
+                                    },
+                                    child: const Text(
+                                      'View All',
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        color: Color(0xFF1E3A8A),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 8),
                             SizedBox(
                               height: 300,
                               child: ListView.builder(
@@ -1094,33 +1108,38 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'NEW PRODUCTS',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Montserrat',
+                            Center(
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'NEW PRODUCTS',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/user-listings',
-                                      arguments: 'All',
-                                    );
-                                  },
-                                  child: const Text(
-                                    'View All',
-                                    style: TextStyle(color: Color(0xFF1E3A8A)),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/user-listings',
+                                        arguments: 'All',
+                                      );
+                                    },
+                                    child: const Text(
+                                      'View All',
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        color: Color(0xFF1E3A8A),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 8),
                             SizedBox(
                               height: 300,
                               child: ListView.builder(
@@ -1140,7 +1159,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center, // Center contents
                         children: [
                           const Text(
                             'BROWSE BY DEPARTMENT',
@@ -1149,6 +1168,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Montserrat',
                             ),
+                            textAlign: TextAlign.center, // Center text
                           ),
                           const SizedBox(height: 16),
                           GridView.builder(

@@ -113,16 +113,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All Notifications'),
-        content: const Text('Are you sure you want to clear all notifications?'),
+        title: const Text('Clear All Notifications', style: TextStyle(fontFamily: 'Montserrat')),
+        content: const Text('Are you sure you want to clear all notifications?', style: TextStyle(fontFamily: 'Montserrat')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Clear All'),
+            child: const Text('Clear All', style: TextStyle(fontFamily: 'Montserrat')),
           ),
         ],
       ),
@@ -172,16 +172,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: Transform.scale(
+          scale: 1.5,
+          child: Image.asset(
+            'assets/logos/uddess.png',
+            height: 100,
+            fit: BoxFit.contain,
+          ),
+        ),
+        centerTitle: true,
+        toolbarHeight: 100,
         actions: [
           if (_notifications.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear_all),
+              icon: const Icon(Icons.clear_all, color: Colors.black),
               onPressed: _clearAllNotifications,
               tooltip: 'Clear All',
             ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: _loadNotifications,
             tooltip: 'Refresh',
           ),
@@ -211,7 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadNotifications,
-                        child: const Text('Retry'),
+                        child: const Text('Retry', style: TextStyle(fontFamily: 'Montserrat')),
                       ),
                     ],
                   ),
@@ -233,6 +246,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               color: Colors.grey[600],
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
+                              fontFamily: 'Montserrat',
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -241,6 +255,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 14,
+                              fontFamily: 'Montserrat',
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -308,6 +323,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           style: TextStyle(
             fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
             color: notification.isRead ? Colors.grey[600] : Colors.black,
+            fontFamily: 'Montserrat',
           ),
         ),
         subtitle: Column(
@@ -317,6 +333,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               notification.message,
               style: TextStyle(
                 color: notification.isRead ? Colors.grey[500] : Colors.grey[700],
+                fontFamily: 'Montserrat',
               ),
             ),
             const SizedBox(height: 4),
@@ -325,6 +342,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               style: TextStyle(
                 color: Colors.grey[400],
                 fontSize: 12,
+                fontFamily: 'Montserrat',
               ),
             ),
           ],

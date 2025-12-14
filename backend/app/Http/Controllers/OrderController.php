@@ -36,106 +36,106 @@ class OrderController extends Controller
                 'discount_code' => 'nullable|string|max:50',
             ]);
 
-        // Get the listing with size variants
-        $listing = Listing::with(['sizeVariants', 'images'])->findOrFail($validated['listing_id']);
+            // Get the listing with size variants
+            $listing = Listing::with(['sizeVariants', 'images'])->findOrFail($validated['listing_id']);
 
-        // Check stock based on whether it's a size variant or regular stock
-        // Allow pre-orders when stock is 0
-        if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-            // Check size-specific stock
-            $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-            if (!$sizeVariant) {
-                return response()->json([
-                    'message' => 'Selected size not available'
-                ], 400);
+            // Check stock based on whether it's a size variant or regular stock
+            // Allow pre-orders when stock is 0
+            if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
+                // Check size-specific stock
+                $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
+                if (!$sizeVariant) {
+                    return response()->json([
+                        'message' => 'Selected size not available'
+                    ], 400);
+                }
+
+                // Allow pre-orders when stock is 0, but check if trying to order more than available when stock > 0
+                if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $validated['quantity']) {
+                    return response()->json([
+                        'message' => 'Insufficient stock for size ' . $validated['size'] . '. Available: ' . $sizeVariant->stock_quantity
+                    ], 400);
+                }
+            } else {
+                // Check regular stock - allow pre-orders when stock is 0
+                if ($listing->stock_quantity > 0 && $listing->stock_quantity < $validated['quantity']) {
+                    return response()->json([
+                        'message' => 'Insufficient stock. Available: ' . $listing->stock_quantity
+                    ], 400);
+                }
             }
-            
-            // Allow pre-orders when stock is 0, but check if trying to order more than available when stock > 0
-            if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $validated['quantity']) {
-                return response()->json([
-                    'message' => 'Insufficient stock for size ' . $validated['size'] . '. Available: ' . $sizeVariant->stock_quantity
-                ], 400);
+
+            // Calculate original amount
+            $originalAmount = $listing->price * $validated['quantity'];
+            $discountAmount = 0;
+            $discountCodeId = null;
+
+            // Apply discount code if provided
+            if (!empty($validated['discount_code'])) {
+                $discountCode = DiscountCode::where('code', $validated['discount_code'])
+                    ->active()
+                    ->valid()
+                    ->first();
+
+                if ($discountCode && $discountCode->canBeUsedBy($user, $listing->department_id)) {
+                    $discountAmount = $discountCode->calculateDiscount($originalAmount);
+                    $discountCodeId = $discountCode->id;
+                }
             }
-        } else {
-            // Check regular stock - allow pre-orders when stock is 0
-            if ($listing->stock_quantity > 0 && $listing->stock_quantity < $validated['quantity']) {
-                return response()->json([
-                    'message' => 'Insufficient stock. Available: ' . $listing->stock_quantity
-                ], 400);
+
+            // Calculate final amount after discount
+            $totalAmount = $originalAmount - $discountAmount;
+            $reservationFeeAmount = $totalAmount * 0.35; // 35% reservation fee
+
+            // Create order
+            $order = Order::create([
+                'order_number' => Order::generateOrderNumber(),
+                'user_id' => $user->id,
+                'email' => $validated['email'], // Save the email used in order
+                'listing_id' => $validated['listing_id'],
+                'department_id' => $listing->department_id,
+                'quantity' => $validated['quantity'],
+                'total_amount' => $totalAmount,
+                'original_amount' => $originalAmount,
+                'discount_code_id' => $discountCodeId,
+                'discount_amount' => $discountAmount,
+                'reservation_fee_amount' => $reservationFeeAmount,
+                'reservation_fee_paid' => false,
+                'status' => 'pending',
+                'notes' => $validated['notes'] ?? null,
+                'payment_method' => 'cash_on_pickup',
+                'size' => $validated['size'] ?? null,
+            ]);
+
+            // Increment discount code usage if applied
+            if ($discountCodeId) {
+                DiscountCode::where('id', $discountCodeId)->increment('usage_count');
             }
-        }
 
-        // Calculate original amount
-        $originalAmount = $listing->price * $validated['quantity'];
-        $discountAmount = 0;
-        $discountCodeId = null;
-        
-        // Apply discount code if provided
-        if (!empty($validated['discount_code'])) {
-            $discountCode = DiscountCode::where('code', $validated['discount_code'])
-                ->active()
-                ->valid()
-                ->first();
-                
-            if ($discountCode && $discountCode->canBeUsedBy($user, $listing->department_id)) {
-                $discountAmount = $discountCode->calculateDiscount($originalAmount);
-                $discountCodeId = $discountCode->id;
+            // Update stock quantity - only decrement if stock is available (not for pre-orders)
+            if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
+                // Decrement size-specific stock only if available
+                $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
+                if ($sizeVariant->stock_quantity > 0) {
+                    $sizeVariant->decrement('stock_quantity', $validated['quantity']);
+                }
+            } else {
+                // Decrement regular stock only if available
+                if ($listing->stock_quantity > 0) {
+                    $listing->decrement('stock_quantity', $validated['quantity']);
+                }
             }
-        }
-        
-        // Calculate final amount after discount
-        $totalAmount = $originalAmount - $discountAmount;
-        $reservationFeeAmount = $totalAmount * 0.35; // 35% reservation fee
 
-        // Create order
-        $order = Order::create([
-            'order_number' => Order::generateOrderNumber(),
-            'user_id' => $user->id,
-            'email' => $validated['email'], // Save the email used in order
-            'listing_id' => $validated['listing_id'],
-            'department_id' => $listing->department_id,
-            'quantity' => $validated['quantity'],
-            'total_amount' => $totalAmount,
-            'original_amount' => $originalAmount,
-            'discount_code_id' => $discountCodeId,
-            'discount_amount' => $discountAmount,
-            'reservation_fee_amount' => $reservationFeeAmount,
-            'reservation_fee_paid' => false,
-            'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
-            'payment_method' => 'cash_on_pickup',
-            'size' => $validated['size'] ?? null,
-        ]);
-        
-        // Increment discount code usage if applied
-        if ($discountCodeId) {
-            DiscountCode::where('id', $discountCodeId)->increment('usage_count');
-        }
+            // Send confirmation email to the provided email address
+            $this->sendOrderConfirmationEmail($order, $validated['email']);
 
-        // Update stock quantity - only decrement if stock is available (not for pre-orders)
-        if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-            // Decrement size-specific stock only if available
-            $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-            if ($sizeVariant->stock_quantity > 0) {
-                $sizeVariant->decrement('stock_quantity', $validated['quantity']);
-            }
-        } else {
-            // Decrement regular stock only if available
-            if ($listing->stock_quantity > 0) {
-                $listing->decrement('stock_quantity', $validated['quantity']);
-            }
-        }
+            // Send notifications
+            $this->notificationService->notifyOrderCreated($order);
 
-        // Send confirmation email to the provided email address
-        $this->sendOrderConfirmationEmail($order, $validated['email']);
-
-        // Send notifications
-        $this->notificationService->notifyOrderCreated($order);
-
-        return response()->json([
-            'message' => 'Order created successfully',
-            'order' => $order->load(['listing', 'department']),
-        ], 201);
+            return response()->json([
+                'message' => 'Order created successfully',
+                'order' => $order->load(['listing', 'department']),
+            ], 201);
         } catch (\Exception $e) {
             Log::error('Order creation error: ' . $e->getMessage());
             return response()->json([
@@ -150,7 +150,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $orders = Order::with(['listing.images', 'department'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
@@ -165,7 +165,7 @@ class OrderController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        
+
         $order = Order::with(['listing.images', 'department'])
             ->where('user_id', $user->id)
             ->findOrFail($id);
@@ -179,7 +179,7 @@ class OrderController extends Controller
     public function cancel(Request $request, $id)
     {
         $user = $request->user();
-        
+
         $order = Order::with(['listing.sizeVariants', 'listing.images'])->where('user_id', $user->id)->findOrFail($id);
 
         if (!$order->canBeCancelled()) {
@@ -218,7 +218,7 @@ class OrderController extends Controller
     public function adminIndex(Request $request)
     {
         $user = $request->user();
-        
+
         $query = Order::with(['listing.images', 'department', 'user']);
 
         // If admin (not superadmin), only show their department's orders
@@ -237,7 +237,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $user = $request->user();
-        
+
         $validated = $request->validate([
             'status' => 'required|in:pending,confirmed,ready_for_pickup,completed,cancelled',
             'pickup_date' => 'nullable|date',
@@ -245,7 +245,7 @@ class OrderController extends Controller
         ]);
 
         $query = Order::with(['listing.images', 'department', 'user']);
-        
+
         // If admin (not superadmin), only update their department's orders
         if ($user->isAdmin() && !$user->isSuperAdmin()) {
             $query->where('department_id', $user->department_id);
@@ -306,10 +306,10 @@ class OrderController extends Controller
         try {
             // Use the email saved in the order (the one used during order creation)
             $emailToUse = $order->email ?? $order->user->email;
-            
+
             Log::info('Attempting to send pickup ready email for order: ' . $order->order_number);
             Log::info('Order email: ' . $emailToUse);
-            
+
             $data = [
                 'order' => $order,
                 'user' => $order->user,
@@ -339,7 +339,7 @@ class OrderController extends Controller
         try {
             // Use the email saved in the order (the one used during order creation)
             $emailToUse = $order->email ?? $order->user->email;
-            
+
             $data = [
                 'order' => $order,
                 'user' => $order->user,
@@ -364,7 +364,7 @@ class OrderController extends Controller
         try {
             // Use the email saved in the order (the one used during order creation)
             $emailToUse = $order->email ?? $order->user->email;
-            
+
             $data = [
                 'order' => $order,
                 'user' => $order->user,
@@ -392,7 +392,7 @@ class OrderController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             $order = Order::where('user_id', $user->id)->findOrFail($id);
 
             if ($order->reservation_fee_paid) {
@@ -435,9 +435,9 @@ class OrderController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             $query = Order::with(['listing.images', 'department', 'user']);
-            
+
             // If admin (not superadmin), only update their department's orders
             if ($user->isAdmin() && !$user->isSuperAdmin()) {
                 $query->where('department_id', $user->department_id);
@@ -488,12 +488,12 @@ class OrderController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             // Find the order and ensure it belongs to the user
             $order = Order::where('user_id', $user->id)
-                         ->where('id', $id)
-                         ->where('status', 'completed')
-                         ->firstOrFail();
+                ->where('id', $id)
+                ->where('status', 'completed')
+                ->firstOrFail();
 
             $validated = $request->validate([
                 'rating' => 'required|integer|min:1|max:5',
@@ -525,7 +525,7 @@ class OrderController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             // Only allow superadmin to access sales report
             if ($user->role !== 'superadmin') {
                 return response()->json(['message' => 'Unauthorized'], 403);

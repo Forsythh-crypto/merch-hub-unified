@@ -217,7 +217,6 @@ class AdminService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error creating department: $e');
       return false;
     }
   }
