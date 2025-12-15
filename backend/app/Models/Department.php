@@ -9,7 +9,7 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'logo_path'];
+    protected $fillable = ['name', 'description', 'logo_path', 'gcash_qr_image_path'];
 
     // Relationships
     public function products()

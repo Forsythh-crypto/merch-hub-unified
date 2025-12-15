@@ -1906,6 +1906,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
     File? selectedLogo;
+    File? selectedQrCode;
 
     showDialog(
       context: context,
@@ -2027,6 +2028,97 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                // QR Code upload section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'GCash QR Code (Optional)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
+                      ),
+                      const SizedBox(height: 8),
+                      if (selectedQrCode != null)
+                        Container(
+                          height: 150,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(selectedQrCode!, fit: BoxFit.cover),
+                          ),
+                        )
+                      else
+                        Container(
+                          height: 150,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.qr_code_2,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final ImagePicker picker = ImagePicker();
+                              final XFile? image = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                maxWidth: 512,
+                                maxHeight: 512,
+                              );
+                              if (image != null) {
+                                setState(() {
+                                  selectedQrCode = File(image.path);
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.photo_library),
+                            label: const Text(
+                              'Gallery',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final ImagePicker picker = ImagePicker();
+                              final XFile? image = await picker.pickImage(
+                                source: ImageSource.camera,
+                                maxWidth: 512,
+                                maxHeight: 512,
+                              );
+                              if (image != null) {
+                                setState(() {
+                                  selectedQrCode = File(image.path);
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text(
+                              'Camera',
+                              style: TextStyle(fontFamily: 'Montserrat'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -2058,6 +2150,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     nameController.text.trim(),
                     descriptionController.text.trim(),
                     logoPath: selectedLogo?.path,
+                    gcashQrImagePath: selectedQrCode?.path,
                   );
 
                   if (success) {
@@ -2085,6 +2178,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       text: department['description'] ?? '',
     );
     File? selectedLogo;
+    File? selectedQrCode;
+    bool removeQrCode = false;
 
     showDialog(
       context: context,
@@ -2141,6 +2236,24 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.file(selectedLogo!, fit: BoxFit.cover),
+                          ),
+                        )
+                      else if (department['logo_path'] != null)
+                        Container(
+                          height: 100,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              AppConfig.fileUrl(department['logo_path']),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                            ),
                           ),
                         )
                       else
@@ -2200,6 +2313,181 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                // QR Code upload section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'GCash QR Code (Optional)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
+                      ),
+                      const SizedBox(height: 8),
+                      if (removeQrCode)
+                        Container(
+                          height: 150,
+                          width: 200,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.red),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.red.withOpacity(0.1),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.delete_forever, color: Colors.red, size: 40),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Marked for deletion',
+                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    removeQrCode = false;
+                                  });
+                                },
+                                icon: const Icon(Icons.undo),
+                                label: const Text('Undo'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (selectedQrCode != null)
+                        Stack(
+                          children: [
+                            Container(
+                              height: 150,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(selectedQrCode!, fit: BoxFit.cover),
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.red,
+                                radius: 16,
+                                child: IconButton(
+                                  icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedQrCode = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (department['gcash_qr_image_path'] != null)
+                         Stack(
+                           children: [
+                             Container(
+                              height: 150,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  AppConfig.fileUrl(department['gcash_qr_image_path']),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.red,
+                                radius: 16,
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete, size: 16, color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      removeQrCode = true;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                           ],
+                         )
+                      else
+                        Container(
+                          height: 150,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.qr_code_2,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      // Only show upload buttons if not marked for deletion and no new file selected
+                      if (!removeQrCode && selectedQrCode == null)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final ImagePicker picker = ImagePicker();
+                                final XFile? image = await picker.pickImage(
+                                  source: ImageSource.gallery,
+                                  maxWidth: 512,
+                                  maxHeight: 512,
+                                );
+                                if (image != null) {
+                                  setState(() {
+                                    selectedQrCode = File(image.path);
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.photo_library),
+                              label: const Text('Gallery'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final ImagePicker picker = ImagePicker();
+                                final XFile? image = await picker.pickImage(
+                                  source: ImageSource.camera,
+                                  maxWidth: 512,
+                                  maxHeight: 512,
+                                );
+                                if (image != null) {
+                                  setState(() {
+                                    selectedQrCode = File(image.path);
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.camera_alt),
+                              label: const Text('Camera'),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -2228,6 +2516,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     nameController.text.trim(),
                     descriptionController.text.trim(),
                     logoPath: selectedLogo?.path,
+                    gcashQrImagePath: selectedQrCode?.path,
+                    removeGcashQrImage: removeQrCode,
                   );
 
                   if (success) {

@@ -502,6 +502,7 @@ class AdminService {
     String name,
     String description, {
     String? logoPath,
+    String? gcashQrImagePath,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -526,6 +527,12 @@ class AdminService {
         request.files.add(file);
       }
 
+      // Add GCash QR code if provided
+      if (gcashQrImagePath != null && gcashQrImagePath.isNotEmpty) {
+        final file = await http.MultipartFile.fromPath('gcash_qr_image', gcashQrImagePath);
+        request.files.add(file);
+      }
+
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
@@ -545,6 +552,8 @@ class AdminService {
     String name,
     String description, {
     String? logoPath,
+    String? gcashQrImagePath,
+    bool removeGcashQrImage = false,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -566,9 +575,19 @@ class AdminService {
       request.fields['name'] = name;
       request.fields['description'] = description;
 
+      if (removeGcashQrImage) {
+        request.fields['remove_gcash_qr_image'] = 'true';
+      }
+
       // Add logo file if provided
       if (logoPath != null && logoPath.isNotEmpty) {
         final file = await http.MultipartFile.fromPath('logo', logoPath);
+        request.files.add(file);
+      }
+
+      // Add GCash QR code if provided
+      if (gcashQrImagePath != null && gcashQrImagePath.isNotEmpty) {
+        final file = await http.MultipartFile.fromPath('gcash_qr_image', gcashQrImagePath);
         request.files.add(file);
       }
 

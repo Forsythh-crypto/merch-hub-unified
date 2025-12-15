@@ -208,17 +208,27 @@ class User {
 class Department {
   final int id;
   final String name;
+  final String? gcashQrImagePath;
 
-  Department({required this.id, required this.name});
+  Department({
+    required this.id, 
+    required this.name,
+    this.gcashQrImagePath,
+  });
 
   factory Department.fromJson(Map<String, dynamic> json) {
-    return Department(id: json['id'], name: json['name']);
+    return Department(
+      id: json['id'], 
+      name: json['name'],
+      gcashQrImagePath: json['gcash_qr_image_path'],
+    );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
+      'gcash_qr_image_path': gcashQrImagePath,
     };
   }
 }

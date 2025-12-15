@@ -4,6 +4,7 @@ import 'dart:io';
 import '../models/order.dart';
 import '../services/order_service.dart';
 import 'receipt_upload_screen.dart';
+import '../config/app_config.dart';
 
 class ReservationFeePaymentScreen extends StatefulWidget {
   final Order order;
@@ -43,10 +44,7 @@ class _ReservationFeePaymentScreenState
     return _order.reservationFeeAmount ?? (_order.totalAmount * 0.35);
   }
 
-  // Path to your QR code image
-  String get _qrCodeImagePath {
-    return 'assets/qr_codes/gcash_qr.png'; 
-  }
+
 
   Future<void> _applyDiscount() async {
     final code = _discountCodeController.text.trim();
@@ -451,39 +449,61 @@ class _ReservationFeePaymentScreenState
                                 SizedBox(
                                   width: 220,
                                   height: 220,
-                                  child: Image.asset(
-                                    _qrCodeImagePath,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.qr_code_2,
-                                            size: 120,
-                                            color: Colors.grey[400],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'QR Code Not Found',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 14,
-                                              fontFamily: 'Montserrat',
-                                            ),
-                                          ),
-                                          Text(
-                                            'Please add your QR code image',
-                                            style: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 12,
-                                              fontFamily: 'Montserrat',
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
+                                  child: _order.department?.gcashQrImagePath != null
+                                      ? Image.network(
+                                          AppConfig.fileUrl(_order.department!.gcashQrImagePath!),
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.broken_image,
+                                                  size: 80,
+                                                  color: Colors.grey[400],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                const Text(
+                                                  'Failed to load QR Code',
+                                                  style: TextStyle(color: Colors.grey),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        )
+                                      : Image.asset(
+                                          'assets/qr_codes/gcash_qr.png',
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.qr_code_2,
+                                                  size: 120,
+                                                  color: Colors.grey[400],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'QR Code Not Found',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 14,
+                                                    fontFamily: 'Montserrat',
+                                                  ),
+                                                ),
+                                                Text(
+                                                  'Please add your QR code image',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[500],
+                                                    fontSize: 12,
+                                                    fontFamily: 'Montserrat',
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        ),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(

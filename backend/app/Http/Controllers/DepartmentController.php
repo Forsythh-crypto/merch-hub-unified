@@ -17,7 +17,7 @@ class DepartmentController extends Controller
             $departments = Department::select('id', 'name', 'description')
                 ->orderBy('name')
                 ->get();
-            
+
             return response()->json($departments);
         } catch (\Exception $e) {
             \Log::error('Get departments error: ' . $e->getMessage());
@@ -34,7 +34,7 @@ class DepartmentController extends Controller
             $departments = Department::withCount(['users', 'products'])
                 ->orderBy('name')
                 ->get();
-            
+
             return response()->json(['departments' => $departments]);
         } catch (\Exception $e) {
             \Log::error('Get admin departments error: ' . $e->getMessage());
@@ -52,6 +52,7 @@ class DepartmentController extends Controller
                 'name' => 'required|string|max:255|unique:departments',
                 'description' => 'nullable|string|max:1000',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'gcash_qr_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             $departmentData = [
@@ -62,9 +63,17 @@ class DepartmentController extends Controller
             // Handle logo upload
             if ($request->hasFile('logo')) {
                 $logo = $request->file('logo');
-                $logoName = time() . '_' . $logo->getClientOriginalName();
+                $logoName = time() . '_logo_' . $logo->getClientOriginalName();
                 $logoPath = $logo->storeAs('department_logos', $logoName, 'public');
                 $departmentData['logo_path'] = $logoPath;
+            }
+
+            // Handle QR code upload
+            if ($request->hasFile('gcash_qr_image')) {
+                $qr = $request->file('gcash_qr_image');
+                $qrName = time() . '_qr_' . $qr->getClientOriginalName();
+                $qrPath = $qr->storeAs('department_qr_codes', $qrName, 'public');
+                $departmentData['gcash_qr_image_path'] = $qrPath;
             }
 
             $department = Department::create($departmentData);
@@ -94,6 +103,7 @@ class DepartmentController extends Controller
                 'name' => 'required|string|max:255|unique:departments,name,' . $department->id,
                 'description' => 'nullable|string|max:1000',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'gcash_qr_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             $departmentData = [
@@ -109,9 +119,30 @@ class DepartmentController extends Controller
                 }
 
                 $logo = $request->file('logo');
-                $logoName = time() . '_' . $logo->getClientOriginalName();
+                $logoName = time() . '_logo_' . $logo->getClientOriginalName();
                 $logoPath = $logo->storeAs('department_logos', $logoName, 'public');
                 $departmentData['logo_path'] = $logoPath;
+            }
+
+            // Handle QR code removal
+            if ($request->boolean('remove_gcash_qr_image')) {
+                if ($department->gcash_qr_image_path && \Storage::disk('public')->exists($department->gcash_qr_image_path)) {
+                    \Storage::disk('public')->delete($department->gcash_qr_image_path);
+                }
+                $departmentData['gcash_qr_image_path'] = null;
+            }
+
+            // Handle QR code upload
+            if ($request->hasFile('gcash_qr_image')) {
+                // Delete old QR code if exists
+                if ($department->gcash_qr_image_path && \Storage::disk('public')->exists($department->gcash_qr_image_path)) {
+                    \Storage::disk('public')->delete($department->gcash_qr_image_path);
+                }
+
+                $qr = $request->file('gcash_qr_image');
+                $qrName = time() . '_qr_' . $qr->getClientOriginalName();
+                $qrPath = $qr->storeAs('department_qr_codes', $qrName, 'public');
+                $departmentData['gcash_qr_image_path'] = $qrPath;
             }
 
             $department->update($departmentData);
