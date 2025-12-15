@@ -10,6 +10,8 @@ import '../widgets/login_prompt_dialog.dart';
 import 'user_orders_screen.dart';
 import '../services/admin_service.dart';
 import '../services/guest_service.dart';
+import 'package:provider/provider.dart';
+import '../services/cart_service.dart';
 
 
 class OrderConfirmationScreen extends StatefulWidget {
@@ -566,6 +568,44 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     }
   }
 
+  Future<void> _addToCart() async {
+    if (_selectedSize == null && widget.listing.sizeVariants != null && widget.listing.sizeVariants!.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a size')),
+        );
+      }
+      return;
+    }
+
+    final quantity = int.tryParse(_quantityController.text) ?? 1;
+
+    await Provider.of<CartService>(context, listen: false).addItem(
+      widget.listing,
+      quantity,
+      _selectedSize,
+      _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+    );
+
+    if (mounted) {
+       Navigator.pop(context); // Close modal
+       
+       showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+          content: const Text('Item added to cart successfully!', style: TextStyle(fontFamily: 'Montserrat')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _quantityController.dispose();
@@ -765,22 +805,52 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                    SizedBox(
                      width: double.infinity,
                      height: 50,
-                     child: ElevatedButton(
-                       onPressed: () {
-                         Navigator.pop(context); // Close sheet
-                         _submitOrder(); // Proceed to order
-                       },
-                       style: ElevatedButton.styleFrom(
-                         backgroundColor: const Color(0xFF1E3A8A),
-                         foregroundColor: Colors.white,
-                         shape: RoundedRectangleBorder(
-                           borderRadius: BorderRadius.circular(12),
+                     child: Row(
+                       children: [
+                         Expanded(
+                           child: OutlinedButton(
+                             onPressed: () {
+                               _addToCart(); 
+                             },
+                             style: OutlinedButton.styleFrom(
+                               side: const BorderSide(color: Color(0xFF1E3A8A)),
+                               shape: RoundedRectangleBorder(
+                                 borderRadius: BorderRadius.circular(12),
+                               ),
+                               padding: const EdgeInsets.symmetric(vertical: 0), // maximized height
+                             ),
+                             child: const Text(
+                               'Add to Cart',
+                               style: TextStyle(
+                                 fontSize: 14, 
+                                 fontWeight: FontWeight.bold, 
+                                 fontFamily: 'Montserrat',
+                                 color: Color(0xFF1E3A8A)
+                               ),
+                             ),
+                           ),
                          ),
-                       ),
-                       child: const Text(
-                         'Confirm',
-                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
-                       ),
+                         const SizedBox(width: 12),
+                         Expanded(
+                           child: ElevatedButton(
+                             onPressed: () {
+                               Navigator.pop(context); // Close sheet
+                               _submitOrder(); // Proceed to order
+                             },
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: const Color(0xFF1E3A8A),
+                               foregroundColor: Colors.white,
+                               shape: RoundedRectangleBorder(
+                                 borderRadius: BorderRadius.circular(12),
+                               ),
+                             ),
+                             child: const Text(
+                               'Buy Now',
+                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
+                             ),
+                           ),
+                         ),
+                       ],
                      ),
                    ),
                 ],
@@ -789,6 +859,108 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           },
         );
       },
+    );
+  }
+
+  void _showAllReviews() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Reviews (${widget.listing.reviewCount})',
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: ListView.builder(
+                  controller: controller,
+                  itemCount: widget.listing.reviews?.length ?? 0,
+                  itemBuilder: (context, index) {
+                    final review = widget.listing.reviews![index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                review.userName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                              Row(
+                                children: List.generate(5, (index) => Icon(
+                                  index < review.rating ? Icons.star : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 16,
+                                )),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            review.review ?? '',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${review.createdAt.day}/${review.createdAt.month}/${review.createdAt.year}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1421,7 +1593,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ...widget.listing.reviews!.map((review) => Container(
+                  ...widget.listing.reviews!.take(3).map((review) => Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -1478,6 +1650,28 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       ],
                     ),
                   )).toList(),
+                  if (widget.listing.reviews!.length > 3)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _showAllReviews,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF1E3A8A)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text(
+                          'See All Reviews',
+                          style: TextStyle(
+                            color: Color(0xFF1E3A8A),
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 24),
                 ],
                 

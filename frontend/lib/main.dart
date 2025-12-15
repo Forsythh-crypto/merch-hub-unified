@@ -12,11 +12,18 @@ import 'screens/admin_add_listing_screen.dart';
 import 'screens/order_confirmation_screen.dart';
 import 'models/user_role.dart';
 import 'models/listing.dart';
+import 'package:provider/provider.dart';
+import 'services/cart_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  runApp(const UDDEssentialsApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CartService(),
+      child: const UDDEssentialsApp(),
+    ),
+  );
 }
 
 class UDDEssentialsApp extends StatelessWidget {

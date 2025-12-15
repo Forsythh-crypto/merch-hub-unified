@@ -578,36 +578,52 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
   }
 
   // Function to show cancel order confirmation dialog
-  void _showCancelOrderDialog(Order order) {
-    showDialog(
+  void _showCancelOrderDialog(Order order) async {
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
-          content: Text(
-            'Are you sure you want to cancel order #${order.orderNumber}?\n\nThis action cannot be undone.',
-            style: const TextStyle(fontFamily: 'Montserrat'),
-          ),
+        return _CancelOrderDialog(order: order);
+      },
+    );
+
+    // If result is null, user dismissed/cancelled the dialog without action
+    if (result == null) return;
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      // Show success
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Order cancelled successfully'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Keep Order', style: TextStyle(fontFamily: 'Montserrat')),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _cancelOrder(order);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
-            ),
+              child: const Text('OK'),
+            )
           ],
-        );
-      },
-    );
+        ),
+      );
+      _loadOrders(); // Refresh list
+    } else {
+      // Show error
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(result['message'] ?? 'Failed to cancel order'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            )
+          ],
+        ),
+      );
+    }
   }
 
   // Function to cancel an order
@@ -881,6 +897,77 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
               controller: _tabController,
               children: _statusTabs.map((status) => _buildOrdersList(status)).toList(),
             ),
+    );
+  }
+}
+
+class _CancelOrderDialog extends StatefulWidget {
+  final Order order;
+
+  const _CancelOrderDialog({
+    Key? key,
+    required this.order,
+  }) : super(key: key);
+
+  @override
+  State<_CancelOrderDialog> createState() => _CancelOrderDialogState();
+}
+
+class _CancelOrderDialogState extends State<_CancelOrderDialog> {
+  bool _isCancelling = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
+      content: Text(
+        'Are you sure you want to cancel order #${widget.order.orderNumber}?\n\nThis action cannot be undone.',
+        style: const TextStyle(fontFamily: 'Montserrat'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isCancelling ? null : () => Navigator.of(context).pop(),
+          child: const Text('Keep Order', style: TextStyle(fontFamily: 'Montserrat')),
+        ),
+        ElevatedButton(
+          onPressed: _isCancelling
+              ? null
+              : () async {
+                  setState(() {
+                    _isCancelling = true;
+                  });
+
+                  try {
+                    // Call the API
+                    final result = await OrderService.cancelOrder(widget.order.id);
+                    
+                    if (!mounted) return;
+                    
+                    // Return the result to the parent
+                    Navigator.of(context).pop(result);
+                    
+                  } catch (e) {
+                     if (!mounted) return;
+                     // Return error as a result map
+                     Navigator.of(context).pop({'success': false, 'message': 'Exception: $e'});
+                  }
+              },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+          ),
+          child: _isCancelling
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text('Cancel Order', style: TextStyle(fontFamily: 'Montserrat')),
+        ),
+      ],
     );
   }
 }

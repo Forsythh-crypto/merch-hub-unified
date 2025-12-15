@@ -8,6 +8,7 @@ import '../services/auth_services.dart';
 import '../services/guest_service.dart';
 import '../config/app_config.dart';
 import 'order_confirmation_screen.dart';
+import 'cart_screen.dart';
 
 class UserListingsScreen extends StatefulWidget {
   const UserListingsScreen({super.key});
@@ -228,7 +229,15 @@ class _UserListingsScreenState extends State<UserListingsScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 48), // Balance for back button
+                      IconButton(
+                        icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CartScreen()),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 const SizedBox(height: 16),
