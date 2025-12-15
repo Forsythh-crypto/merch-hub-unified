@@ -32,16 +32,16 @@ class Listing extends Model
                 $category = Category::find($listing->category_id);
                 if ($category) {
                     $categoryName = strtolower($category->name);
-                    $isClothing = str_contains($categoryName, 'clothing') || 
-                                 str_contains($categoryName, 'shirt') || 
-                                 str_contains($categoryName, 'tee') ||
-                                 str_contains($categoryName, 'apparel');
-                    
+                    $isClothing = str_contains($categoryName, 'clothing') ||
+                        str_contains($categoryName, 'shirt') ||
+                        str_contains($categoryName, 'tee') ||
+                        str_contains($categoryName, 'apparel');
+
                     if ($isClothing) {
                         $sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
                         $stockPerSize = max(0, floor($listing->stock_quantity / 6));
                         $remaining = $listing->stock_quantity - ($stockPerSize * 6);
-                        
+
                         foreach ($sizes as $index => $size) {
                             $stock = $stockPerSize + ($index == 2 ? $remaining : 0); // Add remaining to M size
                             $listing->sizeVariants()->create([
@@ -92,5 +92,38 @@ class Listing extends Model
     public function getHasMultipleSizesAttribute()
     {
         return $this->sizeVariants->count() > 1;
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function getReviewsAttribute()
+    {
+        return $this->orders()
+            ->whereNotNull('rating')
+            ->with('user:id,name,email') // Eager load user for reviews
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'rating' => $order->rating,
+                    'review' => $order->review,
+                    'user_name' => $order->user ? $order->user->name : 'Unknown User',
+                    'created_at' => $order->created_at,
+                ];
+            });
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return round($this->orders()->whereNotNull('rating')->avg('rating') ?? 0, 1);
+    }
+
+    public function getReviewCountAttribute()
+    {
+        return $this->orders()->whereNotNull('rating')->count();
     }
 }

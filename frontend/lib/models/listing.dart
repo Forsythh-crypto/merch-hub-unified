@@ -41,7 +41,15 @@ class Listing {
     this.category,
     this.sizeVariants,
     this.images,
+    this.averageRating = 0.0,
+    this.reviewCount = 0,
+    this.reviews,
   });
+
+  // Ratings
+  final double averageRating;
+  final int reviewCount;
+  final List<Review>? reviews;
 
   factory Listing.fromJson(Map<String, dynamic> json) {
 
@@ -88,6 +96,15 @@ class Listing {
                 .map((image) => ListingImage.fromJson(image))
                 .toList()
           : null,
+      averageRating: (json['average_rating'] is int) 
+          ? (json['average_rating'] as int).toDouble() 
+          : (json['average_rating'] as double?) ?? 0.0,
+      reviewCount: json['review_count'] ?? 0,
+      reviews: json['reviews'] != null
+          ? (json['reviews'] as List)
+              .map((review) => Review.fromJson(review))
+              .toList()
+          : null,
     );
   }
 
@@ -110,6 +127,32 @@ class Listing {
       'updated_at': updatedAt.toIso8601String(),
       'images': images?.map((image) => image.toJson()).toList(),
     };
+  }
+}
+
+class Review {
+  final int id;
+  final int rating;
+  final String? review;
+  final String userName;
+  final DateTime createdAt;
+
+  Review({
+    required this.id,
+    required this.rating,
+    this.review,
+    required this.userName,
+    required this.createdAt,
+  });
+
+  factory Review.fromJson(Map<String, dynamic> json) {
+    return Review(
+      id: json['id'],
+      rating: json['rating'],
+      review: json['review'],
+      userName: json['user_name'] ?? 'Anonymous',
+      createdAt: DateTime.parse(json['created_at']),
+    );
   }
 }
 

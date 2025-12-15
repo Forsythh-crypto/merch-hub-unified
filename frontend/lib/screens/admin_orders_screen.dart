@@ -8,9 +8,14 @@ import '../config/app_config.dart';
 class AdminOrdersScreen extends StatefulWidget {
   final UserSession userSession;
   final bool showAppBar;
+  final int? initialOrderId;
 
-  const AdminOrdersScreen({Key? key, required this.userSession, this.showAppBar = true})
-    : super(key: key);
+  const AdminOrdersScreen({
+    Key? key, 
+    required this.userSession, 
+    this.showAppBar = true,
+    this.initialOrderId,
+  }) : super(key: key);
 
   @override
   State<AdminOrdersScreen> createState() => _AdminOrdersScreenState();
@@ -68,6 +73,21 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
         _orders = orders;
         _isLoading = false;
       });
+
+      // If there's an initial order ID, switch to the correct tab
+      if (widget.initialOrderId != null) {
+        final initialOrder = orders.firstWhere(
+          (o) => o.id == widget.initialOrderId, 
+          orElse: () => orders.first
+        );
+        
+        if (initialOrder.id == widget.initialOrderId) {
+          final statusIndex = _statusTabs.indexOf(initialOrder.status);
+          if (statusIndex != -1) {
+            _tabController.animateTo(statusIndex);
+          }
+        }
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();

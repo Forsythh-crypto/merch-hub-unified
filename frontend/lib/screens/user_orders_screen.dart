@@ -7,7 +7,9 @@ import 'receipt_upload_screen.dart';
 import 'reservation_fee_payment_screen.dart';
 
 class UserOrdersScreen extends StatefulWidget {
-  const UserOrdersScreen({Key? key}) : super(key: key);
+  final int? initialOrderId;
+
+  const UserOrdersScreen({Key? key, this.initialOrderId}) : super(key: key);
 
   @override
   State<UserOrdersScreen> createState() => _UserOrdersScreenState();
@@ -64,6 +66,23 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
           _orders = orders;
           _isLoading = false;
         });
+
+        // If there's an initial order ID, switch to the correct tab
+        if (widget.initialOrderId != null) {
+          try {
+            final initialOrder = orders.firstWhere(
+              (o) => o.id == widget.initialOrderId, 
+            );
+            
+            final statusIndex = _statusTabs.indexOf(initialOrder.status);
+            if (statusIndex != -1) {
+              _tabController.animateTo(statusIndex);
+            }
+          } catch (e) {
+            // Order not found or other error, ignore and stay on default tab
+            print('Could not switch to initial order: $e');
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

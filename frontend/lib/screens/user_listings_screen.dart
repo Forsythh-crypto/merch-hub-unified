@@ -830,6 +830,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // Rating Summary
+                  if (widget.listing.reviewCount > 0)
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber, size: 24),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.listing.averageRating.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '(${widget.listing.reviewCount} ${widget.listing.reviewCount == 1 ? "review" : "reviews"})',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (widget.listing.reviewCount > 0) const SizedBox(height: 16),
                   
                   // Department and Category
                   Container(
@@ -948,6 +975,75 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  const SizedBox(height: 24),
+                  
+                  // Reviews Section
+                  if (widget.listing.reviews != null && widget.listing.reviews!.isNotEmpty) ...[
+                    const Divider(height: 32),
+                    const Text(
+                      'Reviews',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ...widget.listing.reviews!.map((review) => Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                review.userName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                              Row(
+                                children: List.generate(5, (index) => Icon(
+                                  index < review.rating ? Icons.star : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 16,
+                                )),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${review.createdAt.day}/${review.createdAt.month}/${review.createdAt.year}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          if (review.review != null && review.review!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              review.review!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.4,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )).toList(),
+                  ],
+
                   const SizedBox(height: 100), // Space for bottom button
                 ],
               ),
@@ -969,19 +1065,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         child: ElevatedButton(
           onPressed: () {
-            // Handle order logic here
-            // Handle order logic here
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Success'),
-                content: Text('Added ${_quantity}x ${widget.listing.title} to cart'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('OK'),
-                  ),
-                ],
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OrderConfirmationScreen(
+                  listing: widget.listing,
+                  sourceScreen: 'product_detail',
+                ),
               ),
             );
           },

@@ -1025,8 +1025,34 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                       fontFamily: 'Montserrat',
                                     ),
                                   ),
+                                // Rating Summary
+                                if (widget.listing.reviewCount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.star, color: Colors.amber, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        widget.listing.averageRating.toStringAsFixed(1),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Montserrat',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '(${widget.listing.reviewCount})',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                          fontFamily: 'Montserrat',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
-                              ),
+                              ],
+                            ),
                               const Spacer(),
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -1382,6 +1408,78 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           ),
                   ),
                 ),
+                
+                if (widget.listing.reviews != null && widget.listing.reviews!.isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Reviews',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Montserrat',
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...widget.listing.reviews!.map((review) => Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              review.userName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                            Row(
+                              children: List.generate(5, (index) => Icon(
+                                index < review.rating ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                                size: 16,
+                              )),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          review.review ?? '',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.4,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${review.createdAt.day}/${review.createdAt.month}/${review.createdAt.year}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                  const SizedBox(height: 24),
+                ],
                 
                 if (_relatedListings.isNotEmpty) ...[
                   const SizedBox(height: 32),

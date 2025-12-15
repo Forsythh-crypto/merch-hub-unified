@@ -179,7 +179,10 @@ class ListingController extends Controller
         $listings = Listing::with(['category', 'user', 'department', 'sizeVariants', 'images'])
             ->where('status', 'approved')
             ->latest()
-            ->get();
+            ->get()
+            ->each(function ($listing) {
+                $listing->append(['average_rating', 'review_count', 'reviews']);
+            });
 
         return response()->json(['listings' => $listings]);
     }
@@ -266,7 +269,10 @@ class ListingController extends Controller
         $listings = Listing::with(['category', 'user', 'department', 'sizeVariants', 'images'])
             ->where('department_id', $departmentId)
             ->latest()
-            ->get();
+            ->get()
+            ->each(function ($listing) {
+                $listing->append(['average_rating', 'review_count', 'reviews']);
+            });
 
         return response()->json(['listings' => $listings]);
     }

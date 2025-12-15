@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/notification.dart' as app_models;
 import '../services/notification_service.dart';
+import '../models/user_role.dart';
+import 'admin_orders_screen.dart';
+import 'user_orders_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -357,9 +360,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   shape: BoxShape.circle,
                 ),
               ),
-        onTap: () {
+        onTap: () async {
           if (!notification.isRead) {
             _markAsRead(notification);
+          }
+
+          // Handle redirection
+          if (notification.data != null && notification.data!['order_id'] != null) {
+            final orderId = notification.data!['order_id'];
+            final userSession = await UserSession.fromStorage();
+
+            if (userSession != null && mounted) {
+              if (userSession.isAdmin || userSession.isSuperAdmin) {
+                // Redirect admins
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => AdminOrdersScreen(
+                      userSession: userSession,
+                      initialOrderId: orderId,
+                    ),
+                  ),
+                );
+              } else {
+                // Redirect users (students)
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => UserOrdersScreen(
+                      initialOrderId: orderId,
+                    ),
+                  ),
+                );
+              }
+            }
           }
         },
       ),

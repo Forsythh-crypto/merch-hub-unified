@@ -17,16 +17,26 @@ class NotificationService
     {
         try {
             // Notify superadmins about all orders
-            $this->notifySuperAdmins($order, 'New Order Created', 
-                "New order #{$order->order_number} has been created by {$order->user->name} for {$order->listing->name}");
+            $this->notifySuperAdmins(
+                $order,
+                'New Order Created',
+                "New order #{$order->order_number} has been created by {$order->user->name} for {$order->listing->name}"
+            );
 
             // Notify department admins about orders in their department
-            $this->notifyDepartmentAdmins($order, 'New Order in Your Department', 
-                "New order #{$order->order_number} has been created in {$order->department->name} department");
+            $this->notifyDepartmentAdmins(
+                $order,
+                'New Order in Your Department',
+                "New order #{$order->order_number} has been created in {$order->department->name} department"
+            );
 
             // Notify the user who made the order
-            $this->notifyUser($order->user, 'Order Confirmation', 
-                "Your order #{$order->order_number} has been successfully created and is pending confirmation");
+            $this->notifyUser(
+                $order->user,
+                'Order Confirmation',
+                "Your order #{$order->order_number} has been successfully created and is pending confirmation",
+                $order
+            );
 
         } catch (\Exception $e) {
             Log::error('Failed to send order created notifications: ' . $e->getMessage());
@@ -50,17 +60,27 @@ class NotificationService
 
             // Notify the user about status change
             if ($order->user) {
-                $this->notifyUser($order->user, 'Order Status Update', 
-                    "Order #{$order->order_number}: {$message}");
+                $this->notifyUser(
+                    $order->user,
+                    'Order Status Update',
+                    "Order #{$order->order_number}: {$message}",
+                    $order
+                );
             }
 
             // Notify superadmins about status changes
-            $this->notifySuperAdmins($order, 'Order Status Changed', 
-                "Order #{$order->order_number} status changed from {$oldStatus} to {$newStatus}");
+            $this->notifySuperAdmins(
+                $order,
+                'Order Status Changed',
+                "Order #{$order->order_number} status changed from {$oldStatus} to {$newStatus}"
+            );
 
             // Notify department admins about status changes in their department
-            $this->notifyDepartmentAdmins($order, 'Order Status Changed in Your Department', 
-                "Order #{$order->order_number} in {$order->department->name} status changed from {$oldStatus} to {$newStatus}");
+            $this->notifyDepartmentAdmins(
+                $order,
+                'Order Status Changed in Your Department',
+                "Order #{$order->order_number} in {$order->department->name} status changed from {$oldStatus} to {$newStatus}"
+            );
 
         } catch (\Exception $e) {
             Log::error('Failed to send order status change notifications: ' . $e->getMessage());
@@ -73,13 +93,22 @@ class NotificationService
     public function notifyReceiptUploaded(Order $order)
     {
         try {
+            $userEmail = $order->user->email;
+            $userName = $order->user->name;
+
             // Notify superadmins about receipt upload
-            $this->notifySuperAdmins($order, 'Payment Receipt Uploaded', 
-                "Payment receipt has been uploaded for order #{$order->order_number} by {$order->user->name}");
+            $this->notifySuperAdmins(
+                $order,
+                'Payment Receipt Uploaded',
+                "Payment receipt has been uploaded for order #{$order->order_number} by {$userName} ({$userEmail})"
+            );
 
             // Notify department admins about receipt upload in their department
-            $this->notifyDepartmentAdmins($order, 'Payment Receipt Uploaded in Your Department', 
-                "Payment receipt has been uploaded for order #{$order->order_number} in {$order->department->name} department");
+            $this->notifyDepartmentAdmins(
+                $order,
+                'Payment Receipt Uploaded in Your Department',
+                "Payment receipt has been uploaded for order #{$order->order_number} in {$order->department->name} department by {$userName} ({$userEmail})"
+            );
 
         } catch (\Exception $e) {
             Log::error('Failed to send receipt uploaded notifications: ' . $e->getMessage());
@@ -93,21 +122,31 @@ class NotificationService
     {
         try {
             // Notify superadmins about all reservations
-            $this->notifySuperAdmins(null, 'New Reservation Created', 
-                "New reservation has been created");
+            $this->notifySuperAdmins(
+                null,
+                'New Reservation Created',
+                "New reservation has been created"
+            );
 
             // Notify department admins about reservations in their department
             if (isset($reservation['department_id'])) {
-                $this->notifyDepartmentAdminsById($reservation['department_id'], 'New Reservation in Your Department', 
-                    "New reservation has been created in your department");
+                $this->notifyDepartmentAdminsById(
+                    $reservation['department_id'],
+                    'New Reservation in Your Department',
+                    "New reservation has been created in your department"
+                );
             }
 
             // Notify the user who made the reservation
             if (isset($reservation['user_id'])) {
                 $user = User::find($reservation['user_id']);
                 if ($user) {
-                    $this->notifyUser($user, 'Reservation Confirmation', 
-                        "Your reservation has been successfully created and is pending confirmation");
+                    $this->notifyUser(
+                        $user,
+                        'Reservation Confirmation',
+                        "Your reservation has been successfully created and is pending confirmation",
+                        null
+                    );
                 }
             }
 
@@ -122,7 +161,7 @@ class NotificationService
     private function notifySuperAdmins($order, string $title, string $message)
     {
         $superAdmins = User::where('role', User::ROLE_SUPERADMIN)->get();
-        
+
         foreach ($superAdmins as $admin) {
             Notification::create([
                 'type' => $order ? Notification::TYPE_ORDER_CREATED : Notification::TYPE_RESERVATION_CREATED,
@@ -135,6 +174,7 @@ class NotificationService
                     'order_number' => $order->order_number,
                     'department_id' => $order->department_id,
                     'user_name' => $order->user->name,
+                    'user_email' => $order->user->email,
                     'listing_name' => $order->listing->name,
                 ] : null,
             ]);
@@ -149,7 +189,7 @@ class NotificationService
         $departmentAdmins = User::where('role', User::ROLE_ADMIN)
             ->where('department_id', $order->department_id)
             ->get();
-        
+
         foreach ($departmentAdmins as $admin) {
             Notification::create([
                 'type' => Notification::TYPE_ORDER_CREATED,
@@ -163,6 +203,7 @@ class NotificationService
                     'order_number' => $order->order_number,
                     'department_id' => $order->department_id,
                     'user_name' => $order->user->name,
+                    'user_email' => $order->user->email,
                     'listing_name' => $order->listing->name,
                 ],
             ]);
@@ -177,7 +218,7 @@ class NotificationService
         $departmentAdmins = User::where('role', User::ROLE_ADMIN)
             ->where('department_id', $departmentId)
             ->get();
-        
+
         foreach ($departmentAdmins as $admin) {
             Notification::create([
                 'type' => Notification::TYPE_RESERVATION_CREATED,
@@ -193,14 +234,23 @@ class NotificationService
     /**
      * Notify specific user
      */
-    private function notifyUser(User $user, string $title, string $message)
+    /**
+     * Notify specific user
+     */
+    private function notifyUser(User $user, string $title, string $message, ?Order $order = null)
     {
         Notification::create([
-            'type' => Notification::TYPE_ORDER_CREATED,
+            'type' => $order ? Notification::TYPE_ORDER_CREATED : Notification::TYPE_RESERVATION_CREATED,
             'title' => $title,
             'message' => $message,
             'user_id' => $user->id,
             'user_role' => $user->role,
+            'data' => $order ? [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'department_id' => $order->department_id,
+                'listing_name' => $order->listing->name ?? 'Unknown Item',
+            ] : null,
         ]);
     }
 
@@ -215,16 +265,16 @@ class NotificationService
             // Superadmins see all notifications
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->orWhere('user_role', User::ROLE_SUPERADMIN);
+                    ->orWhere('user_role', User::ROLE_SUPERADMIN);
             });
         } elseif ($user->isAdmin()) {
             // Admins see their personal notifications and department notifications
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->orWhere(function ($q2) use ($user) {
-                      $q2->where('user_role', User::ROLE_ADMIN)
-                         ->where('department_id', $user->department_id);
-                  });
+                    ->orWhere(function ($q2) use ($user) {
+                        $q2->where('user_role', User::ROLE_ADMIN)
+                            ->where('department_id', $user->department_id);
+                    });
             });
         } else {
             // Students only see their personal notifications
@@ -232,8 +282,8 @@ class NotificationService
         }
 
         return $query->orderBy('created_at', 'desc')
-                    ->limit($limit)
-                    ->get();
+            ->limit($limit)
+            ->get();
     }
 
     /**
@@ -246,15 +296,15 @@ class NotificationService
         if ($user->isSuperAdmin()) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->orWhere('user_role', User::ROLE_SUPERADMIN);
+                    ->orWhere('user_role', User::ROLE_SUPERADMIN);
             });
         } elseif ($user->isAdmin()) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->orWhere(function ($q2) use ($user) {
-                      $q2->where('user_role', User::ROLE_ADMIN)
-                         ->where('department_id', $user->department_id);
-                  });
+                    ->orWhere(function ($q2) use ($user) {
+                        $q2->where('user_role', User::ROLE_ADMIN)
+                            ->where('department_id', $user->department_id);
+                    });
             });
         } else {
             $query->where('user_id', $user->id);
