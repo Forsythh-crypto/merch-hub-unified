@@ -99,26 +99,43 @@ class _CartScreenState extends State<CartScreen> {
         // Start with: Loop through all items and create individual orders, but maybe group them in payment?
         // Or simpler: Just create separate orders for everything.
         
-        for (var item in items) {
-           final result = await OrderService.createOrder(
-              listingId: item.listing.id,
-              quantity: item.quantity,
-              email: userEmail ?? '',
-              notes: item.notes,
-              size: item.size,
-              // Discount support per item? Complex if added to cart. 
-              // For MVP cart, maybe apply global discount or ignore for now.
-           );
-           
-           if (!result['success']) {
-             allSuccess = false;
-             errorMessage = result['message'];
-             break; 
-           } else {
-             createdOrders.add(result['order']);
-           }
+        // Map cart items to order items payload
+        final List<Map<String, dynamic>> orderItems = items.map((item) => {
+          'listing_id': item.listing.id,
+          'quantity': item.quantity,
+          'size': item.size,
+          // 'notes': item.notes // Backend notes is per order currently. 
+          // If we want per-item notes, we need to update backend too. 
+          // For now, let's concatenate notes or just pick the first one?
+          // Or just ignore item-level notes if they are just general instructions?
+          // The current Cart UI has "Special Instructions" per CART (conceptually) or per Item?
+          // Checking Cart UI... it seems there is a valid Notes input in OrderConfirmation (which sets it for the order).
+          // But CartScreen doesn't seem to expose notes input per item clearly in the UI shown.
+          // Wait, `addItem` has notes. 
+          // Let's assume we can concat notes to the order notes.
+        }).toList();
+
+        // Concatenate unique notes
+        final allNotes = items
+            .map((i) => i.notes)
+            .where((n) => n != null && n.isNotEmpty)
+            .toSet()
+            .join('\n');
+
+        final result = await OrderService.createOrder(
+          items: orderItems,
+          email: userEmail ?? '',
+          notes: allNotes.isNotEmpty ? allNotes : null,
+          // discountCode: ... // TODO: Add discount support in cart
+        );
+
+        if (!result['success']) {
+          allSuccess = false;
+          errorMessage = result['message'];
+          break;
+        } else {
+          createdOrders.add(result['order']);
         }
-        if (!allSuccess) break;
       }
 
       if (allSuccess) {
@@ -133,10 +150,15 @@ class _CartScreenState extends State<CartScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Close Cart
-                     // Navigate to My Orders
+                    // Navigate to My Orders (Pending/To Prepare tab)
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/orders',
+                      (route) => route.settings.name == '/home', // Keep home in stack
+                      arguments: {'initialTab': 0}, // 0 index for "To Prepare" / Pending
+                    );
                   },
-                  child: const Text('OK'),
+                  child: const Text('Go to Pay Reservation Fee'),
                 ),
               ],
             ),
@@ -369,56 +391,87 @@ class _CartScreenState extends State<CartScreen> {
                   ],
                 ),
                 child: SafeArea(
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Total Items',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            'Subtotal',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
                           ),
                           Text(
-                            '${cart.totalItemCount}',
+                            '₱${_formatPrice(cart.totalAmount)}',
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
                               fontFamily: 'Montserrat',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isCheckingOut ? null : _processCheckout,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E3A8A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          child: _isCheckingOut
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Text(
-                                  'Checkout All',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Montserrat',
-                                  ),
+                          Text(
+                            '₱${_formatPrice(cart.totalAmount)}',
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isCheckingOut ? null : _processCheckout,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A8A),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                        ),
+                              ),
+                              child: _isCheckingOut
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Checkout All',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

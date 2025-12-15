@@ -741,84 +741,146 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen>
                       const Divider(height: 24, thickness: 1, color: Color(0xFFF3F4F6)),
                       
                       // Product Details
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Product Info
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  order.listing?.title ?? 'Product Unavailable',
-                                  style: const TextStyle(
-                                    fontFamily: 'Montserrat',
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF374151),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                Wrap(
-                                  spacing: 12,
-                                  children: [
-                                    if (order.size != null)
-                                      _buildDetailBadge(Icons.straighten, 'Size: ${order.size}'),
-                                    _buildDetailBadge(Icons.layers, 'Qty: ${order.quantity}'),
-                                  ],
-                                ),
-                                if (order.department != null) ...[
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.business, size: 14, color: Colors.grey[400]),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          order.department!.name,
-                                          style: TextStyle(
-                                            fontFamily: 'Montserrat',
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          
-                          // Price
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                      if (order.items.isNotEmpty) ...[
+                        // Multi-item display
+                        ...order.items.map((item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Total Amount',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.listing?.title ?? 'Product Unavailable',
+                                      style: const TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF374151),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      spacing: 12,
+                                      children: [
+                                        if (item.size != null)
+                                          _buildDetailBadge(Icons.straighten, 'Size: ${item.size}'),
+                                        _buildDetailBadge(Icons.layers, 'Qty: ${item.quantity}'),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                               Text(
-                                '₱${order.totalAmount.toStringAsFixed(2)}',
+                                '₱${item.subtotal.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontFamily: 'Montserrat',
-                                  fontSize: 18,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF1E3A8A),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        )),
+                      ] else ...[
+                        // Legacy Single Item Fallback
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Product Info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    order.listing?.title ?? 'Product Unavailable',
+                                    style: const TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF374151),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Wrap(
+                                    spacing: 12,
+                                    children: [
+                                      if (order.size != null)
+                                        _buildDetailBadge(Icons.straighten, 'Size: ${order.size}'),
+                                      _buildDetailBadge(Icons.layers, 'Qty: ${order.quantity}'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            // Price (Total for single item order)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '₱${order.totalAmount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Department & Customer Info
+                      if (order.department != null)
+                        Row(
+                          children: [
+                            Icon(Icons.business, size: 14, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                order.department!.name,
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      
+                      if (order.user != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                             Icon(Icons.person, size: 14, color: Colors.grey[400]),
+                             const SizedBox(width: 4),
+                             Text(
+                               order.user?.name ?? 'Guest',
+                               style: TextStyle(
+                                 fontFamily: 'Montserrat',
+                                 fontSize: 12,
+                                 color: Colors.grey[600],
+                               ),
+                             ),
+                          ],
+                        ),
+                      ],
+
 
                       // Customer Info
                       const SizedBox(height: 12),

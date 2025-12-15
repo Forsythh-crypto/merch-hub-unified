@@ -22,15 +22,76 @@ class ReservationFeePaymentScreen extends StatefulWidget {
 
 class _ReservationFeePaymentScreenState
     extends State<ReservationFeePaymentScreen> {
-  final bool _isLoading = false;
+  late Order _order;
+  final _discountCodeController = TextEditingController();
+  bool _isLoading = false;
+  bool _isApplyingDiscount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _order = widget.order;
+  }
+
+  @override
+  void dispose() {
+    _discountCodeController.dispose();
+    super.dispose();
+  }
 
   double get _reservationFeeAmount {
-    return widget.totalAmount * 0.35; // 35% reservation fee
+    return _order.reservationFeeAmount ?? (_order.totalAmount * 0.35);
   }
 
   // Path to your QR code image
   String get _qrCodeImagePath {
-    return 'assets/qr_codes/gcash_qr.png'; // Change this to your QR code filename
+    return 'assets/qr_codes/gcash_qr.png'; 
+  }
+
+  Future<void> _applyDiscount() async {
+    final code = _discountCodeController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() => _isApplyingDiscount = true);
+
+    try {
+      final result = await OrderService.applyDiscount(_order.id, code);
+
+      if (mounted) {
+        if (result['success']) {
+          setState(() {
+            _order = result['order'];
+            _discountCodeController.clear();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Discount applied successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Failed to apply discount'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isApplyingDiscount = false);
+      }
+    }
   }
 
   @override
@@ -94,7 +155,7 @@ class _ReservationFeePaymentScreenState
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.order.orderNumber,
+                            _order.orderNumber,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -130,6 +191,55 @@ class _ReservationFeePaymentScreenState
                     ),
                     const SizedBox(height: 16),
 
+                    // Discount Section
+                    if (_order.discountAmount == null || _order.discountAmount == 0) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: TextField(
+                                controller: _discountCodeController,
+                                textCapitalization: TextCapitalization.characters,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter discount code',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: _isApplyingDiscount ? null : _applyDiscount,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A8A),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: _isApplyingDiscount
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text('Apply'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     // Order Summary
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -140,40 +250,107 @@ class _ReservationFeePaymentScreenState
                       ),
                       child: Column(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Product:',
-                                style: TextStyle(fontFamily: 'Montserrat'),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  widget.order.listing?.title ?? 'Unknown Product',
-                                  textAlign: TextAlign.right,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
+                          const Text(
+                            'Items:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_order.items.isNotEmpty)
+                            ..._order.items.map((item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${item.quantity}x ${item.listing?.title ?? 'Unknown Product'} ${item.size != null ? '(${item.size})' : ''}',
+                                          style: const TextStyle(
+                                            fontFamily: 'Montserrat',
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '₱${item.subtotal.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ))
+                          else
+                            // Fallback for legacy orders
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Product:',
+                                      style: TextStyle(fontFamily: 'Montserrat'),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        _order.listing?.title ?? 'Unknown Product',
+                                        textAlign: TextAlign.right,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: 'Montserrat',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Quantity:',
+                                      style: TextStyle(fontFamily: 'Montserrat'),
+                                    ),
+                                    Text(
+                                      '${_order.quantity}',
+                                      style: const TextStyle(fontFamily: 'Montserrat'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          const SizedBox(height: 8),
+                          
+                           // Discount Display
+                          if (_order.discountAmount != null && _order.discountAmount! > 0) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Discount Applied:',
+                                  style: TextStyle(
                                     fontFamily: 'Montserrat',
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Quantity:',
-                                style: TextStyle(fontFamily: 'Montserrat'),
-                              ),
-                              Text(
-                                '${widget.order.quantity}',
-                                style: const TextStyle(fontFamily: 'Montserrat'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
+                                Text(
+                                  '-₱${_order.discountAmount!.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -182,7 +359,7 @@ class _ReservationFeePaymentScreenState
                                 style: TextStyle(fontFamily: 'Montserrat'),
                               ),
                               Text(
-                                '₱${widget.totalAmount.toStringAsFixed(2)}',
+                                '₱${_order.totalAmount.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Montserrat',
@@ -509,7 +686,7 @@ class _ReservationFeePaymentScreenState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ReceiptUploadScreen(order: widget.order),
+        builder: (context) => ReceiptUploadScreen(order: _order),
       ),
     );
   }

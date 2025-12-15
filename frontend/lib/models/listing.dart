@@ -126,6 +126,9 @@ class Listing {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'images': images?.map((image) => image.toJson()).toList(),
+      'department': department?.toJson(),
+      'category': category?.toJson(),
+      'user': user?.toJson(),
     };
   }
 }
@@ -154,6 +157,16 @@ class Review {
       createdAt: DateTime.parse(json['created_at']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'rating': rating,
+      'review': review,
+      'user_name': userName,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
 }
 
 class User {
@@ -180,6 +193,16 @@ class User {
       departmentId: json['department_id'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'role': role,
+      'department_id': departmentId,
+    };
+  }
 }
 
 class Department {
@@ -191,6 +214,13 @@ class Department {
   factory Department.fromJson(Map<String, dynamic> json) {
     return Department(id: json['id'], name: json['name']);
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
+  }
 }
 
 class Category {
@@ -201,6 +231,13 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(id: json['id'], name: json['name']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
   }
 }
 

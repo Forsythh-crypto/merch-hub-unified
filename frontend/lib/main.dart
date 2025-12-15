@@ -12,6 +12,7 @@ import 'screens/admin_add_listing_screen.dart';
 import 'screens/order_confirmation_screen.dart';
 import 'models/user_role.dart';
 import 'models/listing.dart';
+import 'screens/user_orders_screen.dart';
 import 'package:provider/provider.dart';
 import 'services/cart_service.dart';
 
@@ -84,6 +85,10 @@ class UDDEssentialsApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           final listing = args['listing'] as Listing;
           return OrderConfirmationScreen(listing: listing);
+        },
+        '/orders': (context) {
+           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>? ?? {};
+           return UserOrdersScreen(initialTab: args['initialTab'] ?? 0);
         },
         '/admin-add-listing': (context) => const AdminAddListingScreen(),
       },

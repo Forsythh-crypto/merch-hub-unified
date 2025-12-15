@@ -8,8 +8,13 @@ import 'reservation_fee_payment_screen.dart';
 
 class UserOrdersScreen extends StatefulWidget {
   final int? initialOrderId;
+  final int initialTab;
 
-  const UserOrdersScreen({Key? key, this.initialOrderId}) : super(key: key);
+  const UserOrdersScreen({
+    Key? key, 
+    this.initialOrderId,
+    this.initialTab = 0,
+  }) : super(key: key);
 
   @override
   State<UserOrdersScreen> createState() => _UserOrdersScreenState();
@@ -41,7 +46,11 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _statusTabs.length, vsync: this);
+    _tabController = TabController(
+      length: _statusTabs.length, 
+      vsync: this, 
+      initialIndex: widget.initialTab
+    );
     _loadOrders();
   }
 
@@ -176,36 +185,29 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header: Order Number and Status
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        order.listing?.title ?? 'Product',
+                        'Order #${order.orderNumber}',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Montserrat',
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
                       Text(
-                        'Order #${order.orderNumber}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Montserrat',
-                        ),
+                         order.department?.name ?? 'Department',
+                         style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Montserrat'),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -227,51 +229,121 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Display quantity with size if available
-                      Text(
-                        order.size != null 
-                            ? 'Quantity: ${order.quantity} (Size: ${order.size})'
-                            : order.listing?.size != null
-                                ? 'Quantity: ${order.quantity} (Size: ${order.listing!.size})'
-                                : 'Quantity: ${order.quantity}',
-                        style: const TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
-                      ),
-                      if (order.email != null && order.email!.isNotEmpty)
-                        Text(
-                          'Email: ${order.email}',
-                          style: const TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
+            const Divider(height: 24),
+            
+            // Items List
+            if (order.items.isNotEmpty) ...[
+               ...order.items.map((item) => Padding(
+                 padding: const EdgeInsets.only(bottom: 8.0),
+                 child: Row(
+                   children: [
+                     // Optional: Listing Image could go here if available in item.listing
+                     if (item.listing?.imagePath != null)
+                        Container(
+                          width: 40, 
+                          height: 40,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            image: DecorationImage(
+                              image: NetworkImage(Uri.encodeFull(AppConfig.fileUrl(item.listing!.imagePath!))),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
-                    ],
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(
+                             item.listing?.title ?? 'Unknown Item',
+                             style: const TextStyle(
+                               fontWeight: FontWeight.w600,
+                               fontSize: 14,
+                               fontFamily: 'Montserrat',
+                             ),
+                             maxLines: 1,
+                             overflow: TextOverflow.ellipsis,
+                           ),
+                           Text(
+                             item.size != null ? 'Size: ${item.size} • x${item.quantity}' : 'x${item.quantity}',
+                             style: TextStyle(
+                               fontSize: 12, 
+                               color: Colors.grey[600],
+                               fontFamily: 'Montserrat',
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     Text(
+                       '₱${item.subtotal.toStringAsFixed(2)}',
+                       style: const TextStyle(
+                         fontWeight: FontWeight.w500,
+                         fontFamily: 'Montserrat',
+                       ),
+                     ),
+                   ],
+                 ),
+               )).toList(),
+            ] else ...[
+              // Legacy Single Item Fallback
+               Row(
+                 children: [
+                   Expanded(
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Text(
+                           order.listing?.title ?? 'Product',
+                           style: const TextStyle(
+                             fontSize: 16,
+                             fontWeight: FontWeight.w600,
+                             fontFamily: 'Montserrat',
+                           ),
+                         ),
+                         Text(
+                           order.size != null 
+                             ? 'Size: ${order.size} • x${order.quantity}' 
+                             : 'x${order.quantity}',
+                           style: TextStyle(
+                             fontSize: 12, 
+                             color: Colors.grey[600],
+                             fontFamily: 'Montserrat',
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+                 ],
+               ),
+            ],
+            
+            const Divider(height: 24),
+
+            // Total Summary
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total Amount',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Montserrat',
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '₱${order.totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A),
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                    Text(
-                      order.department?.name ?? 'Department',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Montserrat'),
-                    ),
-                  ],
+                Text(
+                  '₱${order.totalAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
+                    fontFamily: 'Montserrat',
+                  ),
                 ),
               ],
             ),
-
+            
             // Reservation Fee Information
             if (order.status == 'pending') ...[
               const SizedBox(height: 12),
@@ -332,7 +404,8 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                 ),
               ),
             ],
-
+            
+            // Notes and Date
             if (order.notes != null && order.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
@@ -352,8 +425,7 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
               'Ordered on ${_formatDate(order.createdAt)}',
               style: TextStyle(fontSize: 12, color: Colors.grey[500], fontFamily: 'Montserrat'),
             ),
-            if (order.status == 'ready_for_pickup' &&
-                order.pickupDate != null) ...[
+            if (order.status == 'ready_for_pickup' && order.pickupDate != null) ...[
               const SizedBox(height: 4),
               Text(
                 'Pickup by: ${_formatDate(order.pickupDate!)}',
@@ -391,8 +463,8 @@ class _UserOrdersScreenState extends State<UserOrdersScreen>
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      icon: const Icon(Icons.qr_code),
-                      label: const Text('View QR Code', style: TextStyle(fontFamily: 'Montserrat')),
+                      icon: const Icon(Icons.payment),
+                      label: const Text('Pay Reservation Fee', style: TextStyle(fontFamily: 'Montserrat')),
                     ),
                   ),
                   const SizedBox(width: 12),

@@ -14,10 +14,11 @@ class Order extends Model
         'order_number',
         'user_id',
         'email',
-        'listing_id',
+        // 'listing_id', // Moved to order_items
+        // 'department_id', // Kept for grouping
+        // 'quantity', // Moved to order_items
+        // 'size', // Moved to order_items
         'department_id',
-        'quantity',
-        'size',
         'total_amount',
         'discount_code_id',
         'discount_amount',
@@ -52,6 +53,11 @@ class Order extends Model
     }
 
     // Relationships
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -75,7 +81,7 @@ class Order extends Model
     // Get status display name
     public function getStatusDisplayAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'Pending',
             'confirmed' => 'Confirmed',
             'ready_for_pickup' => 'Ready for Pickup',

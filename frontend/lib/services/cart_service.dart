@@ -87,6 +87,10 @@ class CartService extends ChangeNotifier {
     return grouped;
   }
   
+  double get totalAmount {
+    return _items.fold(0.0, (sum, item) => sum + item.totalPrice);
+  }
+
   int get totalItemCount {
     return _items.fold(0, (sum, item) => sum + item.quantity);
   }

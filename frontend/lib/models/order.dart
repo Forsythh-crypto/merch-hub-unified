@@ -24,18 +24,25 @@ class Order {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // New fields for discounts
+  final int? discountCodeId;
+  final double? discountAmount;
+  final double? originalAmount;
+
   // Related objects
   final Listing? listing;
   final Department? department;
   final UserSession? user;
-
+  final List<OrderItem> items; // Moved here for clarity
+  
   Order({
     required this.id,
     required this.orderNumber,
     this.userId,
-    required this.listingId,
+    // Legacy fields - nullable now
+    this.listingId = 0, 
     required this.departmentId,
-    required this.quantity,
+    this.quantity = 0,
     this.size,
     required this.totalAmount,
     this.reservationFeeAmount,
@@ -54,6 +61,10 @@ class Order {
     this.listing,
     this.department,
     this.user,
+    this.items = const [],
+    this.discountCodeId,
+    this.discountAmount,
+    this.originalAmount,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -61,9 +72,9 @@ class Order {
       id: json['id'],
       orderNumber: json['order_number'],
       userId: json['user_id'],
-      listingId: json['listing_id'],
+      listingId: json['listing_id'] ?? 0, 
       departmentId: json['department_id'],
-      quantity: json['quantity'],
+      quantity: json['quantity'] ?? 0, 
       size: json['size'],
       totalAmount: double.parse(json['total_amount'].toString()),
       reservationFeeAmount: json['reservation_fee_amount'] != null
@@ -90,6 +101,16 @@ class Order {
           ? Department.fromJson(json['department'])
           : null,
       user: json['user'] != null ? UserSession.fromJson(json['user']) : null,
+      items: json['items'] != null
+          ? (json['items'] as List).map((i) => OrderItem.fromJson(i)).toList()
+          : [],
+      discountCodeId: json['discount_code_id'],
+      discountAmount: json['discount_amount'] != null 
+          ? double.parse(json['discount_amount'].toString()) 
+          : null,
+      originalAmount: json['original_amount'] != null 
+          ? double.parse(json['original_amount'].toString()) 
+          : null,
     );
   }
 
@@ -116,6 +137,9 @@ class Order {
       'review': review,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'discount_code_id': discountCodeId,
+      'discount_amount': discountAmount,
+      'original_amount': originalAmount,
     };
   }
 
@@ -183,5 +207,63 @@ class Order {
   // Check if order needs reservation fee payment
   bool get needsReservationFeePayment {
     return !reservationFeePaid && status == 'pending';
+  }
+
+
+
+}
+
+class OrderItem {
+  final int id;
+  final int orderId;
+  final int listingId;
+  final int quantity; // Make sure this is int
+  final String? size;
+  final double price;
+  final double subtotal;
+  final Listing? listing;
+
+  OrderItem({
+    required this.id,
+    required this.orderId,
+    required this.listingId,
+    required this.quantity,
+    this.size,
+    required this.price,
+    required this.subtotal,
+    this.listing,
+  });
+
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value is int) return value.toDouble();
+      if (value is double) return value;
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    return OrderItem(
+      id: json['id'],
+      orderId: json['order_id'],
+      listingId: json['listing_id'],
+      quantity: json['quantity'] ?? 1,
+      size: json['size'],
+      price: parseDouble(json['price']),
+      subtotal: parseDouble(json['subtotal']),
+      listing: json['listing'] != null ? Listing.fromJson(json['listing']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'order_id': orderId,
+      'listing_id': listingId,
+      'quantity': quantity,
+      'size': size,
+      'price': price,
+      'subtotal': subtotal,
+      'listing': listing?.toJson(),
+    };
   }
 }

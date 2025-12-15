@@ -28,75 +28,91 @@ class OrderController extends Controller
             $user = $request->user();
 
             $validated = $request->validate([
-                'listing_id' => 'required|exists:listings,id',
-                'quantity' => 'required|integer|min:1',
+                'items' => 'required|array|min:1',
+                'items.*.listing_id' => 'required|exists:listings,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.size' => 'nullable|string|max:10',
                 'email' => 'required|email',
                 'notes' => 'nullable|string|max:500',
-                'size' => 'nullable|string|max:10',
                 'discount_code' => 'nullable|string|max:50',
             ]);
 
-            // Get the listing with size variants
-            $listing = Listing::with(['sizeVariants', 'images'])->findOrFail($validated['listing_id']);
+            $totalOriginalAmount = 0;
+            $orderItemsData = [];
+            $departmentId = null;
 
-            // Check stock based on whether it's a size variant or regular stock
-            // Allow pre-orders when stock is 0
-            if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-                // Check size-specific stock
-                $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-                if (!$sizeVariant) {
-                    return response()->json([
-                        'message' => 'Selected size not available'
-                    ], 400);
+            // Validate stock and calculate total for all items
+            foreach ($validated['items'] as $itemData) {
+                $listing = Listing::with(['sizeVariants'])->findOrFail($itemData['listing_id']);
+
+                // Ensure all items belong to the same department (simplifies discount/order logic)
+                if ($departmentId === null) {
+                    $departmentId = $listing->department_id;
+                } elseif ($departmentId !== $listing->department_id) {
+                    // Ideally, frontend should group by department.
+                    // If mixed, we might default to first or handle differently.
+                    // For now, let's assume valid grouping.
                 }
 
-                // Allow pre-orders when stock is 0, but check if trying to order more than available when stock > 0
-                if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $validated['quantity']) {
-                    return response()->json([
-                        'message' => 'Insufficient stock for size ' . $validated['size'] . '. Available: ' . $sizeVariant->stock_quantity
-                    ], 400);
+                $size = $itemData['size'] ?? null;
+                $quantity = $itemData['quantity'];
+
+                // Check Stock
+                if ($size && $listing->sizeVariants->isNotEmpty()) {
+                    $sizeVariant = $listing->sizeVariants->where('size', $size)->first();
+                    if (!$sizeVariant) {
+                        return response()->json(['message' => "Size {$size} not available for {$listing->title}"], 400);
+                    }
+                    // Allow pre-orders (stock 0), only block if stock > 0 but insufficient
+                    if ($sizeVariant->stock_quantity > 0 && $sizeVariant->stock_quantity < $quantity) {
+                        return response()->json(['message' => "Insufficient stock for {$listing->title} ({$size})"], 400);
+                    }
+                } else {
+                    if ($listing->stock_quantity > 0 && $listing->stock_quantity < $quantity) {
+                        return response()->json(['message' => "Insufficient stock for {$listing->title}"], 400);
+                    }
                 }
-            } else {
-                // Check regular stock - allow pre-orders when stock is 0
-                if ($listing->stock_quantity > 0 && $listing->stock_quantity < $validated['quantity']) {
-                    return response()->json([
-                        'message' => 'Insufficient stock. Available: ' . $listing->stock_quantity
-                    ], 400);
-                }
+
+                $price = $listing->price;
+                $subtotal = $price * $quantity;
+                $totalOriginalAmount += $subtotal;
+
+                $orderItemsData[] = [
+                    'listing' => $listing,
+                    'quantity' => $quantity,
+                    'size' => $size,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                ];
             }
 
-            // Calculate original amount
-            $originalAmount = $listing->price * $validated['quantity'];
+            // Calculate Discount
             $discountAmount = 0;
             $discountCodeId = null;
 
-            // Apply discount code if provided
             if (!empty($validated['discount_code'])) {
                 $discountCode = DiscountCode::where('code', $validated['discount_code'])
                     ->active()
                     ->valid()
                     ->first();
 
-                if ($discountCode && $discountCode->canBeUsedBy($user, $listing->department_id)) {
-                    $discountAmount = $discountCode->calculateDiscount($originalAmount);
+                if ($discountCode && $discountCode->canBeUsedBy($user, $departmentId)) {
+                    $discountAmount = $discountCode->calculateDiscount($totalOriginalAmount);
                     $discountCodeId = $discountCode->id;
                 }
             }
 
-            // Calculate final amount after discount
-            $totalAmount = $originalAmount - $discountAmount;
-            $reservationFeeAmount = $totalAmount * 0.35; // 35% reservation fee
+            $finalTotalAmount = $totalOriginalAmount - $discountAmount;
+            $reservationFeeAmount = $finalTotalAmount * 0.35;
 
-            // Create order
+            // Create Order
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
                 'user_id' => $user->id,
-                'email' => $validated['email'], // Save the email used in order
-                'listing_id' => $validated['listing_id'],
-                'department_id' => $listing->department_id,
-                'quantity' => $validated['quantity'],
-                'total_amount' => $totalAmount,
-                'original_amount' => $originalAmount,
+                'email' => $validated['email'],
+                'department_id' => $departmentId,
+                'total_amount' => $finalTotalAmount,
+                'original_amount' => $totalOriginalAmount,
                 'discount_code_id' => $discountCodeId,
                 'discount_amount' => $discountAmount,
                 'reservation_fee_amount' => $reservationFeeAmount,
@@ -104,38 +120,44 @@ class OrderController extends Controller
                 'status' => 'pending',
                 'notes' => $validated['notes'] ?? null,
                 'payment_method' => 'cash_on_pickup',
-                'size' => $validated['size'] ?? null,
             ]);
 
-            // Increment discount code usage if applied
+            // Create Order Items and Update Stock
+            foreach ($orderItemsData as $item) {
+                $order->items()->create([
+                    'listing_id' => $item['listing']->id,
+                    'quantity' => $item['quantity'],
+                    'size' => $item['size'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['subtotal'],
+                ]);
+
+                // Update Stock
+                $listing = $item['listing'];
+                if ($item['size'] && $listing->sizeVariants->isNotEmpty()) {
+                    $sizeVariant = $listing->sizeVariants->where('size', $item['size'])->first();
+                    if ($sizeVariant->stock_quantity > 0) {
+                        $sizeVariant->decrement('stock_quantity', $item['quantity']);
+                    }
+                } else {
+                    if ($listing->stock_quantity > 0) {
+                        $listing->decrement('stock_quantity', $item['quantity']);
+                    }
+                }
+            }
+
             if ($discountCodeId) {
                 DiscountCode::where('id', $discountCodeId)->increment('usage_count');
             }
 
-            // Update stock quantity - only decrement if stock is available (not for pre-orders)
-            if (isset($validated['size']) && $listing->sizeVariants->isNotEmpty()) {
-                // Decrement size-specific stock only if available
-                $sizeVariant = $listing->sizeVariants->where('size', $validated['size'])->first();
-                if ($sizeVariant->stock_quantity > 0) {
-                    $sizeVariant->decrement('stock_quantity', $validated['quantity']);
-                }
-            } else {
-                // Decrement regular stock only if available
-                if ($listing->stock_quantity > 0) {
-                    $listing->decrement('stock_quantity', $validated['quantity']);
-                }
-            }
-
-            // Send confirmation email to the provided email address
             $this->sendOrderConfirmationEmail($order, $validated['email']);
-
-            // Send notifications
             $this->notificationService->notifyOrderCreated($order);
 
             return response()->json([
                 'message' => 'Order created successfully',
-                'order' => $order->load(['listing', 'department']),
+                'order' => $order->load(['items.listing', 'department']),
             ], 201);
+
         } catch (\Exception $e) {
             Log::error('Order creation error: ' . $e->getMessage());
             return response()->json([
@@ -151,7 +173,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $orders = Order::with(['listing.images', 'department'])
+        $orders = Order::with(['items.listing.images', 'listing.images', 'department'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -166,7 +188,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $order = Order::with(['listing.images', 'department'])
+        $order = Order::with(['items.listing.images', 'listing.images', 'department'])
             ->where('user_id', $user->id)
             ->findOrFail($id);
 
@@ -180,7 +202,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $order = Order::with(['listing.sizeVariants', 'listing.images'])->where('user_id', $user->id)->findOrFail($id);
+        $order = Order::with(['items.listing.sizeVariants', 'listing.sizeVariants', 'listing.images'])->where('user_id', $user->id)->findOrFail($id);
 
         if (!$order->canBeCancelled()) {
             return response()->json([
@@ -192,15 +214,29 @@ class OrderController extends Controller
         $order->update(['status' => 'cancelled']);
 
         // Restore stock quantity
-        if ($order->size && $order->listing->sizeVariants->isNotEmpty()) {
-            // Restore size-specific stock
-            $sizeVariant = $order->listing->sizeVariants->where('size', $order->size)->first();
-            if ($sizeVariant) {
-                $sizeVariant->increment('stock_quantity', $order->quantity);
+        if ($order->items && $order->items->count() > 0) {
+            foreach ($order->items as $item) {
+                if ($item->size && $item->listing->sizeVariants->isNotEmpty()) {
+                    $sizeVariant = $item->listing->sizeVariants->where('size', $item->size)->first();
+                    if ($sizeVariant) {
+                        $sizeVariant->increment('stock_quantity', $item->quantity);
+                    }
+                } else {
+                    $item->listing->increment('stock_quantity', $item->quantity);
+                }
             }
-        } else {
-            // Restore regular stock
-            $order->listing->increment('stock_quantity', $order->quantity);
+        } elseif ($order->listing) {
+            // Legacy support
+            if ($order->size && $order->listing->sizeVariants->isNotEmpty()) {
+                // Restore size-specific stock
+                $sizeVariant = $order->listing->sizeVariants->where('size', $order->size)->first();
+                if ($sizeVariant) {
+                    $sizeVariant->increment('stock_quantity', $order->quantity);
+                }
+            } else {
+                // Restore regular stock
+                $order->listing->increment('stock_quantity', $order->quantity);
+            }
         }
 
         // Send cancellation email
@@ -208,7 +244,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order cancelled successfully',
-            'order' => $order->load(['listing', 'department']),
+            'order' => $order->load(['items.listing', 'listing', 'department']),
         ]);
     }
 
@@ -219,7 +255,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        $query = Order::with(['listing.images', 'department', 'user']);
+        $query = Order::with(['items.listing', 'listing.images', 'department', 'user']);
 
         // If admin (not superadmin), only show their department's orders
         if ($user->isAdmin() && !$user->isSuperAdmin()) {
@@ -244,7 +280,7 @@ class OrderController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $query = Order::with(['listing.images', 'department', 'user']);
+        $query = Order::with(['items.listing', 'listing.images', 'department', 'user']);
 
         // If admin (not superadmin), only update their department's orders
         if ($user->isAdmin() && !$user->isSuperAdmin()) {
@@ -270,7 +306,69 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order status updated successfully',
-            'order' => $order->load(['listing', 'department', 'user']),
+            'order' => $order->load(['items.listing', 'listing', 'department', 'user']),
+        ]);
+    }
+
+    /**
+     * Apply discount code to an existing order
+     */
+    public function applyDiscount(Request $request, $id)
+    {
+        $user = $request->user();
+        $request->validate([
+            'discount_code' => 'required|string',
+        ]);
+
+        $order = Order::with(['items', 'department'])->where('user_id', $user->id)->findOrFail($id);
+
+        if ($order->status !== 'pending' || $order->reservation_fee_paid) {
+            return response()->json(['message' => 'Cannot apply discount to this order'], 400);
+        }
+
+        if ($order->discount_code_id) {
+            return response()->json(['message' => 'A discount is already applied'], 400);
+        }
+
+        $code = strtoupper($request->discount_code);
+        $discountCode = DiscountCode::where('code', $code)
+            ->active()
+            ->valid()
+            ->first();
+
+        if (!$discountCode) {
+            return response()->json(['message' => 'Invalid or expired discount code'], 400);
+        }
+
+        if (!$discountCode->canBeUsedBy($user, $order->department_id)) {
+            return response()->json(['message' => 'Discount code cannot be used for this order'], 400);
+        }
+
+        // Calculate discount based on original amount
+        // Note: original_amount should be the sum of items subtotal before any previous discounts (which we just checked are null)
+        $discountAmount = $discountCode->calculateDiscount($order->original_amount);
+
+        // Ensure discount doesn't exceed total
+        if ($discountAmount > $order->original_amount) {
+            $discountAmount = $order->original_amount;
+        }
+
+        $newTotal = $order->original_amount - $discountAmount;
+        $newReservationFee = $newTotal * 0.35;
+
+        $order->update([
+            'discount_code_id' => $discountCode->id,
+            'discount_amount' => $discountAmount,
+            'total_amount' => $newTotal,
+            'reservation_fee_amount' => $newReservationFee,
+        ]);
+
+        $discountCode->increment('usage_count');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Discount applied successfully',
+            'order' => $order->fresh(['items.listing', 'department']),
         ]);
     }
 

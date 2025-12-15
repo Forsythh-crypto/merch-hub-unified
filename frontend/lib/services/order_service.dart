@@ -21,34 +21,22 @@ class OrderService {
 
   // Create a new order
   static Future<Map<String, dynamic>> createOrder({
-    required int listingId,
-    required int quantity,
+    required List<Map<String, dynamic>> items, // [{listing_id, quantity, size}]
     required String email,
     String? notes,
-    String? size,
     String? discountCode,
-    double? discountAmount,
   }) async {
     try {
       final headers = await _getHeaders();
       final requestBody = {
-        'listing_id': listingId,
-        'quantity': quantity,
+        'items': items,
         'email': email,
         'notes': notes,
       };
 
-      // Add size if provided
-      if (size != null) {
-        requestBody['size'] = size;
-      }
-
-      // Add discount code and amount if provided
+      // Add discount code if provided
       if (discountCode != null) {
         requestBody['discount_code'] = discountCode;
-      }
-      if (discountAmount != null) {
-        requestBody['discount_amount'] = discountAmount;
       }
 
       // Use authenticated orders endpoint
@@ -328,23 +316,52 @@ class OrderService {
 
   // Rate an order
   static Future<void> rateOrder(int orderId, int rating, String review) async {
-    try {
-      final headers = await _getHeaders();
+    final token = await _getToken(); // Changed from AuthService.getToken() to _getToken() for consistency
+    final response = await http.post(
+      AppConfig.api('orders/$orderId/rate'), // Changed from Uri.parse('${AppConfig.apiBaseUrl}/orders/$orderId/rate') to AppConfig.api() for consistency
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'rating': rating,
+        'review': review,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to rate order'); // Wrapped in Exception for consistency
+    }
+  }
+
+  static Future<Map<String, dynamic>> applyDiscount(int orderId, String code) async {
+    try { // Added try-catch block for consistency
+      final token = await _getToken(); // Changed from AuthService.getToken() to _getToken() for consistency
       final response = await http.post(
-        AppConfig.api('orders/$orderId/rate'),
-        headers: headers,
-        body: jsonEncode({
-          'rating': rating,
-          'review': review,
-        }),
+        AppConfig.api('orders/$orderId/apply-discount'), // Changed from Uri.parse('${AppConfig.apiBaseUrl}/orders/$orderId/apply-discount') to AppConfig.api() for consistency
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'discount_code': code}),
       );
 
-      if (response.statusCode != 200) {
-        final data = jsonDecode(response.body);
-        throw Exception(data['message'] ?? 'Failed to submit rating');
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'],
+          'order': Order.fromJson(data['order']),
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to apply discount',
+        };
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      return {'success': false, 'message': 'Network error: $e'}; // Added network error handling for consistency
     }
   }
 }

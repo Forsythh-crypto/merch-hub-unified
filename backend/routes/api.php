@@ -125,6 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::post('/orders/{id}/upload-receipt', [OrderController::class, 'uploadReceipt']);
     Route::post('/orders/{id}/rate', [OrderController::class, 'rateOrder']);
+    Route::post('/orders/{id}/apply-discount', [OrderController::class, 'applyDiscount']);
 
     // Discount code validation route
     Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate']);

@@ -12,6 +12,7 @@ import '../services/admin_service.dart';
 import '../services/guest_service.dart';
 import 'package:provider/provider.dart';
 import '../services/cart_service.dart';
+import 'cart_screen.dart';
 
 
 class OrderConfirmationScreen extends StatefulWidget {
@@ -32,7 +33,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController(text: '1');
   final _notesController = TextEditingController();
-  final _discountCodeController = TextEditingController();
+
 
   final List<Map<String, dynamic>> _departments = [
     {
@@ -130,10 +131,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   String? _selectedSize;
   final Map<String, int> _sizeQuantities = {};
   double _totalAmount = 0.0;
-  String? _appliedDiscountCode;
-  double _discountAmount = 0.0;
-  bool _isValidatingDiscount = false;
-  double _discountPercentage = 0.0;
+
   String? _userEmail;
 
   @override
@@ -203,106 +201,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     return widget.listing.stockQuantity;
   }
 
-  Future<void> _validateDiscountCode() async {
-    final code = _discountCodeController.text.trim().toUpperCase();
-    if (code.isEmpty) return;
 
-    setState(() => _isValidatingDiscount = true);
-
-    try {
-      // Use actual API call to validate discount code
-      final result = await OrderService.validateDiscountCode(
-        code: code,
-        orderAmount: _totalAmount,
-        departmentId: widget.listing.departmentId,
-      );
-
-      if (result['success'] && result['valid']) {
-         final discountCode = result['discount_code'];
-         final discountAmount = result['discount_amount'] as double;
-         
-         // Calculate discount percentage for display
-         final discountPercentage = discountCode['type'] == 'percentage' 
-             ? double.tryParse(discountCode['value'].toString()) ?? 0.0
-             : (discountAmount / _totalAmount * 100);
-
-        setState(() {
-          _appliedDiscountCode = code;
-          _discountAmount = discountAmount;
-          _discountPercentage = discountPercentage;
-        });
-
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Success'),
-              content: Text(result['message'] ?? 'Discount applied successfully'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-      } else {
-        setState(() {
-          _appliedDiscountCode = null;
-          _discountAmount = 0.0;
-          _discountPercentage = 0.0;
-        });
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Error'),
-              content: Text(result['message'] ?? 'Invalid discount code'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _appliedDiscountCode = null;
-        _discountAmount = 0.0;
-        _discountPercentage = 0.0;
-      });
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Error validating discount code: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-    } finally {
-      setState(() => _isValidatingDiscount = false);
-    }
-  }
-
-  void _removeDiscount() {
-    setState(() {
-      _appliedDiscountCode = null;
-      _discountAmount = 0.0;
-      _discountPercentage = 0.0;
-      _discountCodeController.clear();
-    });
-  }
 
   Future<void> _submitOrder() async {
     if (!_formKey.currentState!.validate()) return;
@@ -336,7 +235,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final isPreOrder = _getCurrentStock() <= 0;
     final orderType = isPreOrder ? 'Pre-order' : 'Reservation';
     final quantity = int.tryParse(_quantityController.text) ?? 0;
-    final totalAmount = _totalAmount - _discountAmount;
+    final totalAmount = _totalAmount;
     
     return await showDialog<bool>(
       context: context,
@@ -504,17 +403,18 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
     try {
       final result = await OrderService.createOrder(
-        listingId: widget.listing.id,
-        quantity: int.parse(_quantityController.text),
-        email: _userEmail ?? '',
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-        size: _selectedSize, // Add size parameter
-        discountCode: _appliedDiscountCode,
-        discountAmount: _discountAmount,
-      );
-
+      items: [
+        {
+          'listing_id': widget.listing.id,
+          'quantity': int.parse(_quantityController.text),
+          'size': _selectedSize,
+        }
+      ],
+      email: _userEmail ?? '',
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+    );
       if (result['success']) {
         if (mounted) {
           // Navigate to payment screen for reservation fee
@@ -523,7 +423,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             MaterialPageRoute(
               builder: (context) => ReservationFeePaymentScreen(
                 order: result['order'],
-                totalAmount: _totalAmount - _discountAmount,
+                totalAmount: _totalAmount,
               ),
             ),
           );
@@ -610,7 +510,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   void dispose() {
     _quantityController.dispose();
     _notesController.dispose();
-    _discountCodeController.dispose();
+
     super.dispose();
   }
 
@@ -619,6 +519,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (Match m) => '${m[1]},');
   }
+
 
   String _getImageUrl() {
     if (widget.listing.imagePath == null || widget.listing.imagePath!.isEmpty) {
@@ -737,13 +638,28 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Text(
-                                        variant.size,
-                                        style: TextStyle(
-                                          color: isSelected ? Colors.white : Colors.black87,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Montserrat',
-                                        ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            variant.size,
+                                            style: TextStyle(
+                                              color: isSelected ? Colors.white : Colors.black87,
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: 'Montserrat',
+                                            ),
+                                          ),
+                                          if (variant.stockQuantity <= 0)
+                                            Text(
+                                              '(pre-order)',
+                                              style: TextStyle(
+                                                color: isSelected ? Colors.white70 : Colors.red[300],
+                                                fontSize: 10,
+                                                fontFamily: 'Montserrat',
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
                                   );
@@ -807,49 +723,49 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                      height: 50,
                      child: Row(
                        children: [
-                         Expanded(
-                           child: OutlinedButton(
-                             onPressed: () {
-                               _addToCart(); 
-                             },
-                             style: OutlinedButton.styleFrom(
-                               side: const BorderSide(color: Color(0xFF1E3A8A)),
-                               shape: RoundedRectangleBorder(
-                                 borderRadius: BorderRadius.circular(12),
-                               ),
-                               padding: const EdgeInsets.symmetric(vertical: 0), // maximized height
-                             ),
-                             child: const Text(
-                               'Add to Cart',
-                               style: TextStyle(
-                                 fontSize: 14, 
-                                 fontWeight: FontWeight.bold, 
-                                 fontFamily: 'Montserrat',
-                                 color: Color(0xFF1E3A8A)
-                               ),
-                             ),
-                           ),
-                         ),
-                         const SizedBox(width: 12),
-                         Expanded(
-                           child: ElevatedButton(
-                             onPressed: () {
-                               Navigator.pop(context); // Close sheet
-                               _submitOrder(); // Proceed to order
-                             },
-                             style: ElevatedButton.styleFrom(
-                               backgroundColor: const Color(0xFF1E3A8A),
-                               foregroundColor: Colors.white,
-                               shape: RoundedRectangleBorder(
-                                 borderRadius: BorderRadius.circular(12),
-                               ),
-                             ),
-                             child: const Text(
-                               'Buy Now',
-                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
-                             ),
-                           ),
-                         ),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                _addToCart(); 
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF1E3A8A)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 0),
+                              ),
+                              child: const Text(
+                                'Add to Cart',
+                                style: TextStyle(
+                                  fontSize: 14, 
+                                  fontWeight: FontWeight.bold, 
+                                  fontFamily: 'Montserrat',
+                                  color: Color(0xFF1E3A8A)
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Close sheet
+                                _submitOrder(); // Proceed to order
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A8A),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Buy Now',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
+                              ),
+                            ),
+                          ),
                        ],
                      ),
                    ),
@@ -996,16 +912,16 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const UserOrdersScreen(),
+                      builder: (context) => const CartScreen(),
                     ),
                   );
                 },
                 icon: const Icon(
-                  Icons.shopping_bag_outlined,
+                  Icons.shopping_cart_outlined,
                   size: 28,
                   color: Colors.black,
                 ),
-                tooltip: 'My Orders',
+                tooltip: 'My Cart',
               ),
             ),
           ],
@@ -1313,112 +1229,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         // Size and Quantity selection moved to bottom sheet
 
 
-                        const SizedBox(height: 24),
-
-                        // Discount Code Section
-                        Text(
-                          'Discount Code',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _discountCodeController,
-                                textCapitalization: TextCapitalization.characters,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter code',
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton(
-                              onPressed: _isValidatingDiscount ? null : _validateDiscountCode,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black87,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                              ),
-                              child: _isValidatingDiscount
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : const Text('Apply'),
-                            ),
-                          ],
-
-                        ),
-
-                        // Applied Discount Display
-                        if (_appliedDiscountCode != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.green[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green[200]!),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green[600],
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Discount "$_appliedDiscountCode" applied: -₱${_formatPrice(_discountAmount)}',
-                                    style: TextStyle(
-                                      color: Colors.green[700],
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Montserrat',
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: _removeDiscount,
-                                  icon: Icon(
-                                    Icons.close,
-                                    color: Colors.green[600],
-                                    size: 20,
-                                  ),
-                                  constraints: const BoxConstraints(),
-                                  padding: EdgeInsets.zero,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 16),
-
                         // Notes Input
                         TextFormField(
                           controller: _notesController,
@@ -1474,30 +1284,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                           ],
                         ),
-                        if (_discountAmount > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Discount ($_appliedDiscountCode):',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.green[600],
-                                  fontFamily: 'Montserrat',
-                                ),
-                              ),
-                              Text(
-                                '-₱${_discountAmount.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.green[600],
-                                  fontFamily: 'Montserrat',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+
                         const Divider(thickness: 2),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1511,7 +1298,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             Text(
-                              '₱${_formatPrice(_totalAmount - _discountAmount)}',
+                              '₱${_formatPrice(_totalAmount)}',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
