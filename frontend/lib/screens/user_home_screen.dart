@@ -333,9 +333,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
           ListTile(
             leading: const Icon(Icons.search, color: Color(0xFF1E3A8A)),
             title: const Text('Browse Products', style: TextStyle(fontFamily: 'Montserrat')),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/user-listings');
+              await Navigator.pushNamed(context, '/user-listings');
+              if (mounted) _checkGuestStatus();
             },
           ),
           if (!_isGuest)
@@ -770,9 +771,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
 
   Widget _buildProductCard(Listing listing) {
     return InkWell(
-      onTap: () {
+      onTap: () async {
         // Navigate directly to order confirmation screen to show product details
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => OrderConfirmationScreen(
@@ -781,6 +782,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
             ),
           ),
         );
+        if (mounted) _checkGuestStatus();
       },
       child: Container(
         width: 200,

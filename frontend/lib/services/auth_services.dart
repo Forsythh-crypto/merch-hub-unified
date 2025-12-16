@@ -236,7 +236,7 @@ class AuthService {
   }
 
   // Update profile
-  static Future<bool> updateProfile({String? name, String? password}) async {
+  static Future<bool> updateProfile({String? name, String? password, String? currentPassword}) async {
     try {
       final token = await getToken();
       if (token == null) return false;
@@ -246,6 +246,9 @@ class AuthService {
       if (password != null) {
         body['password'] = password;
         body['password_confirmation'] = password;
+        if (currentPassword != null) {
+          body['current_password'] = currentPassword;
+        }
       }
 
       final response = await http.post(

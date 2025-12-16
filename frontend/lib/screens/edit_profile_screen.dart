@@ -13,9 +13,11 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  final _currentPasswordController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureCurrentPassword = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -64,6 +66,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final success = await AuthService.updateProfile(
       name: _nameController.text,
       password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
+      currentPassword: _passwordController.text.isNotEmpty ? _currentPasswordController.text : null,
     );
 
     setState(() => _isLoading = false);
@@ -217,6 +220,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: Colors.grey[600],
                     fontFamily: 'Montserrat',
                   ),
+                ),
+                const SizedBox(height: 16),
+                // Current Password Field
+                TextFormField(
+                  controller: _currentPasswordController,
+                  obscureText: _obscureCurrentPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureCurrentPassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (_passwordController.text.isNotEmpty && (value == null || value.isEmpty)) {
+                      return 'Current password is required to change password';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -373,6 +404,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _currentPasswordController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();

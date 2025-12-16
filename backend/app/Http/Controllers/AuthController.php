@@ -226,6 +226,14 @@ class AuthController extends Controller
         }
 
         if ($request->has('password') && !empty($validated['password'])) {
+            $request->validate([
+                'current_password' => 'required|string',
+            ]);
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json(['message' => 'Incorrect current password'], 400);
+            }
+
             $user->password = Hash::make($validated['password']);
         }
 

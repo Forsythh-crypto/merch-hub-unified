@@ -73,6 +73,12 @@ class _LoginScreenState extends State<LoginScreen> {
         // Navigate based on role or return route
         if (!mounted) return;
 
+        // If return route is 'pop', just close the screen (for modal flows)
+        if (widget.returnRoute == 'pop') {
+           Navigator.pop(context, true);
+           return;
+        }
+
         // If there's a return route, navigate directly to it
         if (widget.returnRoute != null) {
           await showDialog(

@@ -157,6 +157,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       setState(() {
         _isGuestMode = isGuest;
       });
+      if (!isGuest) {
+        await _getUserEmail();
+      }
     }
   }
 
@@ -211,7 +214,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       final shouldLogin = await GuestService.promptLogin(
          context,
          'checkout',
-         returnRoute: '/order-confirmation',
+         returnRoute: 'pop',
          returnArguments: {'listing': widget.listing},
        );
       if (shouldLogin) {
@@ -469,6 +472,24 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   Future<void> _addToCart() async {
+    // Check if user is guest and prompt login
+    if (_isGuestMode) {
+      final shouldLogin = await GuestService.promptLogin(
+         context,
+         'add_to_cart',
+         returnRoute: 'pop',
+         returnArguments: {'listing': widget.listing},
+       );
+      if (shouldLogin) {
+        // Refresh guest status after potential login
+        await _checkGuestStatus();
+        // If still guest after login prompt, don't proceed
+        if (_isGuestMode) return;
+      } else {
+        return; // User chose not to login
+      }
+    }
+
     if (_selectedSize == null && widget.listing.sizeVariants != null && widget.listing.sizeVariants!.isNotEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
