@@ -782,7 +782,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'Buy Now',
+                                'Reserve Now',
                                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                               ),
                             ),
