@@ -236,13 +236,14 @@ class AuthService {
   }
 
   // Update profile
-  static Future<bool> updateProfile({String? name, String? password, String? currentPassword}) async {
+  static Future<bool> updateProfile({String? name, String? password, String? currentPassword, String? idNumber}) async {
     try {
       final token = await getToken();
       if (token == null) return false;
 
       final Map<String, dynamic> body = {};
       if (name != null) body['name'] = name;
+      if (idNumber != null) body['id_number'] = idNumber;
       if (password != null) {
         body['password'] = password;
         body['password_confirmation'] = password;

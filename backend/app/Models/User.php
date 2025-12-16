@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'role',
         'department_id',
+        'id_number',
         'verification_code',
     ];
 
@@ -109,6 +110,7 @@ class User extends Authenticatable
             'role' => $this->role,
             'departmentId' => $this->department_id,
             'departmentName' => $this->department?->name,
+            'idNumber' => $this->id_number,
         ];
     }
 }

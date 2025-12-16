@@ -84,6 +84,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|confirmed',
             'department_id' => 'required|exists:departments,id',
             'role' => 'required|in:student,admin,superadmin',
+            'id_number' => ['nullable', 'string', 'regex:/^\d{2}-\d{4}-\d{3}$/', 'unique:users,id_number'],
         ]);
 
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -94,6 +95,7 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
             'department_id' => $validated['department_id'],
             'role' => $validated['role'],
+            'id_number' => $validated['id_number'],
             'verification_code' => $code,
         ]);
 
@@ -219,10 +221,15 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'password' => 'sometimes|nullable|string|min:6|confirmed',
+            'id_number' => ['sometimes', 'nullable', 'string', 'regex:/^\d{2}-\d{4}-\d{3}$/', 'unique:users,id_number,' . $user->id],
         ]);
 
         if ($request->has('name')) {
             $user->name = $validated['name'];
+        }
+
+        if ($request->has('id_number')) {
+            $user->id_number = $validated['id_number'];
         }
 
         if ($request->has('password') && !empty($validated['password'])) {

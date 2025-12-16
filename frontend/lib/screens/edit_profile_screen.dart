@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../services/auth_services.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -13,9 +14,16 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _idNumberController;
   final _currentPasswordController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  final _idNumberMask = MaskTextInputFormatter(
+    mask: '##-####-###', 
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
   bool _isLoading = false;
   bool _obscureCurrentPassword = true;
   bool _obscurePassword = true;
@@ -56,6 +64,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.userData['name']);
+    _idNumberController = TextEditingController(text: widget.userData['idNumber'] ?? '');
   }
 
   Future<void> _updateProfile() async {
@@ -65,6 +74,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final success = await AuthService.updateProfile(
       name: _nameController.text,
+      idNumber: _idNumberController.text.isNotEmpty ? _idNumberController.text : null,
       password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
       currentPassword: _passwordController.text.isNotEmpty ? _currentPasswordController.text : null,
     );
@@ -198,6 +208,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // ID Number Field
+                TextFormField(
+                  controller: _idNumberController,
+                  inputFormatters: [_idNumberMask],
+                  decoration: InputDecoration(
+                    labelText: 'ID Number (Optional)',
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty && value.length != 11) {
+                         return 'Invalid ID format';
                     }
                     return null;
                   },
@@ -404,6 +437,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _idNumberController.dispose();
     _currentPasswordController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();

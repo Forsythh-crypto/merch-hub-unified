@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../styles/auth_styles.dart';
@@ -22,6 +23,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _idNumberController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -30,6 +32,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String? _selectedDepartment;
   String _selectedRole = 'student';
+  
+  final _idNumberMask = MaskTextInputFormatter(
+    mask: '##-####-###', 
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
   
   // Password validation trackers
   bool _hasMinLength = false;
@@ -118,6 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _idNumberController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -163,6 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         },
         body: jsonEncode({
           'name': _nameController.text,
+          'id_number': _idNumberController.text,
           'email': _emailController.text,
           'password': _passwordController.text,
           'password_confirmation': _confirmPasswordController.text,
@@ -333,6 +343,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter your full name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // ID Number Field
+                            TextFormField(
+                              controller: _idNumberController,
+                              style: AuthStyles.inputTextStyle,
+                              inputFormatters: [_idNumberMask],
+                              decoration: AuthStyles.getInputDecoration(
+                                labelText: 'ID Number (XX-XXXX-XXX)',
+                                prefixIcon: Icons.badge_outlined,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return null; // Optional
+                                }
+                                if (value.length != 11) { // 2+1+4+1+3 = 11 characters
+                                   return 'Invalid ID format';
                                 }
                                 return null;
                               },

@@ -207,121 +207,129 @@ class _UserHomeScreenState extends State<UserHomeScreen> with WidgetsBindingObse
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1E3A8A),
-                  Color(0xFF1E3A8A),
-                ],
-              ),
+              color: Color(0xFF1E3A8A),
             ),
-            child: _isGuest
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Image.asset(
-                        'assets/logos/uddess_black.png',
-                        height: 60,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Text(
-                            'UDD ESSENTIALS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              fontFamily: 'Montserrat',
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Browsing as Guest',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontFamily: 'Montserrat',
+            child: SafeArea(
+              child: _isGuest
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.asset(
+                          'assets/logos/uddess_black.png',
+                          height: 60,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Text(
+                              'UDD ESSENTIALS',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                fontFamily: 'Montserrat',
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Login to access all features',
-                        style: TextStyle(
-                          color: Colors.white60,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          fontFamily: 'Montserrat',
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Browsing as Guest',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontFamily: 'Montserrat',
+                          ),
                         ),
-                      ),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Login to access all features',
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            fontFamily: 'Montserrat',
+                          ),
                         ),
-                        child: CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
-                          child: ClipOval(
-                            child: Image.asset(
-                              _getDepartmentLogo(_userData),
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Text(
-                                  _userData?['name']?[0]?.toUpperCase() ?? 'U',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E3A8A),
-                                  ),
-                                );
-                              },
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.white,
+                            child: ClipOval(
+                              child: Image.asset(
+                                _getDepartmentLogo(_userData),
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Text(
+                                    _userData?['name']?[0]?.toUpperCase() ?? 'U',
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E3A8A),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _userData?['name'] ?? 'User',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Montserrat',
+                        const SizedBox(height: 10),
+                        Text(
+                          _userData?['name'] ?? 'User',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Montserrat',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        _userData?['email'] ?? '',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          fontFamily: 'Montserrat',
+                        Text(
+                          _userData?['email'] ?? '',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14,
+                            fontFamily: 'Montserrat',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                        if (_userData?['idNumber'] != null && _userData!['idNumber'].toString().isNotEmpty)
+                          Text(
+                            _userData!['idNumber'],
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 14,
+                              fontFamily: 'Montserrat',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.home, color: Color(0xFF1E3A8A)),
