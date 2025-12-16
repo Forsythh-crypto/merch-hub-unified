@@ -4,6 +4,99 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 
 class AuthService {
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        AppConfig.api('forgot-password'),
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: jsonEncode({'email': email}),
+      );
+
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Code sent successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'An error occurred',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyResetCode(String email, String code) async {
+    try {
+      final response = await http.post(
+        AppConfig.api('verify-reset-code'),
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: jsonEncode({'email': email, 'code': code}),
+      );
+
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Code verified',
+          'valid': data['valid'] ?? false,
+        };
+      } else {
+         return {
+          'success': false,
+          'message': data['message'] ?? 'Invalid code',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error occurred'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> resetPassword(String email, String code, String password, String passwordConfirmation) async {
+    try {
+      final response = await http.post(
+        AppConfig.api('reset-password'),
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'code': code,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Password reset successfully',
+        };
+      } else {
+         return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to reset password',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error occurred'};
+    }
+  }
+
   static Future<bool> login(String email, String password) async {
     try {
       final response = await http.post(

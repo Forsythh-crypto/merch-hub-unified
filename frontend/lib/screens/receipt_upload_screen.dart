@@ -255,18 +255,49 @@ class _ReceiptUploadScreenState extends State<ReceiptUploadScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            'Product: ${widget.order.listing?.title ?? 'Unknown Product'}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Montserrat',
+                          if (widget.order.items != null && widget.order.items!.isNotEmpty)
+                            ...widget.order.items!.map((item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Product: ${item.listing?.title ?? 'Unknown Product'}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontFamily: 'Montserrat',
+                                    ),
+                                  ),
+                                  if (item.size != null)
+                                    Text(
+                                      'Size: ${item.size}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontFamily: 'Montserrat',
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  Text(
+                                    'Quantity: ${item.quantity}',
+                                    style: const TextStyle(fontFamily: 'Montserrat'),
+                                  ),
+                                ],
+                              ),
+                            ))
+                          else ...[
+                            Text(
+                              'Product: ${widget.order.listing?.title ?? 'Unknown Product'}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Montserrat',
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Quantity: ${widget.order.quantity}',
-                            style: const TextStyle(fontFamily: 'Montserrat'),
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Quantity: ${widget.order.quantity}',
+                              style: const TextStyle(fontFamily: 'Montserrat'),
+                            ),
+                          ],
                           const SizedBox(height: 4),
                           Text(
                             'Total Amount: ₱${widget.order.totalAmount.toStringAsFixed(2)}',

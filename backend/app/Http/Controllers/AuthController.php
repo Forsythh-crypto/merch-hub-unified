@@ -12,6 +12,70 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    public function forgotPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        // Generate new verification code
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->verification_code = $code;
+        $user->save();
+
+        // Respond immediately to avoid timing attacks/leaks, but still send the email
+        // In a real production app, this should be queued.
+        $this->sendVerificationEmail($user, $code);
+
+        return response()->json([
+            'message' => 'If an account exists with this email, a verification code has been sent.',
+        ]);
+    }
+
+    public function verifyResetCode(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'code' => 'required|string|size:6',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if ($user->verification_code !== $validated['code']) {
+            return response()->json(['message' => 'Invalid verification code'], 400);
+        }
+
+        return response()->json([
+            'message' => 'Verification code is valid',
+            'valid' => true
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if ($user->verification_code !== $validated['code']) {
+            return response()->json(['message' => 'Invalid verification code'], 400);
+        }
+
+        // Update password and clear verification code
+        $user->password = Hash::make($validated['password']);
+        $user->verification_code = null;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password reset successfully. You can now login with your new password.',
+        ]);
+    }
     public function register(Request $request)
     {
         $validated = $request->validate([

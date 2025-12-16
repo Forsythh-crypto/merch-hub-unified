@@ -4,6 +4,7 @@ import 'screens/splash_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/superadmin_dashboard.dart';
 import 'screens/admin_listings_screen.dart';
@@ -47,6 +48,7 @@ class UDDEssentialsApp extends StatelessWidget {
         '/welcome': (context) => const WelcomeScreen(),
         '/register': (context) => const RegisterScreen(),
         '/login': (context) => const LoginScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/home': (context) => const HomeScreen(),
         '/superadmin': (context) {
           final args =
