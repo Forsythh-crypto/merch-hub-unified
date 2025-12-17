@@ -137,12 +137,12 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: Text('Error loading data: $e'),
+          title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+          content: Text('Error loading data: $e', style: const TextStyle(fontFamily: 'Montserrat')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
             ),
           ],
         ),
@@ -191,8 +191,10 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                   const SizedBox(height: 16),
                   TextField(
                     controller: _titleController,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
                       labelText: 'Product Title',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.title),
                     ),
@@ -200,8 +202,10 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                   const SizedBox(height: 16),
                   TextField(
                     controller: _descriptionController,
+                    style: const TextStyle(fontFamily: 'Montserrat'),
                     decoration: const InputDecoration(
                       labelText: 'Description',
+                      labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.description),
                     ),
@@ -213,11 +217,13 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                       Expanded(
                         child: TextField(
                           controller: _priceController,
+                          style: const TextStyle(fontFamily: 'Montserrat'),
                           decoration: const InputDecoration(
                             labelText: 'Price',
+                            labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                             border: OutlineInputBorder(),
                             prefixText: '₱ ',
-                            prefixStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            prefixStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                           ),
                           keyboardType: TextInputType.number,
                         ),
@@ -227,8 +233,10 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                         Expanded(
                           child: TextField(
                             controller: _stockController,
+                            style: const TextStyle(fontFamily: 'Montserrat'),
                             decoration: const InputDecoration(
                               labelText: 'Stock Quantity',
+                              labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.inventory),
                             ),
@@ -244,15 +252,17 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                     width: double.infinity,
                     child: DropdownButtonFormField<String>(
                       value: selectedStatus,
+                      style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                       decoration: const InputDecoration(
                         labelText: 'Status',
+                        labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.flag),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                        DropdownMenuItem(value: 'approved', child: Text('Approved')),
-                        DropdownMenuItem(value: 'rejected', child: Text('Rejected')),
+                        DropdownMenuItem(value: 'pending', child: Text('Pending', style: TextStyle(fontFamily: 'Montserrat'))),
+                        DropdownMenuItem(value: 'approved', child: Text('Approved', style: TextStyle(fontFamily: 'Montserrat'))),
+                        DropdownMenuItem(value: 'rejected', child: Text('Rejected', style: TextStyle(fontFamily: 'Montserrat'))),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -283,15 +293,17 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                                   ),
                                 ),
                                 SizedBox(width: 12),
-                                Text('Loading departments...'),
+                                Text('Loading departments...', style: TextStyle(fontFamily: 'Montserrat')),
                               ],
                             ),
                           )
                         : DropdownButtonFormField<int>(
                             value: selectedDepartmentId,
+                            style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                             isExpanded: true, // Fix for overflow
                             decoration: const InputDecoration(
                               labelText: 'Department',
+                              labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.business),
                             ),
@@ -300,6 +312,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                                       value: dept.id,
                                       child: Text(
                                         dept.name,
+                                        style: const TextStyle(fontFamily: 'Montserrat'),
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
                                       ),
@@ -334,21 +347,23 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                                   ),
                                 ),
                                 SizedBox(width: 12),
-                                Text('Loading categories...'),
+                                Text('Loading categories...', style: TextStyle(fontFamily: 'Montserrat')),
                               ],
                             ),
                           )
                         : DropdownButtonFormField<int>(
                             value: selectedCategoryId,
+                            style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
                             decoration: const InputDecoration(
                               labelText: 'Category',
+                              labelStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.black54),
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.category),
                             ),
                             items: categories
                                 .map((cat) => DropdownMenuItem<int>(
                                       value: cat.id,
-                                      child: Text(cat.name),
+                                      child: Text(cat.name, style: const TextStyle(fontFamily: 'Montserrat')),
                                     ))
                                 .toList(),
                             onChanged: (value) {
@@ -414,7 +429,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Cancel'),
+                          child: const Text('Cancel', style: TextStyle(fontFamily: 'Montserrat')),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -427,7 +442,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Update Listing'),
+                          child: const Text('Update Listing', style: TextStyle(fontFamily: 'Montserrat')),
                         ),
                       ),
                     ],
@@ -454,6 +469,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: Color(0xFF1E3A8A),
+          fontFamily: 'Montserrat',
         ),
       ),
     );
@@ -471,7 +487,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
         children: [
           const Text(
             'Stock per Size:',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, fontFamily: 'Montserrat'),
           ),
           const SizedBox(height: 16),
           GridView.builder(
@@ -515,6 +531,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
+                        fontFamily: 'Montserrat',
                         color: isAvailable
                             ? Colors.green[700]
                             : Colors.orange[700],
@@ -523,8 +540,9 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                   ),
                   const SizedBox(height: 4),
                   Expanded(
-                    child: TextField(
-                      controller: controller,
+                      child: TextField(
+                        controller: controller,
+                        style: const TextStyle(fontFamily: 'Montserrat'),
                       decoration: InputDecoration(
                         hintText: '0',
                         border: OutlineInputBorder(
@@ -591,7 +609,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
               children: [
                 const Text(
                   'Current Images:',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, fontFamily: 'Montserrat'),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -709,7 +727,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                   SizedBox(height: 8),
                   Text(
                     'No Images',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    style: TextStyle(color: Colors.grey, fontSize: 16, fontFamily: 'Montserrat'),
                   ),
                 ],
               ),
@@ -722,7 +740,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
               children: [
                 const Text(
                   'New Images:',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, fontFamily: 'Montserrat'),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -827,12 +845,12 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Error'),
-                          content: Text('Error picking images: $e'),
+                          title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+                          content: Text('Error picking images: $e', style: const TextStyle(fontFamily: 'Montserrat')),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
+                              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
                             ),
                           ],
                         ),
@@ -840,7 +858,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                     }
                   },
                   icon: const Icon(Icons.photo_library),
-                  label: const Text('Gallery'),
+                  label: const Text('Gallery', style: TextStyle(fontFamily: 'Montserrat')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
@@ -868,12 +886,12 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Error'),
-                          content: Text('Error taking photo: $e'),
+                          title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+                          content: Text('Error taking photo: $e', style: const TextStyle(fontFamily: 'Montserrat')),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
+                              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
                             ),
                           ],
                         ),
@@ -881,7 +899,7 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                     }
                   },
                   icon: const Icon(Icons.camera_alt),
-                  label: const Text('Camera'),
+                  label: const Text('Camera', style: TextStyle(fontFamily: 'Montserrat')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
@@ -901,12 +919,12 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Please enter a product title'),
+          title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+          content: const Text('Please enter a product title', style: TextStyle(fontFamily: 'Montserrat')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
             ),
           ],
         ),
@@ -955,12 +973,12 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Listing updated successfully'),
+          title: const Text('Success', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+          content: const Text('Listing updated successfully', style: TextStyle(fontFamily: 'Montserrat')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
             ),
           ],
         ),
@@ -973,12 +991,12 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: Text('Error updating listing: $e'),
+          title: const Text('Error', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold)),
+          content: Text('Error updating listing: $e', style: const TextStyle(fontFamily: 'Montserrat')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: const Text('OK', style: TextStyle(fontFamily: 'Montserrat')),
             ),
           ],
         ),
