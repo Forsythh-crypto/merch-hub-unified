@@ -630,6 +630,24 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+                              if (user.idNumber != null && user.idNumber!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.badge_outlined, size: 14, color: Colors.grey[500]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      user.idNumber!,
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                               const SizedBox(height: 12),
                               Wrap(
                                 spacing: 8,
@@ -1736,8 +1754,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
         final query = _searchQuery.toLowerCase();
         final name = user.name.toLowerCase();
         final email = user.email.toLowerCase();
+        final idNumber = user.idNumber?.toLowerCase() ?? '';
 
-        if (!name.contains(query) && !email.contains(query)) {
+        if (!name.contains(query) && 
+            !email.contains(query) && 
+            !idNumber.contains(query)) {
           return false;
         }
       }

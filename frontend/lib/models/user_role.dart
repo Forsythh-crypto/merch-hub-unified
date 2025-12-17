@@ -8,8 +8,9 @@ class UserSession {
   final String name;
   final String email;
   final UserRole role;
-  final int? departmentId; // null for superAdmin, specific dept for admin
+  final int? departmentId;
   final String? departmentName;
+  final String? idNumber;
 
   UserSession({
     required this.userId,
@@ -18,6 +19,7 @@ class UserSession {
     required this.role,
     this.departmentId,
     this.departmentName,
+    this.idNumber,
   });
 
   bool get isSuperAdmin => role == UserRole.superAdmin;
@@ -54,6 +56,7 @@ class UserSession {
       role: role,
       departmentId: json['departmentId'],
       departmentName: json['departmentName'],
+      idNumber: json['idNumber'],
     );
   }
 
@@ -78,6 +81,7 @@ class UserSession {
       'role': roleString,
       'departmentId': departmentId,
       'departmentName': departmentName,
+      'idNumber': idNumber,
     };
   }
 

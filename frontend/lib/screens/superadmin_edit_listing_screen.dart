@@ -214,9 +214,10 @@ class _SuperAdminEditListingScreenState extends State<SuperAdminEditListingScree
                         child: TextField(
                           controller: _priceController,
                           decoration: const InputDecoration(
-                            labelText: 'Price (₱)',
+                            labelText: 'Price',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.attach_money),
+                            prefixText: '₱ ',
+                            prefixStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           keyboardType: TextInputType.number,
                         ),

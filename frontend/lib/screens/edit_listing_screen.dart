@@ -142,187 +142,200 @@ class _EditListingScreenState extends State<EditListingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50], // Light background for contrast
       appBar: AppBar(
         title: const Text(
           'Edit Listing',
-          style: TextStyle(fontFamily: 'Montserrat'),
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: Stack(
         children: [
           SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Basic Information Section
-                  _buildSectionHeader('Basic Information'),
-                  const SizedBox(height: 16),
-                  
-                  TextField(
-                    controller: _titleController,
-                    enabled: !_isLoading,
-                    style: const TextStyle(fontFamily: 'Montserrat'),
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
-                      border: OutlineInputBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Basic Information Card
+                _buildSectionCard(
+                  title: 'Basic Information',
+                  children: [
+                    _buildTextField(
+                      controller: _titleController,
+                      label: 'Title',
+                      enabled: !_isLoading,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  TextField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    enabled: !_isLoading,
-                    style: const TextStyle(fontFamily: 'Montserrat'),
-                    decoration: const InputDecoration(
-                      labelText: 'Description (Optional)',
-                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
-                      hintText: 'Enter product description (optional)',
-                      hintStyle: TextStyle(fontFamily: 'Montserrat'),
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Description (Optional)',
+                      hint: 'Enter product description',
+                      maxLines: 3,
+                      enabled: !_isLoading,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  TextField(
-                    controller: _priceController,
-                    keyboardType: TextInputType.number,
-                    enabled: !_isLoading,
-                    style: const TextStyle(fontFamily: 'Montserrat'),
-                    decoration: const InputDecoration(
-                      labelText: 'Price',
-                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
-                      border: OutlineInputBorder(),
-                      prefixText: '₱',
-                      prefixStyle: TextStyle(fontFamily: 'Montserrat'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Stock field - only show if not clothing or size variants are hidden
-                  if (!_isClothingCategory || !_shouldShowSizeVariants)
-                    Column(
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        TextField(
-                          controller: _stockController,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(fontFamily: 'Montserrat'),
-                          decoration: const InputDecoration(
-                            labelText: 'Stock Quantity',
-                            labelStyle: TextStyle(fontFamily: 'Montserrat'),
-                            border: OutlineInputBorder(),
+                        Expanded(
+                          child: _buildTextField(
+                            controller: _priceController,
+                            label: 'Price',
+                            prefix: '₱',
+                            isNumber: true,
+                            enabled: !_isLoading,
                           ),
                         ),
-                        const SizedBox(height: 16),
                       ],
                     ),
-                  
-                  // Category Selection
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                      labelStyle: TextStyle(fontFamily: 'Montserrat'),
-                      border: OutlineInputBorder(),
-                    ),
-                    style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black),
-                    value: _selectedCategoryId,
-                    items: _categories
-                        .map((cat) => DropdownMenuItem<int>(
-                              value: cat.id,
-                              child: Text(
-                                cat.name,
-                                style: const TextStyle(fontFamily: 'Montserrat'),
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        final previousCategoryId = _selectedCategoryId;
-                        _selectedCategoryId = value;
-                        
-                        // Check if category type changed (clothing <-> non-clothing)
-                        if (previousCategoryId != null && value != null) {
-                          final previousCategory = _categories.firstWhere(
-                            (cat) => cat.id == previousCategoryId,
-                            orElse: () => Category(id: 0, name: ''),
-                          );
-                          final newCategory = _categories.firstWhere(
-                            (cat) => cat.id == value,
-                            orElse: () => Category(id: 0, name: ''),
-                          );
+                    const SizedBox(height: 16),
+                    
+                    // Stock field - only show if not clothing or size variants are hidden
+                    if (!_isClothingCategory || !_shouldShowSizeVariants)
+                      Column(
+                        children: [
+                          _buildTextField(
+                            controller: _stockController,
+                            label: 'Stock Quantity',
+                            isNumber: true,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    
+                    // Category Selection
+                    DropdownButtonFormField<int>(
+                      decoration: _getInputDecoration('Category'),
+                      style: const TextStyle(fontFamily: 'Montserrat', color: Colors.black, fontSize: 14),
+                      value: _selectedCategoryId,
+                      items: _categories
+                          .map((cat) => DropdownMenuItem<int>(
+                                value: cat.id,
+                                child: Text(
+                                  cat.name,
+                                  style: const TextStyle(fontFamily: 'Montserrat'),
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          final previousCategoryId = _selectedCategoryId;
+                          _selectedCategoryId = value;
                           
-                          final wasClothing = previousCategory.name.toLowerCase().contains('clothing');
-                          final isNowClothing = newCategory.name.toLowerCase().contains('clothing');
-                          
-                          // Handle category type change
-                          if (wasClothing != isNowClothing) {
-                            _clearSizeVariants();
-                            if (isNowClothing) {
-                              // If changing to clothing, distribute current stock across sizes
-                              _distributeSingleStockToSizes();
-                              _shouldShowSizeVariants = true;
-                            } else {
-                              // If changing from clothing to non-clothing, sum up all size stocks
-                              _consolidateSizeStocksToSingle();
-                              _shouldShowSizeVariants = false;
+                          // Check if category type changed (clothing <-> non-clothing)
+                          if (previousCategoryId != null && value != null) {
+                            final previousCategory = _categories.firstWhere(
+                              (cat) => cat.id == previousCategoryId,
+                              orElse: () => Category(id: 0, name: ''),
+                            );
+                            final newCategory = _categories.firstWhere(
+                              (cat) => cat.id == value,
+                              orElse: () => Category(id: 0, name: ''),
+                            );
+                            
+                            final wasClothing = previousCategory.name.toLowerCase().contains('clothing');
+                            final isNowClothing = newCategory.name.toLowerCase().contains('clothing');
+                            
+                            // Handle category type change
+                            if (wasClothing != isNowClothing) {
+                              _clearSizeVariants();
+                              if (isNowClothing) {
+                                // If changing to clothing, distribute current stock across sizes
+                                _distributeSingleStockToSizes();
+                                _shouldShowSizeVariants = true;
+                              } else {
+                                // If changing from clothing to non-clothing, sum up all size stocks
+                                _consolidateSizeStocksToSingle();
+                                _shouldShowSizeVariants = false;
+                              }
                             }
                           }
-                        }
-                      });
-                    },
-                  ),
-                  
-                  // Size Variants Section (for clothing)
-                   if (_isClothingCategory && _shouldShowSizeVariants) ...[
-                     const SizedBox(height: 32),
-                     _buildSectionHeader('Size & Stock Management'),
-                     const SizedBox(height: 16),
-                     _buildSizeVariantsSection(),
-                   ],
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Current Images Section
-                   if (widget.listing.images != null && widget.listing.images!.isNotEmpty) ...[
-                     _buildSectionHeader('Current Images'),
-                     const SizedBox(height: 16),
-                     _buildCurrentImagesSection(),
-                     const SizedBox(height: 32),
-                   ],
-                  
-                  // Add New Images Section
-                  _buildSectionHeader('Add New Images'),
-                  const SizedBox(height: 16),
-                  _buildAddImagesSection(),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Update Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _updateListing,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text(
-                        'Update Listing',
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Size Variants Section (for clothing)
+                if (_isClothingCategory && _shouldShowSizeVariants) ...[
+                  _buildSectionCard(
+                    title: 'Size & Stock Management',
+                    children: [
+                      const Text(
+                        'Stock per Size:',
                         style: TextStyle(
-                          fontSize: 16,
                           fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w600, 
+                          fontSize: 14,
+                          color: Colors.grey,
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSizeVariantsGrid(),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                
+                // Current Images Section
+                if (widget.listing.images != null && widget.listing.images!.isNotEmpty) ...[
+                   _buildSectionCard(
+                     title: 'Current Images',
+                     children: [
+                       _buildCurrentImagesSection(),
+                     ],
+                   ),
+                   const SizedBox(height: 24),
+                ],
+                
+                // Add New Images Section
+                _buildSectionCard(
+                  title: 'Add New Images',
+                  children: [
+                    _buildAddImagesSection(),
+                  ],
+                ),
+                
+                const SizedBox(height: 40),
+                
+                // Update Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: _updateListing,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E3A8A),
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text(
+                      'Update Listing',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'Montserrat',
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 40), // Bottom padding
+              ],
             ),
+          ),
           // Loading overlay
           if (_isLoading)
             Container(
@@ -354,88 +367,143 @@ class _EditListingScreenState extends State<EditListingScreen> {
     );
   }
   
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-        fontFamily: 'Montserrat',
-      ),
-    );
-  }
-  
-  Widget _buildSizeVariantsSection() {
+  Widget _buildSectionCard({required String title, required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Stock per Size:',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.5,
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+              fontFamily: 'Montserrat',
             ),
-            itemCount: _sizeQtyControllers.length,
-            itemBuilder: (context, index) {
-              final entry = _sizeQtyControllers.entries.elementAt(index);
-              final size = entry.key;
-              final controller = entry.value;
-              
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      size,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: '0',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      ),
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
           ),
+          const SizedBox(height: 20),
+          ...children,
         ],
       ),
+    );
+  }
+
+  InputDecoration _getInputDecoration(String label, {String? hint, String? prefix}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixText: prefix,
+      prefixStyle: const TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+      labelStyle: const TextStyle(fontFamily: 'Montserrat', color: Colors.grey),
+      hintStyle: TextStyle(fontFamily: 'Montserrat', color: Colors.grey[400]),
+      filled: true,
+      fillColor: const Color(0xFFF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[200]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[200]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    String? prefix,
+    bool isNumber = false,
+    int maxLines = 1,
+    bool enabled = true,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      maxLines: maxLines,
+      enabled: enabled,
+      style: const TextStyle(fontFamily: 'Montserrat', fontSize: 14),
+      decoration: _getInputDecoration(label, hint: hint, prefix: prefix),
+    );
+  }
+  
+  Widget _buildSizeVariantsGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.1, // More square-ish for better look
+      ),
+      itemCount: _sizeQtyControllers.length,
+      itemBuilder: (context, index) {
+        final entry = _sizeQtyControllers.entries.elementAt(index);
+        final size = entry.key;
+        final controller = entry.value;
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                size,
+                style: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    hintText: '0',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
   
