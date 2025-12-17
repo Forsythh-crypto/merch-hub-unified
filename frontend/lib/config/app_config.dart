@@ -2,8 +2,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
   static const bool isDevelopment = true;
+  static String? _overrideUrl;
+
+  static set overrideUrl(String? url) => _overrideUrl = url;
 
   static String get baseUrl {
+    if (_overrideUrl != null && _overrideUrl!.isNotEmpty) return _overrideUrl!;
     final fromEnv = dotenv.env['API_BASE_URL']?.trim();
     if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
     return 'http://localhost:8000';

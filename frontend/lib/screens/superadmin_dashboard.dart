@@ -1227,7 +1227,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'System Settings',
+              'Settings',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -1236,73 +1236,24 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             ),
             const SizedBox(height: 24),
 
-            // App Configuration Section
             _buildSettingsSection(
-              'App Configuration',
-              Icons.settings_applications,
+              'General',
+              Icons.settings,
               [
-                _buildSettingTile(
-                  'Base URL',
-                  AppConfig.baseUrl,
-                  Icons.link,
-                  onTap: () => _showEditSettingDialog(
-                    'Base URL',
-                    AppConfig.baseUrl,
-                    (value) {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Success'),
-                          content: Text('Base URL updated to: $value'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
                 _buildSettingTile(
                   'App Version',
                   '1.0.0',
-                  Icons.info,
+                  Icons.info_outline,
                   isEditable: false,
                 ),
                 _buildSettingTile(
-                  'Environment',
-                  'Production',
-                  Icons.cloud,
-                  isEditable: false,
+                  'Clear Cache',
+                  'Clear local data & logout',
+                  Icons.delete_outline,
+                  onTap: () => _showClearCacheDialog(),
                 ),
               ],
             ),
-
-            const SizedBox(height: 24),
-
-            // System Preferences
-            _buildSettingsSection('System Preferences', Icons.tune, [
-              _buildSettingTile(
-                'Maintenance Mode',
-                'Disabled',
-                Icons.build,
-                onTap: () => _showToggleDialog('Maintenance Mode', false),
-              ),
-              _buildSettingTile(
-                'Clear Cache',
-                'Cache size: 15 MB',
-                Icons.clear_all,
-                onTap: () => _showClearCacheDialog(),
-              ),
-              _buildSettingTile(
-                'Backup Database',
-                'Last backup: 2 hours ago',
-                Icons.save_alt,
-                onTap: () => _showBackupDialog(),
-              ),
-            ]),
           ],
         ),
       ),
@@ -1371,120 +1322,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   // Dialog methods for settings
-  void _showEditSettingDialog(
-    String title,
-    String currentValue,
-    Function(String) onSave,
-  ) {
-    final controller = TextEditingController(text: currentValue);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edit $title'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: title,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onSave(controller.text);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showToggleDialog(String title, bool currentValue) {
-    bool value = currentValue;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Configure $title'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Enable $title?'),
-              const SizedBox(height: 16),
-              Switch(
-                value: value,
-                onChanged: (newValue) {
-                  setState(() {
-                    value = newValue;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Success'),
-                  content: Text('$title ${value ? 'enabled' : 'disabled'}'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-  void _showBackupDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Backup Database'),
-        content: const Text(
-          'This will create a backup of all system data. Continue?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _performBackup();
-            },
-            child: const Text('Backup'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showClearCacheDialog() {
     showDialog(
@@ -1522,36 +1360,61 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
 
   // Action methods
-  void _performBackup() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Success'),
-        content: const Text('Backup completed successfully'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _clearCache() {
-    showDialog(
+
+  Future<void> _clearCache() async {
+    // Show confirmation first
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Success'),
-        content: const Text('Cache cleared successfully'),
+        title: const Text('Clear Cache & Reset'),
+        content: const Text(
+          'This will clear all local data, settings, and logout the current session. Are you sure?'
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Clear & Logout'),
           ),
         ],
       ),
     );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Clear all shared preferences
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cache cleared. Logging out...')),
+        );
+        
+        // Navigate to splash or login
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/', // Assuming '/' is splash or login wrapper
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Error clearing cache: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
 

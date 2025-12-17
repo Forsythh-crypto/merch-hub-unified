@@ -210,6 +210,7 @@ class _AdminAddListingScreenState extends State<AdminAddListingScreen> {
           imagePaths: imagePaths,
           status: 'pending',
           sizeVariants: sizeVariants,
+          stockQuantity: totalStock,
         );
       } else {
         // Use regular createListing for non-clothing items

@@ -96,7 +96,7 @@ class ListingController extends Controller
             'category_id' => $validated['category_id'],
             'department_id' => $departmentId,
             'user_id' => $user->id,
-            'stock_quantity' => $validated['stock_quantity'] ?? 1,
+            'stock_quantity' => $validated['stock_quantity'] ?? 0,
             'status' => $initialStatus,
         ]);
 
@@ -153,8 +153,8 @@ class ListingController extends Controller
 
                 if ($isClothing) {
                     $sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-                    $stockPerSize = max(0, floor(($validated['stock_quantity'] ?? 1) / 6));
-                    $remaining = ($validated['stock_quantity'] ?? 1) - ($stockPerSize * 6);
+                    $stockPerSize = max(0, floor(($validated['stock_quantity'] ?? 0) / 6));
+                    $remaining = ($validated['stock_quantity'] ?? 0) - ($stockPerSize * 6);
 
                     foreach ($sizes as $index => $size) {
                         $stock = $stockPerSize + ($index == 2 ? $remaining : 0); // Add remaining to M size

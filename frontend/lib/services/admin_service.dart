@@ -705,6 +705,7 @@ class AdminService {
     int? categoryId,
     int? departmentId,
     required List<Map<String, dynamic>> sizeVariants,
+    int? stockQuantity,
   }) async {
     try {
       var request = http.MultipartRequest(
@@ -724,6 +725,9 @@ class AdminService {
       request.fields['description'] = description;
       request.fields['price'] = price.toString();
       request.fields['status'] = status;
+      if (stockQuantity != null) {
+        request.fields['stock_quantity'] = stockQuantity.toString();
+      }
       if (categoryId != null) {
         request.fields['category_id'] = categoryId.toString();
       }
