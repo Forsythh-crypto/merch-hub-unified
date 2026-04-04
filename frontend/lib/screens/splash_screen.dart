@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(const Duration(seconds: 5));
 
       if (!mounted) return;
 
@@ -77,7 +77,8 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacementNamed(context, '/welcome');
       }
     } catch (e) {
-      // Silently handle error
+      debugPrint("Auth Error: $e");
+      // Silently handle error and go to welcome
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/welcome');
     }

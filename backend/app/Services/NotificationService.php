@@ -16,11 +16,25 @@ class NotificationService
     public function notifyOrderCreated(Order $order)
     {
         try {
+            // Load necessary relationships if not already loaded
+            $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
+
+            $userName = $order->user->name ?? 'A user';
+            $itemCount = $order->items->count();
+            
+            if ($itemCount > 1) {
+                $itemDescription = "{$itemCount} items";
+            } elseif ($itemCount === 1) {
+                $itemDescription = $order->items->first()->listing->title ?? 'an item';
+            } else {
+                $itemDescription = $order->listing->title ?? 'an item';
+            }
+
             // Notify superadmins about all orders
             $this->notifySuperAdmins(
                 $order,
                 'New Order Created',
-                "New order #{$order->order_number} has been created by {$order->user->name} for {$order->listing->name}"
+                "New order #{$order->order_number} has been created by {$userName} for {$itemDescription}"
             );
 
             // Notify department admins about orders in their department
@@ -93,8 +107,8 @@ class NotificationService
     public function notifyReceiptUploaded(Order $order)
     {
         try {
-            $userEmail = $order->user->email;
-            $userName = $order->user->name;
+            $userEmail = $order->user->email ?? 'unknown email';
+            $userName = $order->user->name ?? 'Unknown user';
 
             // Notify superadmins about receipt upload
             $this->notifySuperAdmins(
@@ -163,20 +177,36 @@ class NotificationService
         $superAdmins = User::where('role', User::ROLE_SUPERADMIN)->get();
 
         foreach ($superAdmins as $admin) {
+            $data = null;
+            if ($order) {
+                $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
+                
+                $itemCount = $order->items->count();
+                if ($itemCount > 1) {
+                    $listingName = "{$itemCount} items";
+                } elseif ($itemCount === 1) {
+                    $listingName = $order->items->first()->listing->title ?? 'Unknown Item';
+                } else {
+                    $listingName = $order->listing->title ?? 'Unknown Item';
+                }
+
+                $data = [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'department_id' => $order->department_id,
+                    'user_name' => $order->user->name ?? 'Unknown User',
+                    'user_email' => $order->user->email ?? 'Unknown Email',
+                    'listing_name' => $listingName,
+                ];
+            }
+
             Notification::create([
                 'type' => $order ? Notification::TYPE_ORDER_CREATED : Notification::TYPE_RESERVATION_CREATED,
                 'title' => $title,
                 'message' => $message,
                 'user_id' => $admin->id,
                 'user_role' => User::ROLE_SUPERADMIN,
-                'data' => $order ? [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'department_id' => $order->department_id,
-                    'user_name' => $order->user->name,
-                    'user_email' => $order->user->email,
-                    'listing_name' => $order->listing->name,
-                ] : null,
+                'data' => $data,
             ]);
         }
     }
@@ -191,6 +221,17 @@ class NotificationService
             ->get();
 
         foreach ($departmentAdmins as $admin) {
+            $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
+            
+            $itemCount = $order->items->count();
+            if ($itemCount > 1) {
+                $listingName = "{$itemCount} items";
+            } elseif ($itemCount === 1) {
+                $listingName = $order->items->first()->listing->title ?? 'Unknown Item';
+            } else {
+                $listingName = $order->listing->title ?? 'Unknown Item';
+            }
+
             Notification::create([
                 'type' => Notification::TYPE_ORDER_CREATED,
                 'title' => $title,
@@ -202,9 +243,9 @@ class NotificationService
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
                     'department_id' => $order->department_id,
-                    'user_name' => $order->user->name,
-                    'user_email' => $order->user->email,
-                    'listing_name' => $order->listing->name,
+                    'user_name' => $order->user->name ?? 'Unknown User',
+                    'user_email' => $order->user->email ?? 'Unknown Email',
+                    'listing_name' => $listingName,
                 ],
             ]);
         }
@@ -234,23 +275,35 @@ class NotificationService
     /**
      * Notify specific user
      */
-    /**
-     * Notify specific user
-     */
     private function notifyUser(User $user, string $title, string $message, ?Order $order = null)
     {
+        $data = null;
+        if ($order) {
+            $order->loadMissing(['items.listing', 'listing']);
+            $itemCount = $order->items->count();
+            if ($itemCount > 1) {
+                $listingName = "{$itemCount} items";
+            } elseif ($itemCount === 1) {
+                $listingName = $order->items->first()->listing->title ?? 'Unknown Item';
+            } else {
+                $listingName = $order->listing->title ?? 'Unknown Item';
+            }
+
+            $data = [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'department_id' => $order->department_id,
+                'listing_name' => $listingName,
+            ];
+        }
+
         Notification::create([
             'type' => $order ? Notification::TYPE_ORDER_CREATED : Notification::TYPE_RESERVATION_CREATED,
             'title' => $title,
             'message' => $message,
             'user_id' => $user->id,
             'user_role' => $user->role,
-            'data' => $order ? [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'department_id' => $order->department_id,
-                'listing_name' => $order->listing->name ?? 'Unknown Item',
-            ] : null,
+            'data' => $data,
         ]);
     }
 

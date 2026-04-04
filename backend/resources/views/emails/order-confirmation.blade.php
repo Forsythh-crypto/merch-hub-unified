@@ -55,7 +55,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>UDD Merch Hub</h1>
+            <h1>UDD Essentials</h1>
             <h2>Order Confirmation</h2>
         </div>
 
@@ -72,35 +72,36 @@
 
                 <h4>Product Information</h4>
                 @if($order->items && $order->items->count() > 0)
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                        <thead>
-                            <tr style="background: #f0f0f0; text-align: left;">
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Product</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Size</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Qty</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Price</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($order->items as $item)
-                                <tr>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                        {{ $item->listing->title ?? 'Item' }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->size ?? '-' }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->quantity }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                        ₱{{ number_format($item->price, 2) }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                        ₱{{ number_format($item->subtotal, 2) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                    <thead>
+                        <tr style="background: #f0f0f0; text-align: left;">
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Product</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Size</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Qty</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Price</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($order->items as $item)
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                {{ $item->listing->title ?? 'Item' }}
+                            </td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->size ?? '-' }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->quantity }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                ₱{{ number_format($item->price, 2) }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                ₱{{ number_format($item->subtotal, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
                 @elseif($listing)
-                    <p><strong>Product:</strong> {{ $listing->title }}</p>
-                    <p><strong>Quantity:</strong> {{ $order->quantity }}</p>
-                    <p><strong>Price per item:</strong> ₱{{ number_format($listing->price, 2) }}</p>
+                <p><strong>Product:</strong> {{ $listing->title }}</p>
+                <p><strong>Quantity:</strong> {{ $order->quantity }}</p>
+                <p><strong>Price per item:</strong> ₱{{ number_format($listing->price, 2) }}</p>
                 @endif
 
                 <p><strong>Department:</strong> {{ $department->name }}</p>
@@ -110,7 +111,7 @@
                     ₱{{ number_format($order->total_amount * 0.65, 2) }}</p>
 
                 @if($order->notes)
-                    <p><strong>Notes:</strong> {{ $order->notes }}</p>
+                <p><strong>Notes:</strong> {{ $order->notes }}</p>
                 @endif
             </div>
 
@@ -132,10 +133,10 @@
 
             <p>If you have any questions, please contact us at {{ $department->name }}.</p>
 
-            <p>Thank you for choosing UDD Merch Hub!</p>
+            <p>Thank you for choosing UDD Essentials!</p>
 
             <p>Best regards,<br>
-                UDD Merch Hub Team</p>
+                UDD Essentials</p>
         </div>
     </div>
 </body>

@@ -249,13 +249,16 @@ class _CartScreenState extends State<CartScreen> {
                                 color: const Color(0xFF1E3A8A),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                deptName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Montserrat',
-                                  color: Color(0xFF1E3A8A),
+                              Expanded(
+                                child: Text(
+                                  deptName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Montserrat',
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],

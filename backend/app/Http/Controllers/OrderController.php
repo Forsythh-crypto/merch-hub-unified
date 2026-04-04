@@ -150,6 +150,7 @@ class OrderController extends Controller
                 DiscountCode::where('id', $discountCodeId)->increment('usage_count');
             }
 
+            $order->load(['user', 'department', 'items.listing', 'listing']);
             $this->sendOrderConfirmationEmail($order, $validated['email']);
             $this->notificationService->notifyOrderCreated($order);
 
@@ -378,10 +379,11 @@ class OrderController extends Controller
     private function sendOrderConfirmationEmail($order, $email)
     {
         try {
+            $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
             $data = [
                 'order' => $order,
                 'user' => $order->user,
-                'listing' => $order->listing,
+                'listing' => $order->listing ?? ($order->items->first() ? $order->items->first()->listing : null),
                 'department' => $order->department,
             ];
 
@@ -402,6 +404,7 @@ class OrderController extends Controller
     private function sendPickupReadyEmail($order)
     {
         try {
+            $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
             // Use the email saved in the order (the one used during order creation)
             $emailToUse = $order->email ?? $order->user->email;
 
@@ -411,7 +414,7 @@ class OrderController extends Controller
             $data = [
                 'order' => $order,
                 'user' => $order->user,
-                'listing' => $order->listing,
+                'listing' => $order->listing ?? ($order->items->first() ? $order->items->first()->listing : null),
                 'department' => $order->department,
             ];
 
@@ -435,13 +438,14 @@ class OrderController extends Controller
     private function sendOrderConfirmedEmail($order)
     {
         try {
+            $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
             // Use the email saved in the order (the one used during order creation)
             $emailToUse = $order->email ?? $order->user->email;
 
             $data = [
                 'order' => $order,
                 'user' => $order->user,
-                'listing' => $order->listing,
+                'listing' => $order->listing ?? ($order->items->first() ? $order->items->first()->listing : null),
                 'department' => $order->department,
             ];
 
@@ -460,13 +464,14 @@ class OrderController extends Controller
     private function sendOrderCancellationEmail($order)
     {
         try {
+            $order->loadMissing(['user', 'department', 'items.listing', 'listing']);
             // Use the email saved in the order (the one used during order creation)
             $emailToUse = $order->email ?? $order->user->email;
 
             $data = [
                 'order' => $order,
                 'user' => $order->user,
-                'listing' => $order->listing,
+                'listing' => $order->listing ?? ($order->items->first() ? $order->items->first()->listing : null),
                 'department' => $order->department,
             ];
 

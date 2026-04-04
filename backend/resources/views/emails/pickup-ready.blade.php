@@ -75,39 +75,39 @@
             <div class="order-details">
                 <h3>Order Details</h3>
                 <p><strong>Order Number:</strong> {{ $order->order_number }}</p>
-                <p><strong>Status:</strong> <span
-                        class="status">{{ ucfirst(str_replace('_', ' ', $order->status)) }}</span></p>
+                <p><strong>Status:</strong> <span class="status">{{ ucfirst(str_replace('_', ' ', $order->status))
+                        }}</span></p>
 
                 <h4>Product Information</h4>
                 @if($order->items && $order->items->count() > 0)
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                        <thead>
-                            <tr style="background: #f0f0f0; text-align: left;">
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Product</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Size</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Qty</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Price</th>
-                                <th style="padding: 8px; border-bottom: 1px solid #ddd;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($order->items as $item)
-                                <tr>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                        {{ $item->listing->title ?? 'Item' }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->size ?? '-' }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->quantity }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                        ₱{{ number_format($item->price, 2) }}</td>
-                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                        ₱{{ number_format($item->subtotal, 2) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                    <thead>
+                        <tr style="background: #f0f0f0; text-align: left;">
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Product</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Size</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Qty</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Price</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #ddd;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($order->items as $item)
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                {{ $item->listing->title ?? 'Item' }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->size ?? '-' }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $item->quantity }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                ₱{{ number_format($item->price, 2) }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                ₱{{ number_format($item->subtotal, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
                 @elseif($listing)
-                    <p><strong>Product:</strong> {{ $listing->title }}</p>
-                    <p><strong>Quantity:</strong> {{ $order->quantity }}</p>
+                <p><strong>Product:</strong> {{ $listing->title }}</p>
+                <p><strong>Quantity:</strong> {{ $order->quantity }}</p>
                 @endif
 
                 <p><strong>Department:</strong> {{ $department->name }}</p>
@@ -117,8 +117,8 @@
                     ₱{{ number_format($order->total_amount * 0.65, 2) }}</p>
 
                 @if($order->pickup_date)
-                    <p><strong>Pickup Date:</strong>
-                        {{ \Carbon\Carbon::parse($order->pickup_date)->format('F j, Y g:i A') }}</p>
+                <p><strong>Pickup Date:</strong>
+                    {{ \Carbon\Carbon::parse($order->pickup_date)->format('F j, Y g:i A') }}</p>
                 @endif
             </div>
 
@@ -140,11 +140,11 @@
             </ul>
 
             @if($order->notes)
-                <h3>Additional Notes</h3>
-                <p>{{ $order->notes }}</p>
+            <h3>Additional Notes</h3>
+            <p>{{ $order->notes }}</p>
             @endif
 
-            <p>Thank you for choosing UDD Merch Hub!</p>
+            <p>Thank you for choosing UDD Essentials!</p>
 
             <p>Best regards,<br>
                 {{ $department->name }} Team</p>

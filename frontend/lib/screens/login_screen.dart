@@ -46,13 +46,13 @@ class _LoginScreenState extends State<LoginScreen> {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json', // Add Accept header
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           'email': emailController.text.trim(),
           'password': passwordController.text,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
       setState(() => isLoading = false);
